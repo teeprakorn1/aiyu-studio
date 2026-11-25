@@ -24,7 +24,7 @@
 
 <sub>Every frame above is pure canvas code rendered by this template's own demo project — characters, subtitles, chart cards and all.</sub>
 
-**▶ [Watch a real production made with this pipeline](https://youtu.be/dNbr5_IbYVY)** — a full Thai-language vertical documentary (the `jensen-legend` project in [examples/](examples/jensen-legend/)), demonstrating automatic Thai line-breaking subtitles, speaker-aware lip sync and the final loudness-normalized output in the wild.
+**▶ [Watch: ทำไมเจนเซนหวงถึงหายไป 11 วัน? — a real production made with this pipeline](https://youtu.be/dNbr5_IbYVY)** — a full Thai-language vertical documentary (the `jensen-legend` project in [examples/](examples/jensen-legend/)), demonstrating automatic Thai line-breaking subtitles, speaker-aware lip sync and the final loudness-normalized output in the wild.
 
 ## 💡 Why this exists
 

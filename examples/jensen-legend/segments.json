@@ -1,0 +1,12 @@
+{
+  "settings": { "tempo": 1.15, "gap": 0.15, "trimThresh": 500, "lineGap": 0.06 },
+  "_comment": "real config of jensen-legend v7 (107 lines) — voice files are not included in this repo; use as a reference for segment structure: narrator n*.wav bundles multiple lines, characters c*_X.wav one line each",
+  "segments": [
+    ["n000-004.wav", 0, 4], ["n005-008.wav", 5, 8], ["g02.wav", 9, 13], ["n014.wav", 14, 14],
+    ["c015_J.wav", 15, 15], ["n016-018.wav", 16, 18], ["n019-020.wav", 19, 20], ["g05.wav", 21, 24],
+    ["g06.wav", 25, 29], ["g07.wav", 30, 35], ["n036-043.wav", 36, 43], ["n044-049.wav", 44, 49],
+    ["g10.wav", 50, 56], ["g11.wav", 57, 58], ["g12.wav", 59, 68], ["n069-076.wav", 69, 76],
+    ["n077.wav", 77, 77], ["c078_J.wav", 78, 78], ["c079_T.wav", 79, 79], ["n080-087.wav", 80, 87],
+    ["g15.wav", 88, 91], ["n092-096.wav", 92, 96], ["g17.wav", 97, 102], ["g18.wav", 103, 106]
+  ]
+}

@@ -1,0 +1,123 @@
+# Guide: writing scenes in style.js
+
+`style.js` is the only file rewritten per project — `rig.js` already contains all machinery. **Never edit rig.js** (if you need extra props/backgrounds, copy them from `examples/jensen-legend/style-v4.js` into your style.js)
+
+## 1. File anatomy — 4 parts
+
+```js
+const FOOTNOTE_TEXT = '...';   // faint fine print at y≈268 (empty = hidden)
+const CH = { ... };            // character definitions
+function scXxx(o) { ... }      // one function per scene
+const SC = [ ... ];            // which lines belong to which scene
+```
+
+## 2. The SC table — wiring scenes to the script
+
+```js
+const SC = [[3, scOpening], [8, scTalk], [Infinity, scClosing]];
+```
+
+Read as: **scOpening covers lines 0–2, scTalk covers 3–7, scClosing covers 8–end**
+(each number is "the first line of the NEXT scene" — always end with Infinity)
+
+Scenes are not defined in seconds — **they bind to dialogue lines**, because line timing shifts with the real audio. Speed up the tempo and scenes shrink automatically. This is why the whole system rescales from a single parameter.
+
+## 3. The `o` object each scene receives
+
+| Field | Meaning | Typical use |
+|---|---|---|
+| `o.t` | current time (seconds) | continuous animation, e.g. `blink: (o.t % 3.4) < .12` |
+| `o.p` | scene progress 0→1 | zoom/reveals, e.g. `pop(..., Math.min(1, o.p * 2))` |
+| `o.i` | current dialogue line index | progressive reveals: `if (o.i >= 2) TXT(...)` |
+| `o.lp` | progress within the line 0→1 | fading chips/cards with the speech |
+| `o.line` | current line {spk, txt, t0, dur} | checking who speaks |
+| `o.em` | audio envelope right now 0..1 | used via mouthFor(); rarely touched directly |
+
+## 4. cam() — the camera (wraps background + characters)
+
+```js
+cam(o, { z0: 1.05, z1: 1.13, x0: 0, x1: 0, cy: 1000, cx: 540,
+         punch: .02, punchDur: .55, driftX: 5, driftY: 4, phase: 0 }, () => {
+  // draw background + characters inside here
+});
+```
+
+- `z0→z1` slow zoom-in across the scene (1.04–1.14 is the production range — don't exceed it)
+- `punch` a zoom kick at each new line — keeps the frame alive as the narrator moves between sentences
+- `driftX/Y` slow floating so the frame never feels frozen
+- `cy` the zoom center — **critical for safe zones, see below**
+- Place text/cards **outside** cam if you don't want them moving with the camera
+
+## 5. person() — characters
+
+```js
+person('host', { x: 540, y: 1600, scale: 1, t: o.t,
+  look: 1,              // facing direction -1..1
+  flip: false,          // mirror horizontally (for two characters facing each other)
+  back: false,          // back turned (cold opens)
+  blink: (o.t % 3.4) < .12,
+  mood: 'neutral',      // neutral smile worry hurt tense resolute
+  mouth: mouthFor('H', o),   // mouth moves only when spk matches this letter
+  pose: 'idle',         // idle fold point open (or arms: [[a,b],[a,b]] for custom angles)
+  walk: false, sit: false });
+rim(540, 1600, 1, 1, 'rgba(118,185,0,.4)');   // rim light — separates character from dark backgrounds
+```
+
+Character definitions live in CH — key fields: `hs` hairstyle (`jensen|swoop|bob|blonde|longF|pony|none`), clothing `jacket|suit+tie|blazer|dress+floral`, extras `glasses lashes earring ghost bw young`
+
+### The lip sync lesson (paid for in production)
+
+`mouthFor('H', o)` returns 0 while anyone else speaks — pass `mouth: o.em` directly and **every character chews along with the narrator**, which looks wrong instantly. Always use mouthFor, and the letter must match spk in dialogue.txt.
+
+## 6. What rig.js already gives you
+
+**Drawing primitives:** `TXT RRECT CIRC LIMB LINE SHAPE PATH` · **scenery/effects:** `wall floorY win glow city stars lamp rain circuitField rim vig tint zoom cam` · **cards/props:** `nameCard newsCard emailCard quoteCard pop chip chartCard` · **systems:** `subs sourceChips footnote mouthFor shot render`
+
+Special-purpose props built in production (paperSheet, wallClock, routeCurve, cargoShip, serverRack, gpuChip, photoCard, docBadge, doorLight + 12 backgrounds like bgHQ/bgOffice) — copy them from `examples/jensen-legend/style-v4.js` as needed.
+
+## 7. Safe zones — the rules that make videos readable on phones {#safe-zone}
+
+```
+┌──────────────────────┐
+│ 0–260 px   EMPTY     │ ← status bar/app icons (footnote sits at y≈268)
+│ y≈300/354  source    │
+│            chips     │
+├──────────────────────┤
+│   CONTENT ZONE       │
+│   headings/cards/    │
+│   characters         │
+├──────────────────────┤
+│ y≈1490 last subtitle │ ← max width 840px, 120px side margins
+│ below      EMPTY     │ ← app buttons/captions overlap here
+└──────────────────────┘
+```
+
+### ⚠ The cam() zoom trap — the most expensive lesson in production
+
+Written coordinates ≠ on-screen positions, because zoom pulls everything toward (cx, cy):
+
+```
+actual = cy + (val − cy) × zoom
+```
+
+Real example: a heading at y=300 inside cam(cy=1060, z=1.13) → on screen `1060 + (300−1060)×1.13 ≈ y 200` — **silently floating into the top forbidden zone mid-scene**
+
+How to stay safe:
+1. Render stills of every scene **before** any real render — `node render.mjs stills t1,t2,...`
+2. Overlay a red line at y=250 and yellow at y=1570 on the contact sheet and scan by eye (or inspect each still)
+3. After any fix, re-check ALL stills, not just the fixed spot — moving one element affects others in the same scene
+
+## 8. Subtitles — fully automatic, nothing to do
+
+The rig handles everything: Thai word-breaking via Intl.Segmenter, line balancing, font shrink 52→40px when exceeding 3 rows, max width 840px. To check which lines overflow: `node measure-subs.mjs` (usage in the file header).
+
+## 9. Battle-tested scene patterns from production
+
+| Goal | Pattern |
+|---|---|
+| Cold open 0–3 s | back-turned character + big pop hook text + rim light |
+| Two-character dialogue | x positions ~450px apart, right one `flip: true` + mouthFor with separate spk |
+| Documents/news beats | character shrinks, cards appear one by one via `o.i` |
+| Closing | slow zoom-in + two lines of big text + darkening tint |
+
+Full implementations: `template/style.js` (compact examples) and `examples/jensen-legend/style-v4.js` (19 real scenes)

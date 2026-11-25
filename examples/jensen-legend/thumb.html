@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html><body style="margin:0;background:#000">
+<canvas id="c"></canvas>
+<script src="talk.js"></script>
+<script src="style-v3.js"></script>
+<script>
+window.DURATION = 1;
+const WIDE = new URLSearchParams(location.search).has('wide');
+if (WIDE) { document.getElementById('c').width = 1280; document.getElementById('c').height = 720; }
+else { document.getElementById('c').width = 1080; document.getElementById('c').height = 1920; }
+const HOT = '#e05252', GOLD = '#e8b84c', CREAM = '#f4f1ea', NV = '118,185,0';
+const headline = (s, x, y, size, fill, stroke) => {
+  g.save(); g.font = `900 ${size}px ${FONT}`; g.textAlign = 'center';
+  g.lineJoin = 'round'; g.lineWidth = stroke; g.strokeStyle = 'rgba(6,5,8,.95)';
+  g.strokeText(s, x, y); g.fillStyle = fill; g.fillText(s, x, y); g.restore();
+};
+const plate = (x, y, w, h) => {
+  g.beginPath(); g.roundRect(x, y, w, h, 26); g.fillStyle = 'rgba(8,10,14,.93)'; g.fill();
+  g.lineWidth = 6; g.strokeStyle = GOLD; g.stroke();
+};
+window.render = function () {
+  g.setTransform(1, 0, 0, 1, 0, 0);
+
+  if (WIDE) {
+    const bg = g.createLinearGradient(0, 0, 0, 720); bg.addColorStop(0, '#080b12'); bg.addColorStop(1, '#101622');
+    g.fillStyle = bg; g.fillRect(0, 0, 1280, 720);
+    glow(900, 300, 360, NV, .16);
+    glow(1120, 300, 260, '224,82,82', .07);
+    person('shadow', { x: 1120, y: 787, scale: 1.05, t: 0, sit: true });
+    CIRC(1098, 270, 8, HOT, 0); CIRC(1142, 270, 8, HOT, 0);
+    pop('?', 1120, 120, HOT, 1, 90);
+    person('jensen', { x: 900, y: 796, scale: 1.1, t: 0, look: 1, mood: 'worry', sit: true });
+    rim(900, 796, 1.1, -1, 'rgba(140,170,255,.35)');
+    headline('เกิดอะไรขึ้น?', 330, 150, 54, GOLD, 12);
+    headline('11 วัน', 330, 330, 230, HOT, 20);
+    headline('พ้นตำแหน่ง', 330, 430, 80, CREAM, 14);
+    plate(40, 490, 600, 100);
+    TXT('CEO NVIDIA · ตามรายงานข่าว', 340, 556, 38, GOLD, 'center', 800);
+    tint('6,8,12', .08);
+    return;
+  }
+
+  const bg = g.createLinearGradient(0, 0, 0, 1920); bg.addColorStop(0, '#080b12'); bg.addColorStop(.6, '#111826'); bg.addColorStop(1, '#06080c');
+  g.fillStyle = bg; g.fillRect(0, 0, 1080, 1920);
+  glow(400, 930, 560, NV, .16);
+  glow(820, 930, 420, '224,82,82', .07);
+  person('shadow', { x: 820, y: 1804, scale: 1.7, t: 0, sit: true });
+  CIRC(778, 968, 14, HOT, 0); CIRC(862, 968, 14, HOT, 0);
+  pop('?', 930, 800, HOT, 1, 110);
+  person('jensen', { x: 400, y: 1812, scale: 1.75, t: 0, look: 1, mood: 'worry', sit: true });
+  rim(400, 1812, 1.75, -1, 'rgba(140,170,255,.35)');
+  headline('เกิดอะไรขึ้น?', 540, 340, 74, GOLD, 16);
+  headline('11 วัน', 540, 585, 300, HOT, 26);
+  headline('พ้นตำแหน่ง', 540, 700, 96, CREAM, 18);
+  gpuChip(930, 330, .5); glow(930, 330, 120, NV, .18);
+  plate(120, 1530, 840, 120);
+  TXT('CEO NVIDIA · ตามรายงานข่าว', 540, 1609, 54, GOLD, 'center', 800);
+  tint('6,8,12', .08);
+  vig();
+};
+window.ready = Promise.resolve();
+</script>
+</body></html>

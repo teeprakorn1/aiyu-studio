@@ -1,0 +1,77 @@
+# ═══════════════════════════════════════════════════════════════════
+# .gitignore — aiyu-video-template
+#
+# This file is copied into every scaffolded project by new-project.py.
+# All patterns are intentionally unanchored (no leading "/") so they
+# apply at every depth in both this repo and generated projects.
+#
+# NOTE: gitignore has NO trailing comments — every explanation sits
+# on its own line, because "#" mid-line is part of the pattern.
+# ═══════════════════════════════════════════════════════════════════
+
+# ── MEDIA — never commit ────────────────────────────────────────────
+# Large binaries, often real people / licensed voices.
+# Audio
+*.wav
+*.mp3
+*.m4a
+*.aac
+*.ogg
+*.flac
+# Video
+*.mp4
+*.mov
+*.mkv
+*.avi
+*.webm
+# ffmpeg intermediate / backup junk
+*.raw
+*.part
+*.bak
+*.orig
+
+# ── GENERATED — always rebuildable, never stored ────────────────────
+# timing backbone — rebuild with: py mix_studio.py
+talk.js
+# render chunks + cues.json
+out/
+# safe-zone QC frames incl. sheet.jpg
+stills/
+# loudness/waveform measurement output
+analysis*/
+# final video output dir in projects
+video/
+render*.log
+
+# ── SECRETS — must never leak ───────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ── NODE ────────────────────────────────────────────────────────────
+# package-lock.json is intentionally NOT ignored: commit it for
+# reproducible installs.
+node_modules/
+
+# ── PYTHON ──────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+env/
+.pytest_cache/
+
+# ── OS / EDITOR junk ────────────────────────────────────────────────
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+NUL
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+*.tmp
+*.log

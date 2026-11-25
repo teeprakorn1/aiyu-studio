@@ -1,0 +1,10 @@
+{
+  "settings": { "tempo": 1.15, "gap": 0.15, "trimThresh": 500, "lineGap": 0.06 },
+  "segments": [
+    ["n000-002.wav", 0, 2],
+    ["c003_H.wav", 3, 3],
+    ["n004-005.wav", 4, 5],
+    ["c006_G.wav", 6, 6],
+    ["n007-009.wav", 7, 9]
+  ]
+}

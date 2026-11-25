@@ -1,0 +1,10 @@
+0|M|This is a short demo story to test the template
+1|M|Imagine that last month, a company made a big announcement
+2|M|The market reacted instantly, shares jumped within hours
+3|H|We have never seen anything like this before
+4|M|But behind the beautiful numbers, questions remain unanswered
+5|M|Leaked documents reveal another side of the story
+6|G|The figures in the report do not match the public claims
+7|M|The company declined to comment
+8|M|This story is not over, and it is worth following
+9|M|Because sometimes, the simplest stories hide the most

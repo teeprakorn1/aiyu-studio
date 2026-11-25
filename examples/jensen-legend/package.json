@@ -1,0 +1,8 @@
+{
+  "name": "legend-style-test",
+  "private": true,
+  "description": "Reference implementation: real Thai vertical-documentary production (canvas + playwright-core)",
+  "dependencies": {
+    "playwright-core": "^1.63.0"
+  }
+}

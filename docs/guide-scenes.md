@@ -31,7 +31,13 @@ Scenes are not defined in seconds — **they bind to dialogue lines**, because l
 | `o.i` | current dialogue line index | progressive reveals: `if (o.i >= 2) TXT(...)` |
 | `o.lp` | progress within the line 0→1 | fading chips/cards with the speech |
 | `o.line` | current line {spk, txt, t0, dur} | checking who speaks |
-| `o.em` | audio envelope right now 0..1 | used via mouthFor(); rarely touched directly |
+| `o.em` | audio envelope right now 0..1 — **0 in the gaps between lines** | used via mouthFor(); rarely touched directly |
+
+**Reveals that must not re-animate:** `rv(o, n, r)` returns 0 before line `n`, ramps 0→1 during it, and stays 1 after. Use it for anything that appears at a line — feeding `o.lp` directly restarts the animation every time the narration advances.
+
+```js
+if (rv(o, 6, 3)) quoteCard(lines, rv(o, 6, 3), 560);   // appears at line 6, then stays
+```
 
 ## 4. cam() — the camera (wraps background + characters)
 
@@ -68,6 +74,42 @@ Character definitions live in CH — key fields: `hs` hairstyle (`jensen|swoop|b
 ### The lip sync lesson (paid for in production)
 
 `mouthFor('H', o)` returns 0 while anyone else speaks — pass `mouth: o.em` directly and **every character chews along with the narrator**, which looks wrong instantly. Always use mouthFor, and the letter must match spk in dialogue.txt.
+
+## 10. Cinematic upgrade — atmos.js & people.js (v0.2.0)
+
+Two optional modules ship in the template and are already loaded by `index.html`.
+They were extracted from the real production in `examples/thai-origins/` — read that
+example's README for the full story.
+
+**`atmos.js`** — atmosphere & nature: `skyStops()` multi-stop skies, `hillsLayer()` /
+`treeMass()` / `cloudsDusk()` / `birdsFlock()` for living horizons, `waterBody()` +
+`ripples()` + `lightReflection()` for water, `smokeColumn()` / `motes()` / `starField()`
+for air, and the frame treatments `grainLayer()` + `screenVig()` + `captionScrim()`
+(always draw those three last, in that order, vignette outside cam). See the module
+header for copy-paste recipes.
+
+**`people.js`** — `personTH()` as an alternative to rig's `person()`:
+
+```js
+personTH('merchant', { x: 540, y: 1560, scale: 1, t: o.t,
+  walk: true,       // boolean — stride position is (t*walkSpeed+phase)%1; .25 = max leg spread
+  walkSpeed: 1, look: 1, blink: (o.t % 3.4) < .12, mood: 'neutral' });
+```
+
+Choose per project: `person()` mascot proportions suit presenter/news formats
+(jensen-legend); `personTH()` realistic proportions suit historical/cinematic stories
+(thai-origins). They can even mix in one film.
+
+> Deep dives: [guide-cinematic.md](guide-cinematic.md) for humans/backgrounds/water/frame treatments, [guide-map.md](guide-map.md) for the animated map system.
+
+**Hard-won production rules** (also in the module comments):
+
+- Depth comes from **color mixing toward the horizon color** (`mixHex`), never from
+  lowering alpha — alpha-faded objects read as ghosts
+- Never use `Math.random()` in scenes — use `srnd()` seeds, or frames flicker and
+  chunk-parallel rendering breaks
+- Clouds must be wide flat overlapping strips; round shaded discs read as UFOs
+- Large text/props should be sized in explicit pixels — relative sizing surprises at scale
 
 ## 6. What rig.js already gives you
 
@@ -109,7 +151,7 @@ How to stay safe:
 
 ## 8. Subtitles — fully automatic, nothing to do
 
-The rig handles everything: Thai word-breaking via Intl.Segmenter, line balancing, font shrink 52→40px when exceeding 3 rows, max width 840px. To check which lines overflow: `node measure-subs.mjs` (usage in the file header).
+The rig handles everything: Thai word-breaking via Intl.Segmenter, line balancing, font shrink 52→40px when exceeding 3 rows, max width 840px. To check which lines overflow: `node measure-subs.mjs [page.html]` — needs `talk.js`; prints the widest lines, exits with code 2 if any line overflows the 840px frame.
 
 ## 9. Battle-tested scene patterns from production
 
@@ -121,3 +163,8 @@ The rig handles everything: Thai word-breaking via Intl.Segmenter, line balancin
 | Closing | slow zoom-in + two lines of big text + darkening tint |
 
 Full implementations: `template/style.js` (compact examples) and `examples/jensen-legend/style-v4.js` (19 real scenes)
+
+## 11. Name collisions when copying code
+
+- `rig.js` provides top-level names (`W`, `H`, `g`, `L`, `ease`, …). Do not redeclare them in style.js.
+- `atmos.js`, `people.js`, and `rig.js`'s `rv` declare nothing at top level (they are `window` properties). Copied code that re-declares them, such as `const srnd`, `mixHex`, `hillsLayer`, `personTH`, or `const rv`, **shadows them silently** and still runs.

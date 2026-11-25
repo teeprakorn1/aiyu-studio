@@ -204,7 +204,7 @@ function person(id, o) {
   if (!o.sit) { g.beginPath(); g.ellipse(0, 6, 108 * bw, 18, 0, 0, 7); g.fillStyle = 'rgba(0,0,0,.22)'; g.fill(); }
   const wv = o.walk ? Math.sin(t * 7) * 24 : 0;
   if (!o.sit) for (const sd of [-1, 1]) {
-    const fx = sd * (44 * bw + wv * sd);
+    const fx = sd * (44 * bw + wv);   // legs alternate: sd*(44bw+wv) — sd*(44bw+wv*sd) collapses to in-unison motion
     LIMB(sd * 38 * bw, -178, fx, -14, 52, c.bot || '#26262b');
     g.beginPath(); g.ellipse(fx + sd * 4, -6, 32, 13, 0, 0, 7); g.fillStyle = c.ghost ? c.top : '#20242c'; g.fill(); g.lineWidth = OW; g.strokeStyle = OL; g.stroke();
   }
@@ -541,6 +541,10 @@ function subs(o) {
   });
   g.restore();
 }
+/** Line-scoped reveal progress: 0 before line n, ramps 0→1 during line n, stays 1 after.
+ *  Use for any element that appears at a line and must NOT re-animate on later lines —
+ *  feeding o.lp directly re-triggers the animation every time the narration advances. */
+window.rv = (o, n, r = 1.7) => o.i < n ? 0 : o.i === n ? Math.min(1, o.lp * r) : 1;
 const ms = o => o.em * 1.6;
 /** Mouth openness for one character: envelope only while lines carry this spk, else 0.
  *  Always use this for lip sync — feeding o.em directly makes every character chew along.
@@ -582,16 +586,16 @@ function footnote() {
 
 // generic shot/render — SC comes from style.js: [[nextSceneFirstLine, sceneFn], ...] sorted ascending, ending with Infinity
 function shot(t) {
-  let li = 0, lp = 0, line = null;
+  let li = 0, lp = 0, line = null, inside = false;
   for (let i = 0; i < L.length; i++) {
-    if (t >= L[i].t0 && t < L[i].t0 + L[i].dur) { li = i; line = L[i]; lp = (t - L[i].t0) / L[i].dur; break; }
+    if (t >= L[i].t0 && t < L[i].t0 + L[i].dur) { li = i; line = L[i]; lp = (t - L[i].t0) / L[i].dur; inside = true; break; }
     if (t >= L[i].t0) { li = i; line = L[i]; lp = 1; }
   }
   const k = SC.findIndex(([till]) => li < till);
   const from = k === 0 ? 0 : SC[k - 1][0];
   const g0 = L[from].t0, g1 = SC[k][0] < L.length ? L[SC[k][0]].t0 : TALK.dur;
   const p = Math.min(1, Math.max(0, (t - g0) / (g1 - g0)));
-  const em = line && line.env ? line.env[Math.min(line.env.length - 1, Math.floor(lp * line.env.length))] : 0;
+  const em = inside && line && line.env ? line.env[Math.min(line.env.length - 1, Math.floor(lp * line.env.length))] : 0;
   return { t, p, i: li, lp, line, em, fn: SC[k][1] };
 }
 function render(t) {

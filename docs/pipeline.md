@@ -1,6 +1,6 @@
 # Real production pipeline: jensen-legend v3–v7 (historical record)
 
-> ⚠ **Read first:** this is a historical production record — **all principles still apply**, but 5 mechanics differ from the current template:
+> ⚠ **Read first:** this is a historical production record — **all principles still apply**, but several mechanics differ from the current template:
 >
 > | In this document (original production) | Current template |
 > |---|---|
@@ -8,6 +8,8 @@
 > | new projects copied the jensen-legend folder | use `python new-project.py` — see [quickstart.md](quickstart.md) |
 > | single `style-v4.js` file (rig + scenes mixed) | split into `rig.js` (never edit) / `style.js` — see [guide-scenes.md](guide-scenes.md) |
 > | filenames `index-v4.html` / `dialogue-v5.txt` | `index.html` / `dialogue.txt` |
+> | mux output in `../video/` | `final.mp4` in the project folder (`--out` to change) |
+> | bed-vs-speech check at fixed 40.4–41.4 s | opt-in: `--pause=a-b --speech=c-d` — see [qc-publish.md](qc-publish.md) |
 > | — | sheet.jpg now displays vertical frames correctly (render.mjs bug fixed) |
 >
 > Everything about safe zones, the cam() zoom trap, QC, and the audio workflow applies unchanged.
@@ -83,7 +85,7 @@ Originally the narrator's envelope fed every character's mouth → characters ch
 
 1. `ffprobe`: duration/frames/1080×1920/yuv420p/bt709/tv range/faststart (moov before mdat)
 2. post-encode loudness: target −15.5 LUFS, TP ≤ −1.5 (real results −15.5x / −2.0)
-3. **bed-below-speech must be measured at real narration pauses** (mask −55dB), not a fixed window — the mux warning measures 40.4–41.4s which isn't a pause in newer versions; ignore it and measure yourself (real value ~24 dB)
+3. **bed-below-speech must be measured at real narration pauses** (mask −55dB), not a fixed window — the original mux warning measured 40.4–41.4 s, a jensen-legend-specific window; since v0.2.0 the check is opt-in and needs `--pause`/`--speech` (real value ~24 dB)
 4. color: compare a decoded frame with a still at the same time — 1–3 levels/channel off is normal
 5. seams at chunk boundaries: diff should ≈ control (adjacent frames within a scene) — **beware false alarms when a scene cut coincides with a boundary** (hit diff 42 exactly at a cut once; continuity was fine)
 6. subtitles: measure every line's width within frame + no overlapping lines (gap ≥ −0.001)
@@ -100,8 +102,8 @@ Originally the narrator's envelope fed every character's mouth → characters ch
 
 1. Write the script as `dialogue-*.txt` in the same format, adding spk for real speaking characters
 2. Generate voices in AI Studio segment by segment (voices used: Orus=narrator, Iapetus/Charon=characters) into `vo/`
-3. Edit `SEGMENTS` in mix_studio.py to cover 0..n-1 → run mix → check overlaps/env
-4. Write/adjust `style-*.js` (rig/scenes reusable from this project) — bind SC to line numbers
+3. Edit `segments.json` to cover 0..n-1 → run mix → check overlaps/env
+4. Write/adjust `style.js` (scenes reusable from this project; `rig.js` stays untouched) — bind SC to line numbers
 5. Render stills of every scene + safe-zone lines → fix collisions before any real render (huge time saver)
 6. publish 6 chunks → mux → QC per section 6 → watch once on a real phone before publishing
 

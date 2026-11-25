@@ -16,6 +16,13 @@ This folder is the starting point of every production (copied by `py new-project
 - `rig.js` — all machinery: person/cam/helpers/subtitles/chips (for extra props, copy from `examples/jensen-legend/style-v4.js` into style.js)
 - `render.mjs` `publish-v4.mjs` `mux-v4.mjs` `mix_studio.py` `measure-subs.mjs` — the engine
 
+## Optional modules (loaded by index.html)
+
+- `atmos.js` — skies, haze, hills, trees, clouds, birds, water, smoke, grain, vignette, caption scrim, label plates. Call them bare from style.js (`skyStops(...)`, `waterBody(...)`, `grainLayer()`)
+- `people.js` — `personTH(id, o)` realistic humans with characters defined in `PCH`
+
+Both declare nothing at global scope. Copied code that redeclares their helpers, including `rv` from rig.js, shadows them silently. Details: `docs/guide-cinematic.md` and `docs/guide-scenes.md` §10–11.
+
 ## Scene cheatsheet (in style.js)
 
 ```js
@@ -32,6 +39,7 @@ function scExample(o) {
     rim(540, 1600, 1, 1, 'rgba(118,185,0,.4)');
   });
   if (o.i >= 2) TXT('appears from line 2', 540, 400, 60, '#e8dede');
+  // rv(o, n) ramps 0→1 during line n and stays 1 after — prefer it over o.lp for anything that must not re-animate
 }
 const SC = [[3, scExample], [Infinity, scEnd]];  // first scene covers lines 0–2
 ```
@@ -44,4 +52,4 @@ const SC = [[3, scExample], [Infinity, scEnd]];  // first scene covers lines 0�
 
 ## person() full parameters
 
-`x y scale flip back walk sit t look(-1..1) blink mood mouth pose arms` — see moods/poses in rig.js (face fn / POSE)
+`x y scale flip back walk sit t look(-1..1) blink mood mouth pose arms` — see moods/poses in rig.js (face fn / POSE). `walk: true` alternates the legs; `sit: true` hides them

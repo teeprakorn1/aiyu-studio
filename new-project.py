@@ -45,6 +45,10 @@ Next steps:
   4. node render.mjs stills 1,3,5 --page=index.html   (see the demo scenes in stills/sheet.jpg)
   5. Write your story: edit dialogue.txt / segments.json / srchips.js / style.js
      (never edit rig.js — for extra props/scenes see examples/jensen-legend/style-v4.js in the main repo)
+     Optional modules already loaded by index.html:
+       - atmos.js  — cinematic skies, water, hills, weather, grain/vignette (see its header for recipes)
+       - people.js — personTH() realistic humans with knees/elbows and a walk cycle
+       (for a full production using both, see examples/thai-origins/ in the main repo)
   6. Drop real voice files into vo/ per segments.json names, then run py mix_studio.py again (real mode)
   7. Full render: node publish-v4.mjs --duration=<TALK.dur+1> --chunks=6 --page=index.html --out=v1
   8. Mux:         node mux-v4.mjs --concat=out/v1concat.txt --out=final-v1.mp4

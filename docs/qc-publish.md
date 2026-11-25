@@ -5,8 +5,8 @@
 | # | Check | Passes when |
 |---|---|---|
 | 1 | ffprobe on the final file (mux runs it automatically) | 1080×1920, 30fps, H.264, yuv420p, BT.709 tv, AAC 48kHz, faststart, frames = fps×dur |
-| 2 | 2-pass loudness in mux log | integrated ≈ −15.5 LUFS, true peak ≤ −1.5 dBTP |
-| 3 | music bed below speech | 20–24 dB — **measure at a real narration pause**, see caveats below |
+| 2 | 2-pass loudness in mux log | integrated ≈ −15.5 LUFS, true peak ≤ the verify ceiling (default −1.5 dBTP; −2.0 recommended — see caveats) |
+| 3 | music bed below speech | 20–24 dB — **only checked if you pass `--pause=a-b --speech=c-d`** at real regions, see caveats below |
 | 4 | chunk seams | extract frames before/after each boundary, compare by eye — differences are acceptable if the boundary coincides with a scene cut |
 | 5 | color vs stills | extract a frame from the mp4 at the same timestamp as a still — 1–2 RGB levels off is normal |
 | 6 | subs/headings/chips | re-scan every scene against safe zones on the **final file** |
@@ -14,12 +14,13 @@
 
 ### Audio measurement caveats (real false positives)
 
-- **The bed warning in mux log** measures a fixed time window (`--pause=40.4-41.4`) — if that window isn't a real pause in your film, the reading is meaningless: find a real pause and pass `--pause=a-b` yourself
+- **The bed check is opt-in.** Without `--pause` and `--speech`, mux prints a skip note. Pick a region that is really silent in your narration (e.g. between two scenes). A window inside speech gives a meaningless reading.
+- **True-peak ceiling:** AAC encoding adds 0.1–0.3 dB of overshoot, so a −1.5 dBTP target can fail verification by a hair. Use `--loudness-tp=-2.0` (sets the target and the verify ceiling together) or set `--verify-tp` separately.
 - **A chunk boundary coinciding with a scene cut** always measures high frame difference because the picture genuinely changes — it's not a broken seam; verify continuity of audio/props within the scene instead
 
 ## File versioning
 
-- Name outputs `final-v1.mp4, final-v2.mp4` — **never overwrite**; you'll want to roll back or compare pacing
+- Name outputs with `--out`, e.g. `final-v1.mp4, final-v2.mp4` — **never overwrite**; you'll want to roll back or compare pacing
 - Chunks in `out/` eat disk fast (an 8-minute film ≈ 1+ GB) — keep them until the project closes, then clean up
 - Fixing only some scenes: render just the affected chunks, copy the rest from the previous version — saves half the time
 

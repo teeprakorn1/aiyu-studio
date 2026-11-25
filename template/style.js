@@ -57,7 +57,7 @@ function scTalk(o) {
   });
   // elements appear line by line — keep headings/cards below y=260
   if (o.i >= 4) chartCard(240, 470, 600, 300, [[0, .9], [.2, .7], [.4, .75], [.6, .4], [.8, .25], [1, .05]], '#76b900', 'shares +40%');
-  if (o.i >= 6) quoteCard(['"the figures in the report', 'do not match the claims"'], Math.min(1, o.lp * 3), 560);
+  if (rv(o, 6, 3)) quoteCard(['"the figures in the report', 'do not match the claims"'], rv(o, 6, 3), 560);
 }
 
 // Closing scene (lines 8–9): front-facing character + big text — the outro pattern

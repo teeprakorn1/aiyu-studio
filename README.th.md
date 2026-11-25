@@ -5,7 +5,7 @@
 **Video-as-code สำหรับสารคดีแนวตั้ง** — เขียนฉากด้วย JavaScript พากย์ด้วย TTS แล้วเรนเดอร์วิดีโอ 1080×1920 พร้อมลง Reels & TikTok โดยไม่ต้องเปิดโปรแกรมตัดต่อ ไม่ต้องไล่ไทม์ไลน์ ไม่ต้องซิงก์ซับมือ
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg?style=for-the-badge)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg?style=for-the-badge)](CHANGELOG.md)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg?style=for-the-badge)](#ความต้องการระบบ)
 
 <table>
@@ -37,6 +37,7 @@
 - **ระบบ safe zone** — ขอบกันตายในตัวกันข้อความโดน UI ของ Reels/TikTok บัง ตรวจด้วยภาพนิ่งก่อนเรนเดอร์จริงทุกครั้ง
 - **เรนเดอร์ขนานหลายโปรเซส** — headless Chrome หลายตัวเรนเดอร์ช่วงเวลาที่ไม่ซ้ำกันพร้อมกัน
 - **เสียงมาตรฐาน broadcast** — loudnorm สองผ่านไปที่ −15.5 LUFS พร้อม true-peak limiting ตรวจยืนยันด้วย ffprobe หลัง mux
+- **โมดูล cinematic (v0.2.0)** — `atmos.js` (ท้องฟ้าหลายชั้น มุมมองลึกด้วยสี น้ำมีชีวิต อากาศ/ฟิล์มเกรน) และ `people.js` (ตัวละครมนุษย์สัดส่วนจริงเดินได้) แยกมาจากโปรดักชัน `thai-origins` ใน [examples/](examples/thai-origins/)
 - **scaffold คำสั่งเดียว** — `new-project.py` ให้โปรเจกต์ demo ที่เรนเดอร์ได้จริงในไม่กี่วินาที
 - **พร้อมทั้งไทยและอังกฤษ** — แนบ demo อังกฤษในตัว พร้อมเอกสาร pipeline ไทยครบจากข้อมูล production จริง
 
@@ -54,14 +55,14 @@
           v
   [1] อินพุต .............................................. ส่วนที่คุณเขียน
           dialogue.txt ....... บทพูด บรรทัดละ cue พร้อมรหัสผู้พูด
-          segments.json ...... กลุ่มเวลา + tempo ต่อ segment
+          segments.json ...... กลุ่ม ไฟล์เสียง → ช่วงบรรทัด + tempo รวม
           style.js + rig.js .. ฉากเป็นโค้ด canvas (ห้ามแก้ rig.js)
-          vo/*.wav + BGM ..... เสียงพากย์ + เพลงประกอบ
+          vo/*.wav + bed.wav . เสียงพากย์ + เพลงประกอบ (mux ใช้)
           |
           v
   [2] TIMING BACKBONE ...................... python mix_studio.py
           talk.js ............ แหล่งความจริงเดียว: เวลา + envelope ปาก
-          narration.wav ...... เสียงทั้งหมด + BGM mix ในผ่านเดียว
+          narration.wav ...... ต่อไฟล์เสียงทั้งหมดพร้อมช่วงเงียบ
           |
           v
   [3] ตรวจ SAFE ZONE ....... node render.mjs stills 1,5,10 --page=index.html
@@ -100,6 +101,7 @@ node render.mjs stills 1,5,10 --page=index.html   # แล้วเปิด sti
 ## 📋 ความต้องการระบบ
 
 - **Node.js** · **Python 3** · **ffmpeg** + **ffprobe** บน PATH · **Chrome**
+- ต้องติดตั้ง Chrome: สคริปต์เปิดด้วย `channel: 'chrome'` ไม่ได้ใช้ Chromium ที่แนบมา
 - `playwright-core` — ติดตั้งผ่าน `npm install` ในโฟลเดอร์โปรเจกต์แต่ละเรื่อง
 
 ## 📚 เอกสาร
@@ -110,9 +112,13 @@ node render.mjs stills 1,5,10 --page=index.html   # แล้วเปิด sti
 | [docs/quickstart.md](docs/quickstart.md) | ศูนย์ถึงวิดีโอแรก ทีละขั้น |
 | [docs/guide-audio.md](docs/guide-audio.md) | ฟอร์แมตบท, segments.json, เสียง TTS, ตาราง tempo |
 | [docs/guide-scenes.md](docs/guide-scenes.md) | เขียนฉาก, API ของ rig.js, safe zone, หลุม cam() zoom |
+| [docs/guide-cinematic.md](docs/guide-cinematic.md) | ตัวละครมนุษย์สมจริง ฉากหลังหลายชั้น ระบบน้ำ และ frame treatment |
+| [docs/guide-map.md](docs/guide-map.md) | แผนที่แอนิเมชันจากข้อมูลจริง: projection, flow path, ภูเขาแบบ hachure, จุดเมือง |
 | [docs/qc-publish.md](docs/qc-publish.md) | QC 7 ข้อ, สเปก Reels/TikTok, กฎเปิดเผยเนื้อหา AI |
 | [docs/pipeline.md](docs/pipeline.md) | บันทึก production จากโปรเจกต์จริงต้นฉบับ |
 | [examples/jensen-legend/](examples/jensen-legend/) | ตัวอย่าง reference implementation เต็ม (เฉพาะโค้ด) |
+| [examples/thai-origins/](examples/thai-origins/) | ตัวอย่างสไตล์ cinematic: แผนที่แอนิเมชัน ตัวละครสมจริง บรรยากาศ (เฉพาะโค้ด) |
+| [CHANGELOG.md](CHANGELOG.md) | ประวัติเวอร์ชัน |
 
 ## 🧭 หลักการหลัก
 
@@ -126,10 +132,12 @@ node render.mjs stills 1,5,10 --page=index.html   # แล้วเปิด sti
 ```
 ├── new-project.py            # scaffold โปรเจกต์คำสั่งเดียว
 ├── engine/                   # สคริปต์ pipeline ใช้ซ้ำ 5 ตัว — ห้ามแก้ต่อเรื่อง
-├── template/                 # โครงเรื่อง: rig.js (กลไก) + style.js (ฉากของคุณ)
+├── template/                 # โครงเรื่อง: rig.js (กลไก) + style.js (ฉากของคุณ) + atmos.js / people.js (โมดูลเสริม)
 │   └── assets/fonts/         #   Kanit 4 weights (SIL OFL)
 ├── docs/                     # คู่มือครบระบบ
-└── examples/jensen-legend/   # reference implementation จริง
+├── examples/                 # reference implementation: jensen-legend, thai-origins
+│   ├── jensen-legend/        #   สไตล์ presenter ใช้ person() มาสคอต
+│   └── thai-origins/         #   สไตล์ cinematic ใช้ personTH() + แผนที่แอนิเมชัน
 ```
 
 ## 🗺️ Roadmap

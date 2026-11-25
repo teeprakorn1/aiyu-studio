@@ -30,7 +30,7 @@ const rows = await page.evaluate(() => TALK.lines.map(line => {
     fontSize: lay.size,
     textWidth: Math.round(lay.maxWidth * 10) / 10,
     frameWidth: Math.round(lay.frameWidth * 10) / 10,
-    overflow: !!lay.overflow || lay.frameWidth > 980,
+    overflow: !!lay.overflow || lay.frameWidth > 840,
   };
 }));
 await browser.close();

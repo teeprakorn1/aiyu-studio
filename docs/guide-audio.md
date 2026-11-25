@@ -77,3 +77,11 @@ Recommended: write dialogue → stub → finish scenes → generate voices → r
 
 - The log prints `dur` — compare against your length target
 - Open talk.js and inspect the first few lines: `t0` must increase monotonically with no overlaps; `env` must not be all zeros in real mode (all zeros = silent/broken audio file)
+
+## 7. Music bed — the second mux input
+
+`mux-v4.mjs` mixes the narration with a looped music bed (`bed.wav` in the project folder by default, +3 dB before mixing). The bed is a **required** input — the template does not ship one, so create or copy it before muxing.
+
+- Keep it quiet: the target is 20–24 dB below speech (measured in the mux verification — see [qc-publish.md](qc-publish.md))
+- The narration is never truncated: mux refuses to run if the narration is longer than the rendered video, so render the full timeline (`--duration` ≥ talk.js `dur`)
+- Voice limiting: narration peaks are limited before mixing (`--voice-limit`, default 0.35) because raw TTS peaks sit above 0 dBTP

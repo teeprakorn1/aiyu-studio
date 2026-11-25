@@ -15,7 +15,7 @@ cd path/to/my-story
 npm install        # playwright-core
 ```
 
-You get: 5 engine scripts + rig.js + example style.js + fonts + starter configs + empty `vo/`
+You get: 5 engine scripts + rig.js + atmos.js and people.js (optional cinematic modules) + demo style.js + fonts + starter configs + empty `vo/`
 
 ## 2. Test the system with the built-in demo (no audio needed)
 
@@ -67,7 +67,10 @@ node publish-v4.mjs --duration=<TALK.dur+1> --chunks=6 --page=index.html --out=v
 node mux-v4.mjs --concat=out/v1concat.txt --narration=narration.wav --bed=bed.wav --out=final-v1.mp4
 ```
 
-`--bed` is optional but recommended — mux normalizes to −15.5 LUFS + faststart + runs ffprobe verification automatically.
+- `--bed` is **required** — the template does not ship a music bed. Put any audio file at `bed.wav` (quiet music or silence; it is looped under the narration). See [guide-audio.md §7](guide-audio.md).
+- `--out` defaults to `final.mp4` in the project folder.
+- Mux normalizes to −15.5 LUFS, applies faststart, and runs ffprobe verification automatically.
+- The bed-vs-speech check runs only if you pass `--pause=a-b --speech=c-d` at real regions of your film — see [qc-publish.md](qc-publish.md).
 
 ## 8. QC + publish
 

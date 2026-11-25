@@ -5,7 +5,7 @@
 **Video-as-code for vertical documentaries.** Write scenes in JavaScript, narrate with TTS, and render publish-ready 1080×1920 videos for Reels & TikTok — no video editor, no timeline scrubbing, no manual subtitle sync.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.1.0-blue.svg?style=for-the-badge)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg?style=for-the-badge)](CHANGELOG.md)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg?style=for-the-badge)](#requirements)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge)](#contributing)
 
@@ -38,6 +38,7 @@ Vertical documentaries are repetitive to produce: sync subtitles by hand, resize
 - **Safe-zone discipline** — built-in margins keep text clear of Reels/TikTok UI overlays; QC with stills before committing to a full render
 - **Parallel chunked rendering** — multiple headless Chrome processes render disjoint timeline segments simultaneously
 - **Broadcast loudness** — two-pass loudnorm to −15.5 LUFS with true-peak limiting, verified by ffprobe after muxing
+- **Cinematic modules (v0.2.0)** — optional `atmos.js` (multi-stop skies, atmospheric depth, living water, weather, film grain) and `people.js` (realistic walk-cycle humans), extracted from the `thai-origins` production in [examples/](examples/thai-origins/)
 - **One-command scaffolding** — `new-project.py` gives you a working, renderable demo project in seconds
 - **English & Thai ready** — ships with an English demo; full Thai pipeline documented with real production data
 
@@ -55,14 +56,14 @@ Vertical documentaries are repetitive to produce: sync subtitles by hand, resize
           v
   [1] INPUTS ............................................. you write this
           dialogue.txt ....... script, one cue per line, with speaker ids
-          segments.json ...... timing groups + per-segment tempo
+          segments.json ...... voice file -> line range groups + global tempo
           style.js + rig.js .. scenes as canvas code (never edit rig.js)
-          vo/*.wav + BGM ..... voice takes + background music
+          vo/*.wav + bed.wav . voice takes + music bed (mux input)
           |
           v
   [2] TIMING BACKBONE ...................... python mix_studio.py
           talk.js ............ single source of truth: timing + mouth envelopes
-          narration.wav ...... all voices + BGM mixed in one pass
+          narration.wav ...... all voice files joined with gaps
           |
           v
   [3] SAFE-ZONE QC ......... node render.mjs stills 1,5,10 --page=index.html
@@ -101,6 +102,7 @@ If the sheet shows characters and subtitles, the pipeline works. Continue with t
 ## 📋 Requirements
 
 - **Node.js** · **Python 3** · **ffmpeg** + **ffprobe** on PATH · **Chrome**
+- Chrome must be installed: the scripts launch it with `channel: 'chrome'`, not a bundled Chromium
 - `playwright-core` — installed via `npm install` in each project folder
 
 ## 📚 Documentation
@@ -111,9 +113,13 @@ If the sheet shows characters and subtitles, the pipeline works. Continue with t
 | [docs/quickstart.md](docs/quickstart.md) | Zero to first video, step by step |
 | [docs/guide-audio.md](docs/guide-audio.md) | Dialogue format, segments.json, TTS voices, tempo table |
 | [docs/guide-scenes.md](docs/guide-scenes.md) | Scene writing, rig.js API, safe zones, the cam() zoom trap |
+| [docs/guide-cinematic.md](docs/guide-cinematic.md) | Realistic humans, layered backgrounds, water systems, frame treatments |
+| [docs/guide-map.md](docs/guide-map.md) | Animated data-driven maps: projection, flow paths, hachure mountains, city markers |
 | [docs/qc-publish.md](docs/qc-publish.md) | 7-point QC, Reels/TikTok specs, AI-content disclosure |
 | [docs/pipeline.md](docs/pipeline.md) | Production notes from the original real-world project |
 | [examples/jensen-legend/](examples/jensen-legend/) | Complete reference implementation (code only) |
+| [examples/thai-origins/](examples/thai-origins/) | Cinematic reference: animated map, realistic humans, atmosphere (code only) |
+| [CHANGELOG.md](CHANGELOG.md) | Version history |
 
 ## 🧭 Core principles
 
@@ -127,10 +133,12 @@ If the sheet shows characters and subtitles, the pipeline works. Continue with t
 ```
 ├── new-project.py            # one-command project scaffolding
 ├── engine/                   # 5 reusable pipeline scripts — never edit per project
-├── template/                 # project skeleton: rig.js (machinery) + style.js (your scenes)
+├── template/                 # project skeleton: rig.js (machinery) + style.js (your scenes) + optional atmos.js / people.js
 │   └── assets/fonts/         #   Kanit 4 weights (SIL OFL)
 ├── docs/                     # complete guides
-└── examples/jensen-legend/   # real reference implementation
+├── examples/                 # reference implementations: jensen-legend, thai-origins
+│   ├── jensen-legend/        #   presenter format, person() mascots
+│   └── thai-origins/         #   cinematic format, personTH() humans + animated map
 ```
 
 ## 🗺️ Roadmap

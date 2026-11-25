@@ -31,7 +31,7 @@ Required:
 Options:
   --narration=narration.wav
   --bed=bed.wav
-  --out=<mp4>              Default: ../video/output.mp4
+  --out=<mp4>              Default: final.mp4
   --bed-gain-db=3          Music bed gain before mixing. +3 dB measured as ~21-23 dB below speech.
   --voice-limit=0.35       Lookahead peak-limiter ceiling for narration (linear amplitude).
                            Needed because raw narration true peak is about +0.84 dBTP.
@@ -40,8 +40,9 @@ Options:
   --loudness-i=-15.5       Integrated loudness target, LUFS
   --loudness-tp=-1.5       True-peak ceiling target, dBTP
   --loudness-lra=11        Loudness-range target, LU
-  --pause=40.4-41.4        Verification pause region, seconds
-  --speech=10-30           Verification speech region, seconds
+  --pause=a-b              Verification pause region, seconds (omit = skip bed-gap check;
+                           measure at a REAL narration pause in your film or the reading is meaningless)
+  --speech=a-b             Verification speech region, seconds
   --skip-audio-verify      Do not run post-encode loudness/RMS measurements
   --help
 
@@ -230,16 +231,17 @@ if (!flags.concat) {
 const concatList = path.resolve(here, String(flags.concat));
 const narration = path.resolve(here, String(flags.narration ?? 'narration.wav'));
 const bed = path.resolve(here, String(flags.bed ?? 'bed.wav'));
-const output = path.resolve(here, String(flags.out ?? path.join('..', 'video', 'output.mp4')));
+const output = path.resolve(here, String(flags.out ?? 'final.mp4'));
 const bedGainDb = Number(flags['bed-gain-db'] ?? 3);
 const voiceLimit = Number(flags['voice-limit'] ?? 0.35);
 const crf = String(flags.crf ?? 19);
 const preset = String(flags.preset ?? 'medium');
 const targetI = Number(flags['loudness-i'] ?? -15.5);
 const targetTP = Number(flags['loudness-tp'] ?? -1.5);
+const verifyTP = Number(flags['verify-tp'] ?? targetTP);
 const targetLRA = Number(flags['loudness-lra'] ?? 11);
-const pauseRegion = regionSpec(flags.pause, '40.4-41.4');
-const speechRegion = regionSpec(flags.speech, '10-30');
+const pauseRegion = flags.pause !== undefined ? regionSpec(flags.pause) : null;
+const speechRegion = flags.speech !== undefined ? regionSpec(flags.speech) : null;
 
 for (const [label, file] of [['concat list', concatList], ['narration', narration], ['bed', bed]]) {
   if (!existsSync(file)) throw new Error(`${label} not found: ${file}`);
@@ -410,16 +412,21 @@ if (!flags['skip-audio-verify']) {
   console.log(printCommand('ffmpeg', measureArgs));
   const lm = await runProcess('ffmpeg', measureArgs);
   loudnessMeasured = extractLoudnormJson(lm.stderr + lm.stdout);
-  pauseStats = await measureAstats(output, pauseRegion);
-  speechStats = await measureAstats(output, speechRegion);
-  const bedGap = speechStats.rms - pauseStats.rms;
+  const hasRegions = pauseRegion && speechRegion;
+  if (hasRegions) {
+    pauseStats = await measureAstats(output, pauseRegion);
+    speechStats = await measureAstats(output, speechRegion);
+  } else {
+    console.log('\nbed pause-vs-speech check skipped (pass --pause=a-b --speech=c-d at real regions of your film to enable it)');
+  }
+  const bedGap = hasRegions ? speechStats.rms - pauseStats.rms : null;
 
   const integrated = Number(loudnessMeasured.input_i);
   const truePeak = Number(loudnessMeasured.input_tp);
   const lra = Number(loudnessMeasured.input_lra);
   if (!(Math.abs(integrated - targetI) <= 0.25)) warnings.push(`integrated loudness ${integrated} LUFS differs from ${targetI} by more than 0.25 LU`);
-  if (!(truePeak <= targetTP + 0.01)) failures.push(`measured true peak ${truePeak} dBTP exceeds ${targetTP} dBTP`);
-  if (!(bedGap >= 20 && bedGap <= 24)) warnings.push(`bed pause-vs-speech gap ${bedGap.toFixed(2)} dB is outside target 20-24 dB`);
+  if (!(truePeak <= verifyTP + 0.01)) failures.push(`measured true peak ${truePeak} dBTP exceeds delivery ceiling ${verifyTP} dBTP`);
+  if (bedGap !== null && !(bedGap >= 20 && bedGap <= 24)) warnings.push(`bed pause-vs-speech gap ${bedGap.toFixed(2)} dB is outside target 20-24 dB`);
 
   console.log('\naudio measurements:');
   console.log(JSON.stringify({
@@ -427,8 +434,8 @@ if (!flags['skip-audio-verify']) {
     true_peak_dbtp: truePeak,
     lra_lu: lra,
     threshold_lufs: Number(loudnessMeasured.input_thresh),
-    pause_region: { ...pauseRegion, rms_db: pauseStats.rms, peak_db: pauseStats.peak },
-    speech_region: { ...speechRegion, rms_db: speechStats.rms, peak_db: speechStats.peak },
+    pause_region: pauseStats && { ...pauseRegion, rms_db: pauseStats.rms, peak_db: pauseStats.peak },
+    speech_region: speechStats && { ...speechRegion, rms_db: speechStats.rms, peak_db: speechStats.peak },
     bed_below_speech_db: bedGap,
   }, null, 2));
 }

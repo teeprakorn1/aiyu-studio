@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8">
+<style>
+  * { margin: 0; box-sizing: border-box; }
+  body { background: #0a0a10; font-family: "Kanit", "Leelawadee UI", sans-serif; overflow: hidden; }
+  .frame { position: relative; overflow: hidden; }
+  canvas { position: absolute; inset: 0; }
+  .ov { position: absolute; inset: 0; }
+  .title { position: absolute; font-weight: 800; white-space: nowrap; line-height: 1.15;
+    background: linear-gradient(180deg, #FFF3C9 0%, #F6C453 55%, #D9913A 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    filter: drop-shadow(0 4px 16px rgba(0,0,0,.7)) drop-shadow(0 0 2px rgba(0,0,0,.9)); }
+  .xwrap { position: absolute; }
+  .xwrap .xt { font-weight: 800; white-space: nowrap; color: #F2E8D5;
+    text-shadow: 0 3px 12px rgba(0,0,0,.85); }
+  .xwrap .xr { position: absolute; pointer-events: none; }
+  .sub { position: absolute; font-weight: 600; color: #F2E8D5; text-shadow: 0 2px 10px rgba(0,0,0,.9); white-space: nowrap; }
+  .tag { position: absolute; font-weight: 700; color: #F2E8D5; background: rgba(5,10,14,.75);
+    border-left: 6px solid #E35E55; padding: 10px 22px; border-radius: 6px; white-space: nowrap; }
+
+  .wide { width: 1280px; height: 720px; }
+  .tall { width: 1080px; height: 1920px; }
+</style></head>
+<body>
+
+<div id="wide" class="frame wide">
+  <canvas id="cw" width="1280" height="720"></canvas>
+  <div class="ov">
+    <div class="xwrap" style="left:64px; top:118px;">
+      <div class="xt" style="font-size:74px;">คนไทยมาจาก<span style="position:relative; display:inline-block;">จีน<svg style="position:absolute; left:-22px; top:-12px; width:170px; height:128px;" width="170" height="135" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <line x1="6" y1="12" x2="94" y2="88" stroke="#E35E55" stroke-width="13" stroke-linecap="round"/>
+        <line x1="94" y1="12" x2="6" y2="88" stroke="#E35E55" stroke-width="13" stroke-linecap="round"/>
+      </svg></span></div>
+    </div>
+    <div class="title" style="left:64px; top:236px; font-size:108px;">จริงแค่ครึ่งเดียว</div>
+    <div class="sub" style="left:70px; top:398px; font-size:40px;">เรื่องที่หายไปก่อนสุโขทัย</div>
+    <div class="tag" style="left:70px; bottom:64px; font-size:27px;">ย้อนดูลุ่มเจ้าพระยาก่อนมีคนไทย</div>
+  </div>
+</div>
+
+<div id="tall" class="frame tall" style="display:none">
+  <canvas id="ct" width="1080" height="1920"></canvas>
+  <div class="ov">
+    <div class="xwrap" style="left:50%; transform:translateX(-50%); top:150px;">
+      <div class="xt" style="font-size:104px;">คนไทยมาจาก<span style="position:relative; display:inline-block;">จีน<svg style="position:absolute; left:-30px; top:-16px; width:230px; height:175px;" width="230" height="185" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <line x1="6" y1="12" x2="94" y2="88" stroke="#E35E55" stroke-width="13" stroke-linecap="round"/>
+        <line x1="94" y1="12" x2="6" y2="88" stroke="#E35E55" stroke-width="13" stroke-linecap="round"/>
+      </svg></span></div>
+    </div>
+    <div class="title" style="left:0; right:0; top:330px; font-size:150px; text-align:center;">จริงแค่ครึ่งเดียว</div>
+    <div class="sub" style="left:0; right:0; top:540px; font-size:58px; text-align:center;">เรื่องที่หายไปก่อนสุโขทัย</div>
+    <div class="tag" style="left:50%; transform:translateX(-50%); bottom:130px; font-size:42px;">ย้อนดูลุ่มเจ้าพระยาก่อนมีคนไทย</div>
+  </div>
+</div>
+
+<script src="people.js"></script>
+<script>
+// minimal runtime deps for people.js
+window.OL = 'rgba(22,16,10,.9)';
+
+function drawBackdrop(g, W, H, sunX, sunY, horizonY) {
+  // dusk sky
+  const sky = g.createLinearGradient(0, 0, 0, horizonY);
+  sky.addColorStop(0, '#171D33');
+  sky.addColorStop(.42, '#463457');
+  sky.addColorStop(.72, '#8C5A50');
+  sky.addColorStop(1, '#D9915A');
+  g.fillStyle = sky;
+  g.fillRect(0, 0, W, horizonY + 2);
+  // stars upper
+  for (let i = 0; i < 40; i++) {
+    const sx = (i * 733 % W), sy = (i * 389 % (horizonY * .45));
+    g.fillStyle = `rgba(255,245,225,${.12 + (i % 5) * .05})`;
+    g.fillRect(sx, sy, 2.4, 2.4);
+  }
+  // sun glow + disc
+  const gl = g.createRadialGradient(sunX, sunY, 0, sunX, sunY, 420);
+  gl.addColorStop(0, 'rgba(255,190,110,.5)');
+  gl.addColorStop(1, 'rgba(255,190,110,0)');
+  g.fillStyle = gl;
+  g.fillRect(sunX - 420, sunY - 420, 840, 840);
+  g.fillStyle = '#FFD9A0';
+  g.beginPath(); g.arc(sunX, sunY, 72, 0, Math.PI * 2); g.fill();
+  // hills far + near
+  const hill = (yBase, amp, f1, f2, col) => {
+    g.fillStyle = col;
+    g.beginPath();
+    g.moveTo(-40, yBase + 400);
+    for (let x = -40; x <= W + 40; x += 18) {
+      const y = yBase - Math.abs(Math.sin(x * f1 + 1.7)) * amp - Math.abs(Math.sin(x * f2 + .4)) * amp * .4;
+      g.lineTo(x, y);
+    }
+    g.lineTo(W + 40, yBase + 400);
+    g.closePath(); g.fill();
+  };
+  hill(horizonY - 26, 120, .0038, .011, '#5E4238');
+  hill(horizonY - 8, 64, .0052, .016, '#42291F');
+  // ground strip
+  g.fillStyle = '#241811';
+  g.fillRect(0, horizonY, W, H - horizonY);
+  // warm dusk light fading across the plain
+  const gg = g.createLinearGradient(0, horizonY, 0, H);
+  gg.addColorStop(0, 'rgba(217,145,90,.20)');
+  gg.addColorStop(.35, 'rgba(217,145,90,.06)');
+  gg.addColorStop(1, 'rgba(217,145,90,0)');
+  g.fillStyle = gg;
+  g.fillRect(0, horizonY, W, H - horizonY);
+  // sparse grass tufts, denser near horizon
+  g.strokeStyle = 'rgba(14,10,6,.8)';
+  g.lineCap = 'round';
+  for (let i = 0; i < 60; i++) {
+    const gx = (i * 197 % W);
+    const depth = (i * 131 % 100) / 100;
+    const gy = horizonY + 14 + depth * (H - horizonY - 30);
+    const gs = 5 + depth * 15;
+    g.lineWidth = 1.6 + depth * 2;
+    for (let b = -1; b <= 1; b++) {
+      g.beginPath();
+      g.moveTo(gx + b * 3, gy);
+      g.quadraticCurveTo(gx + b * 4 - 2, gy - gs * .6, gx + b * 5 - 4, gy - gs);
+      g.stroke();
+    }
+  }
+  // tiny silhouette props at horizon (houses, palms) — simple shapes
+  g.fillStyle = '#1C130D';
+  const house = (x, y, s) => {
+    g.save(); g.translate(x, y); g.scale(s, s);
+    g.beginPath();
+    g.moveTo(-46, 0); g.lineTo(-46, -34); g.lineTo(-58, -34); g.lineTo(0, -78); g.lineTo(58, -34); g.lineTo(46, -34); g.lineTo(46, 0);
+    g.closePath(); g.fill();
+    g.restore();
+  };
+  const palm = (x, y, s) => {
+    g.save(); g.translate(x, y); g.scale(s, s);
+    g.strokeStyle = '#1C130D'; g.lineWidth = 7; g.lineCap = 'round';
+    g.beginPath(); g.moveTo(0, 0); g.quadraticCurveTo(6, -50, 2, -92); g.stroke();
+    for (let k = 0; k < 6; k++) {
+      const a = -Math.PI * (.15 + k * .14);
+      g.beginPath(); g.moveTo(2, -92);
+      g.quadraticCurveTo(2 + Math.cos(a) * 34, -92 + Math.sin(a) * 30 - 10, 2 + Math.cos(a) * 52, -92 + Math.sin(a) * 44 + 12);
+      g.lineWidth = 5; g.stroke();
+    }
+    g.restore();
+  };
+  house(W * .06, horizonY, .8); house(W * .88, horizonY, .9); house(W * .72, horizonY, .65);
+  palm(W * .16, horizonY, .9); palm(W * .96, horizonY, 1.0); palm(W * .62, horizonY, .7);
+  // vignette
+  const vg = g.createRadialGradient(W / 2, H * .45, H * .3, W / 2, H * .45, H * .85);
+  vg.addColorStop(0, 'rgba(0,0,0,0)');
+  vg.addColorStop(1, 'rgba(0,0,0,.5)');
+  g.fillStyle = vg;
+  g.fillRect(0, 0, W, H);
+}
+
+function drawScene(canvasId, W, H) {
+  const cv = document.getElementById(canvasId);
+  const ctx = cv.getContext('2d');
+  window.g = ctx;
+  const tall = H > W;
+  const horizonY = tall ? 1150 : 560;
+  const sunX = tall ? 660 : 700, sunY = tall ? 960 : 420;
+  drawBackdrop(ctx, W, H, sunX, sunY, horizonY);
+  // merchant — big focal point, backlit by sun, walking gently toward viewer-left
+  const scale = tall ? 1.78 : .95;
+  const mx = tall ? 480 : 915, my = tall ? 1560 : 655;
+  personTH('merchant', {
+    x: mx, y: my, scale, t: 0,
+    walk: true, walkSpeed: 1, look: -1,
+    blink: false, mood: 'neutral', phase: .12,
+  });
+  // warm rim glow behind him
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  const rg = ctx.createRadialGradient(mx, my - 320 * scale / 1.85, 0, mx, my - 320 * scale / 1.85, 330 * scale);
+  rg.addColorStop(0, 'rgba(255,170,90,.14)');
+  rg.addColorStop(1, 'rgba(255,170,90,0)');
+  ctx.fillStyle = rg;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+  // grass/ground shadow under feet
+  ctx.fillStyle = 'rgba(0,0,0,.4)';
+  ctx.beginPath();
+  ctx.ellipse(mx, my + 6, 90 * scale / 1.85 * 1.85, 14 * scale, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+drawScene('cw', 1280, 720);
+drawScene('ct', 1080, 1920);
+</script>
+</body></html>

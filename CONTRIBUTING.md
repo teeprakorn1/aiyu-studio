@@ -24,6 +24,8 @@ node render.mjs stills 1,5,10 --page=index.html
 
 > **Python command:** use `py` on Windows, `python3` on macOS/Linux if `python` is not found.
 
+> Chrome must be installed (scripts use `channel: 'chrome'`), along with Node.js, Python 3, and ffmpeg/ffprobe on PATH.
+
 ## What to contribute
 
 Especially welcome:
@@ -42,8 +44,9 @@ Please **open an issue first** for anything beyond a small fix so we can agree o
 | `engine/` | **Conservative** — these scripts ship into every generated project. Changes affect all users. |
 | `template/rig.js` | **Conservative** — the reusable machinery. Never project-specific content here. |
 | `template/style.js` | Demo scenes — improvements welcome, keep it small and renderable. |
+| `template/atmos.js`, `template/people.js` | Optional cinematic modules. Keep them IIFE-wrapped with `window` exports, so copied code that redeclares a helper name shadows it instead of crashing. |
 | `docs/` | Documentation — keep English as the primary language. |
-| `examples/` | Reference implementations — read-only historical record. |
+| `examples/` | Reference implementations (`jensen-legend`, `thai-origins`). Code only; media is generated per project. Keep `rig.js` identical to `template/rig.js`. |
 
 ## Coding guidelines
 
@@ -61,6 +64,8 @@ There is no test framework — verification is end-to-end rendering:
 # 1. Syntax
 node --check engine/render.mjs
 node --check template/rig.js
+node --check template/atmos.js
+node --check template/people.js
 
 # 2. Full pipeline in a scratch project
 python new-project.py /tmp/verify && cd /tmp/verify

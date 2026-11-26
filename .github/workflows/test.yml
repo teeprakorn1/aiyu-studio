@@ -1,0 +1,64 @@
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: xavidop/ffmpeg-action@v1.1
+      # npm test is the single source of truth — add new unit test files in
+      # package.json only, never here.
+      - name: unit tests (node + python)
+        run: npm test
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: xavidop/ffmpeg-action@v1.1
+      - name: install playwright cli
+        run: npm install --no-save playwright-core
+      - name: resolve playwright version (for browser cache key)
+        id: pw
+        run: echo "version=$(node -p "require('playwright-core/package.json').version")" >> "$GITHUB_OUTPUT"
+      # Browser binaries are ~170 MB and revision-locked to the playwright version —
+      # caching them is the single biggest time save in this workflow. Safe because
+      # the key contains the exact resolved version: a version bump misses cleanly
+      # and re-caches instead of restoring a stale browser.
+      - name: cache chromium binaries
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
+      - name: install chromium (once, shared by scaffolded projects)
+        run: npx playwright-core install chromium --with-deps || npx playwright-core install chromium
+      - name: e2e pipeline + determinism + preview
+        env:
+          PYTHON: python
+        run: npm run test:e2e

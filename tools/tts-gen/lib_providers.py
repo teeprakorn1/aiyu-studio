@@ -20,6 +20,17 @@ import tempfile
 import wave
 
 
+def _post_json(url, payload, headers, timeout=120):
+    """POST JSON and return the parsed response using only the standard library.
+    (project law: python stdlib only — requests is a third-party dependency)"""
+    import urllib.request
+    body = json.dumps(payload).encode('utf-8')
+    req = urllib.request.Request(url, data=body, method='POST',
+                                 headers=dict({'Content-Type': 'application/json'}, **headers))
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        return json.loads(resp.read().decode('utf-8'))
+
+
 def _to_wav(src_path, out_wav, rate_hz=48000):
     """Convert any ffmpeg-decodable audio to the production wav shape (mono s16)."""
     subprocess.run(
@@ -82,19 +93,14 @@ def synth_elevenlabs(text, voice, rate, out_wav):
     """ElevenLabs with-timestamps endpoint — returns audio + per-character alignment,
     grouped here into words at whitespace/punctuation boundaries. EXPERIMENTAL: untested
     against the live API. Needs ELEVENLABS_API_KEY in the environment."""
-    import requests
-
     key = os.environ.get('ELEVENLABS_API_KEY')
     if not key:
         raise RuntimeError('elevenlabs provider needs ELEVENLABS_API_KEY in the environment')
-    resp = requests.post(
+    data = _post_json(
         f'https://api.elevenlabs.io/v1/text-to-speech/{voice}/with-timestamps',
-        headers={'xi-api-key': key, 'Content-Type': 'application/json'},
-        json={'text': text, 'model_id': 'eleven_multilingual_v2',
-              'output_format': 'mp3_44100_128'},
-        timeout=120)
-    resp.raise_for_status()
-    data = resp.json()
+        {'text': text, 'model_id': 'eleven_multilingual_v2',
+         'output_format': 'mp3_44100_128'},
+        {'xi-api-key': key})
     audio = base64.b64decode(data['audio_base64'])
     with tempfile.TemporaryDirectory() as td:
         mp3 = os.path.join(td, 'out.mp3')
@@ -122,24 +128,19 @@ def synth_elevenlabs(text, voice, rate, out_wav):
 def synth_gemini(text, voice, rate, out_wav):
     """Google Gemini speech generation — PCM audio returned inline, no timing data
     (tier B). EXPERIMENTAL: untested against the live API. Needs GEMINI_API_KEY."""
-    import requests
-
     key = os.environ.get('GEMINI_API_KEY')
     if not key:
         raise RuntimeError('gemini provider needs GEMINI_API_KEY in the environment')
-    resp = requests.post(
+    data = _post_json(
         f'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key={key}',
-        headers={'Content-Type': 'application/json'},
-        json={
+        {
             'contents': [{'parts': [{'text': text}]}],
             'generationConfig': {
                 'responseModalities': ['AUDIO'],
                 'speechConfig': {'voiceConfig': {'prebuiltVoiceConfig': {'voiceName': voice}}},
             },
         },
-        timeout=120)
-    resp.raise_for_status()
-    data = resp.json()
+        {})
     part = data['candidates'][0]['content']['parts'][0]['inline_data']
     pcm = base64.b64decode(part['data'])
     # gemini TTS emits L16 PCM at 24kHz mono

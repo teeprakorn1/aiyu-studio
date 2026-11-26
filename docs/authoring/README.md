@@ -10,6 +10,7 @@ scene work actually proceed **in parallel** in real productions.
 | [02-dialogue-audio.md](02-dialogue-audio.md) | `dialogue.txt` format, `segments.json` mapping, TTS voice generation, the `tempo` knob, two-mode (stub/real) workflow |
 | [03-cinematic.md](03-cinematic.md) | choosing a character renderer, `personTH` anatomy, the layered-background recipe, the water system, frame treatments in fixed order |
 | [04-maps.md](04-maps.md) | animated data-driven maps — Natural Earth data, projection, `mapBase`, hachure mountains, `focusCam`, migration flow paths, reveal choreography |
+| [05-parameterized.md](05-parameterized.md) | parameterized rendering — many visual variants from one project: the data-module pattern, batch workflow, what can and cannot vary |
 
 ## Prerequisites
 

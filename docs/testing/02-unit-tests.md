@@ -13,12 +13,14 @@ Fast, deterministic, no browser, no video renders. Run with `npm test` (node + p
 | `motion.test.mjs` | `core/motion.js` — every easing curve plus reveal behavior | finite output across [0,1] (no NaN ever), exact endpoints, monotonicity where required, `easeBack`/`springy` overshoot-then-settle exactly at 1, parameter sensitivity, and purity |
 | `runtime-registry.test.mjs` | the explicit runtime configuration API | character/people registration, unknown-id errors, scene-table shape/order/`Infinity` validation, source chips and footnote registration, portrait-renderer registration |
 | `architecture.test.mjs` | static guardrails for layer direction and module shape | cards do not depend on character internals or story globals, cast resolution goes through the registry, core/features are IIFE-wrapped with explicit `globalThis` exports |
+| `skills.test.mjs` | structural validation of the scaffolded Agent Skills pack | all three skills exist with valid frontmatter (name matches directory, real description), no broken internal links, the non-negotiable invariants are explicitly taught |
 
 ## Python tests (`unittest` — stdlib only)
 
 | File | Covers |
 |---|---|
 | `mix_studio_test.py` | importable pure functions in `engine/lib/mix_audio.py`: waveform peak extraction, silence trimming, dialogue validation, tempo/gap validation, voice filename/path traversal rejection, safe talk.js script serialization — exercised on synthetic PCM generated inside the test |
+| `auto_segment_test.py` | `tools/auto-segment/lib_align.py` pure logic — no whisper needed: normalization keeps Thai vowel/tone marks, perfect/noisy transcript alignment on synthesized word timestamps, monotone position advance, narrator grouping/character solo rules, padding/naming conventions, CLI error paths before any whisper import |
 
 **Rule: never commit real audio fixtures.** Voice material is large, copyrighted-adjacent,
 and unnecessary — synthetic PCM with known amplitude envelopes tests the math better

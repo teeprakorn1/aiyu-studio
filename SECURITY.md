@@ -24,6 +24,6 @@ aiyu-studio is a local authoring pipeline, not a network service — its trust m
 - **Voice files and dialogue are content inputs**, not trusted system input — but they are never executed; they are data for ffmpeg and the timing system.
 - **No network service, no credentials, no user database.** The pipeline makes no network calls beyond what the author explicitly adds; there is nothing server-side to attack.
 
-Issues in scope for a security report: command injection through engine arguments or file paths, unsafe browser automation defaults, malicious-input handling in the parsers (`talk.js`, `segments.json`, ffmpeg output), and supply-chain concerns in the dependency surface (deliberately small: `playwright-core` + system ffmpeg/python).
+Issues in scope for a security report: command injection through engine arguments or file paths, unsafe browser automation defaults, malicious-input handling in the parsers (`talk.js`, `segments.json`, ffmpeg output), and supply-chain concerns in the dependency surface (deliberately small: `playwright-core` + system ffmpeg/python). The optional tool in `tools/auto-segment/` carries its own heavier dependency tree (faster-whisper and its transitive packages); it is strictly opt-in, never installed by the core pipeline, and reports about it should still follow the same private process.
 
 Issues out of scope: the fact that a local rendering pipeline can execute local commands (that is its purpose), and vulnerabilities in upstream tools themselves (report those to ffmpeg/playwright/python).

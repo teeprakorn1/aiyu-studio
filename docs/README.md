@@ -12,7 +12,8 @@ docs/
 │   ├── 01-scenes.md              scenes in style.js · runtime API · safe zones
 │   ├── 02-dialogue-audio.md      dialogue · segments.json · TTS · tempo
 │   ├── 03-cinematic.md           realistic humans · layered backgrounds · water · frame treatments
-│   └── 04-maps.md                animated data-driven maps · flow paths · hachure mountains
+│   ├── 04-maps.md                animated data-driven maps · flow paths · hachure mountains
+│   └── 05-parameterized.md       data-driven variants · batch rendering
 ├── delivery/
 │   └── 01-qc-publish.md          7-point QC · Reels/TikTok specs · legal/platform rules
 ├── examples/

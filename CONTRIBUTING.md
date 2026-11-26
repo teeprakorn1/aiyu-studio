@@ -46,13 +46,15 @@ Please open an issue first for anything beyond a small fix so direction can be a
 | `template/core/` | Kernel primitives and runtime registry. Never project-specific. |
 | `template/features/` | Reusable feature systems. Features must not depend on one another. Optional modules must remain IIFE-wrapped with explicit `globalThis`/`window` exports. |
 | `template/story/` | Author-editable demo configuration: dialogue, segment mapping, source chips, and scenes. |
+| `template/skills/` | Agent-facing operational rules scaffolded into every project. Must stay in sync with AGENTS.md and the runtime API in the same change. |
+| `tools/` | Optional tooling with its own dependency isolation (e.g. whisper auto-segmentation). Must never become required by the core pipeline. |
 | `docs/` | Documentation — English is the primary language. Update docs in the same change as behavior. |
 | `examples/legacy/` | Frozen historical productions. Do not edit or modernize them. |
 
 ## Coding guidelines
 
 - JavaScript: plain ES2020+, no build step. Runtime files must remain classic scripts because projects are opened over `file://`.
-- Python: stdlib only; keep `mix-studio.py` dependency-free.
+- Python: the core pipeline is stdlib only; keep `mix-studio.py` dependency-free. Optional tools under `tools/` may declare their own dependencies, but they must remain strictly opt-in — nothing in `engine/` or `template/` may require them.
 - Public/exported engine and runtime functions need JSDoc with units (`seconds`, `px`, `0..1`).
 - Comments and docs in English. Sample dialogue may be any language.
 - Follow the existing compact style: no over-engineering and no unnecessary comments.

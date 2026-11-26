@@ -55,4 +55,5 @@ measure-subs.mjs  subtitle QC — reads the same runtime
 ## Documentation and examples
 
 - Docs live in `docs/` in topical folders (`getting-started/`, `authoring/`, `delivery/`, `examples/`, `testing/`) — each folder has a README index, files are numbered in reading order. A change that alters behavior must update the matching doc in the same change.
+- `template/skills/` teaches these laws and the runtime API to coding agents inside scaffolded projects — a rule or API change must sync the matching skill in the same change. Stale skills are worse than none: agents follow them confidently.
 - `examples/legacy/` is frozen history — never edit the productions there, not even to "fix" them to current conventions. Their file layouts are fossils on purpose. Modern references belong in `examples/active/`.

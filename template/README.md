@@ -16,6 +16,10 @@ This folder is the starting point of every production (copied by `py new-project
 - `core/` + `features/` — all machinery: person/cam/helpers/subtitles/chips (for extra props, copy from `examples/legacy/jensen-legend/style-v4.js` into `story/style.js`)
 - `engine/` — render/publish/mux/mix/measure scripts + shared `lib/` (invoke through the npm scripts in `package.json`)
 
+## Agent skills (`skills/`)
+
+Condensed operational knowledge for coding agents — `skills/aiyu-authoring` (scene writing), `skills/aiyu-pipeline` (production commands/QC), `skills/aiyu-cinematic` (atmosphere/people/maps). Point your agent at them before asking it to touch `story/` — see `skills/README.md`.
+
 ## Optional modules (loaded by index.html)
 
 - `features/atmosphere.js` — skies, haze, hills, trees, clouds, birds, water, smoke, grain, vignette, caption scrim, label plates. Call them bare from style.js (`skyStops(...)`, `waterBody(...)`, `grainLayer()`)

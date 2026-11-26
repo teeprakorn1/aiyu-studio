@@ -5,7 +5,7 @@
 **Video-as-code สำหรับสารคดีแนวตั้ง** — เขียนฉากด้วย JavaScript พากย์ด้วย TTS แล้วเรนเดอร์วิดีโอ 1080×1920 พร้อมลง Reels & TikTok โดยไม่ต้องเปิดโปรแกรมตัดต่อ ไม่ต้องไล่ไทม์ไลน์ ไม่ต้องซิงก์ซับมือ
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.3.1-blue.svg?style=for-the-badge)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg?style=for-the-badge)](CHANGELOG.md)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg?style=for-the-badge)](#ความต้องการระบบ)
 
 <table>
@@ -32,7 +32,7 @@
 ## ✨ ฟีเจอร์
 
 - **Timing backbone เดียว** — `talk.js` ถูก generate จากเสียงจริงและขับฉาก ซับ และปากตัวละครทั้งหมด ไม่มีการซิงก์มือแม้แต่จุดเดียว
-- **พรีวิวสดแบบ scrub ได้** — เปิด `preview.html` ในเบราว์เซอร์ได้เลย (ไม่ต้องมี server) แล้วลากดูทั้งเรื่องแบบเรียลไทม์ผ่าน render path เดียวกับของจริง: waveform timeline, หมุดแยกบรรทัด/ฉาก, คีย์ลัดควบคุมการเล่น เจอปัญหาเลย์เอาต์ก่อนเสียเวลาเรนเดอร์แม้แต่เฟรมเดียว
+- **พรีวิวสดแบบ scrub ได้** — เปิด `preview.html` ในเบราว์เซอร์ได้เลย (ไม่ต้องมี server) แล้วลากดูทั้งเรื่องแบบเรียลไทม์ผ่าน render path เดียวกับของจริง: waveform timeline, หมุดแยกบรรทัด/ฉาก, คีย์ลัดควบคุมการเล่น, loop A-B และเมนูกระโดดตามฉาก เจอปัญหาเลย์เอาต์ก่อนเสียเวลาเรนเดอร์แม้แต่เฟรมเดียว
 - **ปากขยับตามผู้พูด** — ปากของตัวละครแต่ละคนเคลื่อนตามเฉพาะบทของตัวเอง ด้วย energy envelope 30 จุดต่อบรรทัด
 - **ตัดบรรทัดไทยอัตโนมัติ** — ซับตัดคำถูกต้องทั้งไทย อังกฤษ และผสมกัน ผ่าน `Intl.Segmenter` เครื่องหมายวรรคตอนไม่มีทางลอยไปขึ้นบรรทัดใหม่
 - **การ์ดเด้งแบบสปริง** — การ์ดและ pop-in เคลื่อนด้วยฟิสิกส์สปริงแท้ ทุก curve เป็น pure function deterministic ปลอดภัยกับการเรนเดอร์ขนาน
@@ -43,6 +43,8 @@
 - **Chrome หรือ Chromium ก็ได้** — engine เลือกเบราว์เซอร์ให้อัตโนมัติ ไม่จำเป็นต้องมี Chrome
 - **มีเทส** — pyramid ทั้ง unit + end-to-end โดยไม่เพิ่ม dependency เลย determinism ถูกบังคับด้วย hash ไม่ใช่ความหวัง
 - **scaffold คำสั่งเดียว** — `new-project.py` ให้โปรเจกต์ demo ที่เรนเดอร์ได้จริงในไม่กี่วินาที
+- **agent skills ในทุกโปรเจกต์** — กฎฉบับย่อ (`aiyu-authoring` / `aiyu-pipeline` / `aiyu-cinematic`) ถูก scaffold ไปใน `skills/` เสมอ coding agent เขียนโค้ดฉากถูกตั้งแต่พรอมป์แรก แทนที่จะค่อย ๆ เรียนรู้กฎจากความผิดพลาด
+- **auto-segmentation แบบ optional** — `tools/auto-segment` ร่าง `segments.json` และตัดไฟล์เสียงย่อยจากเสียงยาวไฟล์เดียวต่อผู้พูดด้วย whisper word-alignment วิถี manual เดิมยังเป็น first-class เต็มตัว
 
 ## 🏗️ การทำงาน
 
@@ -116,6 +118,7 @@ npm run stills -- 1,5,10                 # แล้วเปิด stills/sheet
 | [docs/authoring/02-dialogue-audio.md](docs/authoring/02-dialogue-audio.md) | ฟอร์แมตบท, segments.json, เสียง TTS, ตาราง tempo |
 | [docs/authoring/03-cinematic.md](docs/authoring/03-cinematic.md) | ตัวละครมนุษย์สมจริง ฉากหลังหลายชั้น ระบบน้ำ และ frame treatment |
 | [docs/authoring/04-maps.md](docs/authoring/04-maps.md) | แผนที่แอนิเมชันจากข้อมูลจริง: projection, flow path, ภูเขาแบบ hachure, จุดเมือง |
+| [docs/authoring/05-parameterized.md](docs/authoring/05-parameterized.md) | parameterized rendering — วิดีโอหลาย variant จากโปรเจกต์เดียว |
 | [docs/delivery/01-qc-publish.md](docs/delivery/01-qc-publish.md) | QC 7 ข้อ, สเปก Reels/TikTok, กฎเปิดเผยเนื้อหา AI |
 | [docs/testing/README.md](docs/testing/README.md) | test pyramid — กลยุทธ์, unit, e2e, CI |
 | [docs/examples/README.md](docs/examples/README.md) | โบราณคดี production + บันทึกของทั้งสองเรื่องจริง |
@@ -142,8 +145,10 @@ npm run stills -- 1,5,10                 # แล้วเปิด stills/sheet
 │   ├── features/             #   character/subtitles/environment/cards/atmosphere/people (ห้ามแก้)
 │   ├── story/                #   ส่วนที่เขียนเอง: style.js, dialogue.txt, segments.json, srchips.js
 │   ├── preview.html          #   live scrubber — ไม่ต้องมี server
+│   ├── skills/               #   agent skills: aiyu-authoring / aiyu-pipeline / aiyu-cinematic
 │   └── assets/fonts/         #   Kanit 4 weights (SIL OFL)
 ├── tests/                    # pyramid unit + e2e (ไม่ถูก copy ไปในโปรเจกต์)
+├── tools/auto-segment/       # ตัวช่วย draft segments.json ด้วย whisper (optional มี deps ของตัวเอง ไม่ถูก scaffold)
 ├── docs/                     # ระบบเอกสาร — โฟลเดอร์ตามหมวด ไฟล์ numbered
 ├── examples/
 │   ├── active/               # production อนาคตบนสถาปัตยกรรมปัจจุบัน

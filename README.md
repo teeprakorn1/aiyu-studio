@@ -5,7 +5,7 @@
 **Video-as-code for vertical documentaries.** Write scenes in JavaScript, narrate with TTS, and render publish-ready 1080×1920 videos for Reels & TikTok — no video editor, no timeline scrubbing, no manual subtitle sync.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.3.1-blue.svg?style=for-the-badge)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg?style=for-the-badge)](CHANGELOG.md)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg?style=for-the-badge)](#requirements)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge)](#contributing)
 
@@ -33,7 +33,7 @@ Vertical documentaries are repetitive to produce: sync subtitles by hand, resize
 ## ✨ Features
 
 - **Single timing backbone** — `talk.js` is generated from your audio and drives scenes, subtitles and lip sync. Nothing is hand-synced, ever
-- **Live preview scrubber** — open `preview.html` in a browser (no server needed) and scrub the whole film in real time through the exact production render path: waveform timeline, per-line/scene markers, keyboard transport. Catch layout problems before burning a single render
+- **Live preview scrubber** — open `preview.html` in a browser (no server needed) and scrub the whole film in real time through the exact production render path: waveform timeline, per-line/scene markers, keyboard transport, A-B loop and scene jump. Catch layout problems before burning a single render
 - **Speaker-aware lip sync** — each character's mouth follows only their own lines, with a 30-point energy envelope per line
 - **Automatic Thai line-breaking** — subtitles wrap correctly for Thai (and English, and mixed text) via `Intl.Segmenter`; punctuation never orphans onto its own line
 - **Spring-motion cards** — cards and pop-ins animate with exact damped-spring physics; every curve is a deterministic pure function, safe for parallel rendering
@@ -44,6 +44,8 @@ Vertical documentaries are repetitive to produce: sync subtitles by hand, resize
 - **Chrome or Chromium** — automatic browser fallback chain; no Chrome license required
 - **Tested** — unit + end-to-end pyramid with zero added dependencies; determinism enforced by hash, not by hope
 - **One-command scaffolding** — `new-project.py` gives you a working, renderable demo project in seconds
+- **Agent skills in every project** — condensed operational rules (`aiyu-authoring` / `aiyu-pipeline` / `aiyu-cinematic`) are scaffolded into `skills/`, so a coding agent writes correct scene code from the first prompt instead of learning the laws by trial and error
+- **Optional auto-segmentation** — `tools/auto-segment` drafts `segments.json` and sliced voice files from one long recording per speaker via whisper word-alignment; the manual voice-file workflow stays fully first-class
 
 ## 🏗️ How it works
 
@@ -117,6 +119,7 @@ If the sheet shows characters and subtitles, the pipeline works — or open `pre
 | [docs/authoring/02-dialogue-audio.md](docs/authoring/02-dialogue-audio.md) | Dialogue format, segments.json, TTS voices, tempo table |
 | [docs/authoring/03-cinematic.md](docs/authoring/03-cinematic.md) | Realistic humans, layered backgrounds, water systems, frame treatments |
 | [docs/authoring/04-maps.md](docs/authoring/04-maps.md) | Animated data-driven maps: projection, flow paths, hachure mountains, city markers |
+| [docs/authoring/05-parameterized.md](docs/authoring/05-parameterized.md) | Parameterized rendering — many visual variants from one project |
 | [docs/delivery/01-qc-publish.md](docs/delivery/01-qc-publish.md) | 7-point QC, Reels/TikTok specs, AI-content disclosure |
 | [docs/testing/README.md](docs/testing/README.md) | The test pyramid — strategy, unit, e2e, CI |
 | [docs/examples/README.md](docs/examples/README.md) | Production archaeology + notes for both real films |
@@ -143,8 +146,10 @@ If the sheet shows characters and subtitles, the pipeline works — or open `pre
 │   ├── features/             #   character/subtitles/environment/cards/atmosphere/people (never edit)
 │   ├── story/                #   author inputs: style.js, dialogue.txt, segments.json, srchips.js
 │   ├── preview.html          #   live scrubber — no server needed
+│   ├── skills/               #   agent skills: aiyu-authoring / aiyu-pipeline / aiyu-cinematic
 │   └── assets/fonts/         #   Kanit 4 weights (SIL OFL)
 ├── tests/                    # unit + e2e pyramid (not scaffolded into projects)
+├── tools/auto-segment/       # optional whisper-based segments.json drafter (own deps, not scaffolded)
 ├── docs/                     # documentation system — topical folders, numbered files
 ├── examples/
 │   ├── active/               # future productions on the current architecture

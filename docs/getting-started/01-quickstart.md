@@ -25,6 +25,7 @@ my-story/
 ├── features/       characters, subtitles, cards, atmosphere, people — never edit
 ├── story/          ← everything you write lives here: style.js, srchips.js, dialogue.txt, segments.json
 ├── preview.html    live scrubber — open in a browser, no server needed
+├── skills/         agent skills — point your coding agent here before it touches story/
 ├── index.html      the render page
 └── vo/             voice files go here
 ```
@@ -36,7 +37,7 @@ npm run stub                    # estimated talk.js from text length
 npm run stills -- 1,5,10      # open stills/sheet.jpg
 ```
 
-Or open **`preview.html` in Chrome** — a live scrubber that plays/scrubs the animation in real time through the exact production render path: waveform timeline (true narration peaks in real mode, envelope synthesis in stub mode), per-line/per-scene markers, click-drag seeking, playback speed, current-line display. Keys: space, arrows (±1s, shift ±5s), home/end. In stub mode there is no narration.wav yet, so it runs on a silent clock — use it to check scene composition and lip-sync timing before any render.
+Or open **`preview.html` in Chrome** — a live scrubber that plays/scrubs the animation in real time through the exact production render path: waveform timeline (true narration peaks in real mode, envelope synthesis in stub mode), per-line/per-scene markers, click-drag seeking, playback speed, current-line display, a scene-jump menu, and A-B loop marks for repeating a passage. Keys: space, arrows (±1s, shift ±5s), home/end, `[`/`]` set loop A/B, `\` clears the loop. In stub mode there is no narration.wav yet, so it runs on a silent clock — use it to check scene composition and lip-sync timing before any render.
 
 If you see characters + subtitles in the sheet, everything works. Delete the demo content and start your real story.
 

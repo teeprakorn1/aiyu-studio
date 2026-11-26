@@ -73,6 +73,10 @@ npm run mix    # audio complete: real timing + narration.wav + 30-point envelope
 
 Recommended: write dialogue → stub → finish scenes → generate voices → real mix → adjust scenes to real timing. Saves TTS regeneration rounds.
 
+## 5b. Optional: drafting segments.json from long recordings
+
+If you prefer recording **one long take per speaker** over generating per-segment files, the optional `tools/auto-segment/` tool (in the aiyu-studio repo, not scaffolded) uses whisper transcription to fuzzy-align your lines, slice the audio into `vo/`, and draft `segments.json` for you. It is a draft generator, not auto-magic — expect to review low-confidence boundaries by hand. The manual workflow in this guide remains the fully supported first-class path. See `tools/auto-segment/README.md`.
+
 ## 6. After mixing
 
 - The log prints `dur` — compare against your length target

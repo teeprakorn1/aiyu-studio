@@ -20,7 +20,8 @@ aiyu-studio/  (repo: github.com/teeprakorn1/aiyu-studio)
 │   ├── assets/fonts/     bundled Kanit fonts (SIL OFL 1.1)
 │   ├── package.json + package-lock.json   npm scripts (the user interface) + locked playwright-core
 │   ├── index.html        the render page (production path)
-│   └── preview.html      live scrubber — same scripts, same render(t), no server needed
+│   ├── preview.html      live scrubber — same scripts, same render(t), no server needed
+│   └── skills/           agent skills (aiyu-authoring / aiyu-pipeline / aiyu-cinematic) — condensed rules for coding agents
 ├── engine/               pipeline machinery — thin executable shells over engine/lib/
 │   ├── mix-studio.py     dialogue+voices → talk.js (single timing truth) + narration.wav
 │   ├── run-py.mjs        cross-platform Python launcher used by scaffolded npm scripts
@@ -30,6 +31,7 @@ aiyu-studio/  (repo: github.com/teeprakorn1/aiyu-studio)
 │   ├── measure-subs.mjs  subtitle overflow acceptance
 │   └── lib/              all shared logic (cli-args, playwright-env, ffmpeg, encoding, loudness, mp4-verify, chunking, talk, mix_audio)
 ├── tests/                the pyramid — unit (node:test + python unittest) + e2e; never scaffolded
+├── tools/auto-segment/   optional whisper-based segments.json drafter — own dependencies, never scaffolded
 ├── docs/                 documentation system — topical folders, numbered files, per-folder indexes
 ├── examples/
 │   ├── active/           future productions on the current architecture (empty until first)

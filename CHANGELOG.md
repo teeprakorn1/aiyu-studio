@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+Feature release — agent-readability, preview quality-of-life, data-driven variants documentation, and an optional audio-splitting helper. No visual output changes; no breaking changes.
+
+### Added
+
+- Agent Skills pack in `template/skills/` scaffolded into every project: `aiyu-authoring` (scene writing rules), `aiyu-pipeline` (production workflow/QC/troubleshooting), `aiyu-cinematic` (atmosphere/people/maps) — condensed operational knowledge for coding agents in the open Agent Skills format — with ❌/✅ fatal-pattern tables, pre-publish gates, and mandatory self-checks
+- `preview.html` A-B loop marks (`[`/`]` set, `\` clear — highlighted band, wraps playback in both audio and clock mode) and a scene-jump menu built from the registered scene table
+- `tools/auto-segment/` — optional, separately dependency-isolated helper that drafts `segments.json` and slices `vo/*.wav` from one long recording per speaker using faster-whisper alignment; the manual workflow remains first-class and untouched
+- `docs/authoring/05-parameterized.md` — the data-driven variants pattern: what can and cannot vary under an audio-derived timing backbone, the `story/data.js` module pattern, batch workflow with per-variant `--out`
+- `docs/acknowledgements.md` provenance for the release's influences — what was studied and adapted from remotion-dev/remotion (skills distribution, parameterized framing, transport QoL bar) and MN-Lizard-Team/aiyu-multi-agent (enforcement teaching style), plus what was deliberately rejected and why
+
 ## [0.3.1] - 2026-11-26
 
 Bugfix and hardening release — no intentional visual output changes; determinism and golden stills remain green.
@@ -116,7 +126,8 @@ First public release — extracted from the real production of `jensen-legend` (
 - `examples/jensen-legend/` reference implementation (code only)
 
 
-[Unreleased]: https://github.com/teeprakorn1/aiyu-studio/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/teeprakorn1/aiyu-studio/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/teeprakorn1/aiyu-studio/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/teeprakorn1/aiyu-studio/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/teeprakorn1/aiyu-studio/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/teeprakorn1/aiyu-studio/compare/v0.1.0...v0.2.0

@@ -102,3 +102,46 @@ test('click at 75% of timeline seeks to ~75% of duration', async () => {
   const secs = parseFloat(t.match(/0:(\d+\.\d)/)?.[1] ?? '0');
   assert.ok(Math.abs(secs - 0.75 * dur) < 1.0, `click seek off: ${secs} vs ${0.75 * dur}`);
 });
+
+const clockSecs = async () => {
+  const t = await page.evaluate(() => document.getElementById('time').textContent);
+  const m = t.match(/(\d+):(\d+\.\d)/);
+  return m ? +m[1] * 60 + +m[2] : -1;
+};
+
+test('A-B loop marks appear in transport and loop wraps playback', async () => {
+  await page.evaluate(() => { seek(2); });
+  await page.keyboard.press('[');
+  await page.evaluate(() => { seek(5); });
+  await page.keyboard.press(']');
+  const info = await page.evaluate(() => document.getElementById('loopinfo').textContent);
+  assert.match(info, /A 0:02\.0/, `loop A missing: ${info}`);
+  assert.match(info, /B 0:05\.0/, `loop B missing: ${info}`);
+  // play in clock mode from just before B — playback must wrap back near A, never run past B for long
+  await page.evaluate(() => { seek(4.9); setPlaying(true); });
+  await page.waitForTimeout(700);
+  await page.evaluate(() => setPlaying(false));
+  const secs = await clockSecs();
+  assert.ok(secs >= 1.9 && secs < 4.5, `loop did not wrap — clock at ${secs}s (expected back near 2s)`);
+  // clear the loop — marks gone, state resets
+  await page.keyboard.press('\\');
+  const cleared = await page.evaluate(() => document.getElementById('loopinfo').textContent);
+  assert.equal(cleared, '');
+});
+
+test('scene jump menu lists scenes and seeks to their first line', async () => {
+  const count = await page.evaluate(() => document.getElementById('scenejump').options.length);
+  assert.ok(count >= 3, `scene menu too thin: ${count} options`);
+  const target = await page.evaluate(() => TALK.lines[3].t0);
+  await page.selectOption('#scenejump', '3');
+  await page.waitForTimeout(150);
+  const secs = await clockSecs();
+  assert.ok(Math.abs(secs - target) < .3, `scene jump off: ${secs} vs ${target}`);
+  // selector resets to the placeholder after jumping
+  const val = await page.evaluate(() => document.getElementById('scenejump').value);
+  assert.equal(val, '');
+});
+
+test('no page errors after transport interactions', () => {
+  assert.deepEqual(errors, []);
+});

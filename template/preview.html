@@ -3,7 +3,7 @@
   preview.html — live scrubber for scene/lip-sync checking. Open directly in Chrome (file:// is fine).
   Renders through the exact production path (same scripts as index.html) so what you see is what render.mjs captures.
   Waveform: true narration peaks when talk.js carries `wave` (real-mode mix), otherwise synthesized from line envelopes.
-  Keys: space play/pause · ←/→ ±1s · shift+←/→ ±5s · home/end
+  Keys: space play/pause · ←/→ ±1s · shift+←/→ ±5s · home/end · [ ] set loop A/B · \ clear loop
 -->
 <html><head><meta charset="utf-8">
 <title>preview — aiyu studio</title>
@@ -39,11 +39,13 @@ button:hover,select:hover{background:#262b38}
       <option value="1.5">1.5×</option>
       <option value="2">2×</option>
     </select>
+    <select id="scenejump" title="jump to scene"><option value="">scene…</option></select>
+    <span id="loopinfo" style="font-size:13px;color:#8ac98a;min-width:86px"></span>
     <span id="noaudio">no narration.wav — clock mode (run engine/mix-studio.py in real mode for audio + true waveform)</span>
     <span id="lineinfo"></span>
   </div>
   <canvas id="tl"></canvas>
-  <div id="hint">space play/pause · ←/→ ±1s · shift+←/→ ±5s · home/end · click/drag timeline to scrub</div>
+  <div id="hint">space play/pause · ←/→ ±1s · shift+←/→ ±5s · home/end · click/drag to scrub · [ ] loop A/B · \ clear loop</div>
 </div>
 <audio id="aud" src="narration.wav" preload="auto"></audio>
 <script src="talk.js"></script>
@@ -69,6 +71,44 @@ const stage = document.getElementById('stage');
 const tlBase = document.createElement('canvas');   // cached waveform+ticks layer, blitted per frame
 const tlb = tlBase.getContext('2d');
 let audioOk = false, playing = false, timeT = 0, lastFrameT = -1, lastTick = 0, clockRate = 1, lastLineKey = '';
+let loopA = null, loopB = null;   // A-B repeat marks in seconds; active only when both set and loopB > loopA
+
+function loopActive() { return loopA != null && loopB != null && loopB > loopA; }
+function syncLoopUI() {
+  document.getElementById('loopinfo').textContent =
+    loopA != null || loopB != null
+      ? `${loopA != null ? 'A ' + fmt(loopA) : 'A –'} · ${loopB != null ? 'B ' + fmt(loopB) : 'B –'}`
+      : '';
+}
+
+/* scene jump menu — boundaries derive from the registered scene table:
+ * row[i][0] is the first line of scene i+1; scene 1 always starts at line 0 */
+function sceneStarts() {
+  let rows = [];
+  try { rows = runtimeConfig().scenes || (typeof SC !== 'undefined' ? SC : []); } catch (e) { }
+  const starts = [0];
+  for (let i = 0; i < rows.length - 1; i++) if (rows[i][0] < LINES.length) starts.push(rows[i][0]);
+  return starts;
+}
+function buildSceneMenu() {
+  const sel = document.getElementById('scenejump');
+  const starts = sceneStarts();
+  if (!starts.length || starts.length < 2) { sel.style.display = 'none'; return; }
+  starts.forEach((ln, i) => {
+    const opt = document.createElement('option');
+    opt.value = String(ln);
+    const txt = (LINES[ln] ? LINES[ln].txt : '').slice(0, 24);
+    opt.textContent = `Scene ${i + 1} · L${ln}${txt ? ' — ' + txt : ''}`;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', () => {
+    if (sel.value === '') return;
+    const ln = +sel.value;
+    if (LINES[ln]) seek(LINES[ln].t0);
+    sel.value = '';
+    sel.blur();
+  });
+}
 
 aud.addEventListener('canplaythrough', () => { audioOk = true; document.getElementById('noaudio').style.display = 'none'; });
 aud.addEventListener('error', () => { audioOk = false; document.getElementById('noaudio').style.display = 'inline'; });
@@ -145,6 +185,15 @@ function drawTimeline() {
   const w = tl.clientWidth, h = 84;
   tlx.clearRect(0, 0, w, h);
   tlx.drawImage(tlBase, 0, 0, w, h);
+  if (loopA != null || loopB != null) {
+    const a = loopA != null ? loopA / DUR * w : null, b = loopB != null ? loopB / DUR * w : null;
+    if (a != null && b != null && b > a) {
+      tlx.fillStyle = 'rgba(138,201,138,.13)'; tlx.fillRect(a, 0, b - a, h);
+    }
+    tlx.fillStyle = '#8ac98a';
+    if (a != null) { tlx.fillRect(a - 1, 0, 2, h); tlx.font = '10px Kanit,sans-serif'; tlx.fillText('A', a + 3, 10); }
+    if (b != null) { tlx.fillRect(b - 1, 0, 2, h); tlx.font = '10px Kanit,sans-serif'; tlx.fillText('B', b + 3, 10); }
+  }
   const px = timeT / DUR * w;
   tlx.fillStyle = '#e05252'; tlx.fillRect(px - 1, 0, 2, h);
   tlx.beginPath(); tlx.moveTo(px - 5, 0); tlx.lineTo(px + 5, 0); tlx.lineTo(px, 8); tlx.fill();
@@ -198,6 +247,9 @@ window.addEventListener('keydown', e => {
   else if (e.key === 'ArrowRight') seek(timeT + (e.shiftKey ? 5 : 1));
   else if (e.key === 'Home') seek(0);
   else if (e.key === 'End') seek(DUR);
+  else if (e.key === '[') { loopA = timeT; syncLoopUI(); }
+  else if (e.key === ']') { loopB = timeT; syncLoopUI(); }
+  else if (e.key === '\\') { loopA = loopB = null; syncLoopUI(); }
 });
 
 function tick(now) {
@@ -205,7 +257,8 @@ function tick(now) {
   if (playing) {
     if (audioOk) timeT = Math.min(DUR, aud.currentTime);
     else timeT = Math.min(DUR, timeT + dt * clockRate);
-    if (timeT >= DUR) setPlaying(false);
+    if (loopActive() && timeT >= loopB) seek(loopA);
+    else if (timeT >= DUR) setPlaying(false);
   }
   if (timeT !== lastFrameT) { render(timeT); lastFrameT = timeT; syncUI(); }
   drawTimeline();
@@ -215,6 +268,7 @@ function tick(now) {
 window.ready = document.fonts.ready.then(() => { render(0); return true; });
 fit();
 paintBase();
+buildSceneMenu();
 syncUI();
 requestAnimationFrame(t => { lastTick = t; tick(t); });
 </script>

@@ -1,12 +1,12 @@
 {
   "name": "aiyu-studio",
   "private": true,
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Template engine repo — tests and tooling. Scaffolded projects get their own package.json from template/.",
   "scripts": {
     "test": "npm run test:unit && npm run test:unit:py",
-    "test:unit": "node --test tests/unit/cli-args.test.mjs tests/unit/loudness.test.mjs tests/unit/motion.test.mjs tests/unit/ffmpeg.test.mjs tests/unit/engine-cli.test.mjs tests/unit/runtime-registry.test.mjs tests/unit/architecture.test.mjs",
-    "test:unit:py": "node engine/run-py.mjs tests/unit/mix_studio_test.py",
+    "test:unit": "node --test tests/unit/cli-args.test.mjs tests/unit/loudness.test.mjs tests/unit/motion.test.mjs tests/unit/ffmpeg.test.mjs tests/unit/engine-cli.test.mjs tests/unit/runtime-registry.test.mjs tests/unit/architecture.test.mjs tests/unit/skills.test.mjs",
+    "test:unit:py": "node engine/run-py.mjs tests/unit/mix_studio_test.py && node engine/run-py.mjs tests/unit/auto_segment_test.py",
     "test:e2e": "node --test tests/e2e/pipeline.test.mjs tests/e2e/determinism.test.mjs tests/e2e/preview.test.mjs"
   }
 }

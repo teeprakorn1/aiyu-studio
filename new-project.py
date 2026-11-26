@@ -52,6 +52,9 @@ Next steps:
        - features/atmosphere.js — cinematic skies, water, hills, weather, grain/vignette
        - features/people.js — personTH() realistic humans with knees/elbows and a walk cycle
        (for a full production using both, see examples/legacy/thai-origins/ in the main repo)
+     Working with a coding agent? Point it at skills/ — condensed rules for
+     scene writing (aiyu-authoring), the pipeline (aiyu-pipeline), and cinematic
+     features (aiyu-cinematic). See skills/README.md.
   6. Drop real voice files into vo/ per segments.json names, then run npm run mix (real mode)
   7. Full render: npm run publish -- --chunks=6 --out=v1   (duration auto-reads talk.js)
   8. Mux:         npm run mux -- --concat=out/v1concat.txt --out=final-v1.mp4

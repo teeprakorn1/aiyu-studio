@@ -12,7 +12,7 @@ with something stronger than good intentions.
         ┌──────────────┐
         │   e2e  (3)   │  minutes — real scaffold, real ffmpeg renders, real browser
         ├──────────────┤
-        │  unit  (~70) │  seconds — pure logic, no browser, no renders
+        │  unit (~95+) │  seconds — pure logic, no browser, no renders
         └──────────────┘
 ```
 

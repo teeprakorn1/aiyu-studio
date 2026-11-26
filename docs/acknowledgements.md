@@ -41,6 +41,27 @@ The divergences are deliberate and load-bearing:
 
 In short: Motion Canvas is the right tool for motion graphics and explainer animation; aiyu-studio is a narrower machine built for one job — voiced vertical documentaries — and the narrower machine could only be designed after understanding exactly what the general one does and why.
 
+### [remotion-dev/remotion](https://github.com/remotion-dev/remotion) (custom license)
+
+Remotion is the largest "video-as-code" project in the ecosystem — React compositions rendered through headless Chrome, backed by a company with real products (Player, Lambda, Editor). It was studied in v0.4.0 not for its rendering core (which solves a problem aiyu-studio doesn't have) but for its **product surface** — what it teaches about how these tools get adopted and lived with. Three ideas travelled:
+
+1. **Agent Skills as a distribution channel.** Remotion's `skills` repository — condensed operational knowledge installed into projects for coding agents to read — demonstrated that in this era the first "user" to write scene code is often an agent, and feeding it the rules up front beats correcting its mistakes. aiyu-studio adopted the idea in its own shape: skills scaffolded into every project (matching the copy-template model), written fresh around this pipeline's specific invariants (determinism law, talk.js timing truth, layer separation), with enforcement structures — gates, self-checks, wrong/right pattern tables — the content, not just the format, is original.
+2. **Parameterized videos as a named pattern.** Remotion's "render many videos from one template plus data" validated a workflow aiyu-studio users would naturally want for recurring formats. What travelled is the framing — the implementation here is a documentation pattern (`story/data.js` + batch loop) honest about a constraint Remotion doesn't have: in an audio-first pipeline the narration cannot be parameterized without becoming a new production.
+3. **Editor-transport QoL as a quality bar.** Reviewing Remotion Studio's transport motivated the v0.4.0 preview pass (A-B loop, scene jump). The scrubber itself predates that study and traces to the Motion Canvas lineage above — these additions are ordinary editor features, credited here because the review is what prompted them.
+
+The divergences are again deliberate:
+
+| Remotion | aiyu-studio | Why |
+|---|---|---|
+| React + DOM + bundler as the render surface | raw canvas, classic scripts, zero dependencies | same reasons as the Motion Canvas divergence — hackability and resistance to dependency rot |
+| Cloud render farms (Lambda) | parallel local chunks | single-author productions don't need elastic compute; the machine that edits the film is already idle during muxing |
+| Open-core license — free below a company-size threshold, paid above | MIT, everything | the template only spreads if nobody ever has to think about this |
+| General-purpose platform ambition | narrow machine for voiced vertical documentaries | the constraint is the feature — see the Motion Canvas section |
+
+### [MN-Lizard-Team/aiyu-multi-agent](https://github.com/MN-Lizard-Team/aiyu-multi-agent) (Apache-2.0)
+
+A different kind of source — and a disclosure is owed first: this framework is by the same author as aiyu-studio itself, which is precisely why its patterns were close at hand. It is not a video project at all, but a multi-agent AI framework whose skill system treats LLM agents as fallible operators that need enforcement, not just information. When the v0.4.0 Agent Skills pack was written, its structure came from the open Agent Skills format (see the Remotion section above), but its **teaching style** was adapted from patterns proven in this framework: mandatory self-check tables before declaring completion, pre-action gates ("publishing without the gate = burning render time"), wrong/right pattern pairs over abstract rules, and violation framing that names the failure consequence instead of the virtue. The adaptation is selective — the Socratic-questioning protocols and orchestration machinery were deliberately left behind, because a video pipeline's workflow is already fixed and skills here teach correct execution rather than requirements discovery.
+
 ## The production crucible
 
 The pipeline was hardened through real production (`jensen-legend` v3–v7, documented in [examples/v010-jensen-legend/01-jensen-pipeline.md](examples/v010-jensen-legend/01-jensen-pipeline.md)): tempo scaling, safe-zone discipline for Reels/TikTok, parallel chunk rendering, and loudness-standardized muxing are lessons paid for with actual published iterations — the kind of knowledge no amount of reading other people's code provides.

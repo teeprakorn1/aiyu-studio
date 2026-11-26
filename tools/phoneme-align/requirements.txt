@@ -1,0 +1,6 @@
+# phoneme-grade forced alignment — HEAVY, opt-in by design.
+# torch alone is gigabytes. Install into a dedicated venv, never the core pipeline:
+#   python -m venv .venv-phoneme && .venv-phoneme/Scripts/pip install -r tools/phoneme-align/requirements.txt
+torch>=2.2
+transformers>=4.40
+numpy>=1.26

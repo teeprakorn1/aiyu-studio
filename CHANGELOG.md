@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [0.4.0] - 2026-11-26
 
-Feature release — agent-readability, preview quality-of-life, TTS generation with exact timing, karaoke subtitles, auto-ducking, data-driven variants documentation, and optional audio helpers. No breaking changes.
+Feature release — agent-readability, preview quality-of-life, TTS generation with exact timing, karaoke subtitles, auto-ducking, keyword-beat scene reveals, word timing for every voice type, optional phoneme-grade alignment, data-driven variants documentation, and optional audio helpers. No breaking changes.
 
 ### Added
 
@@ -18,6 +18,9 @@ Feature release — agent-readability, preview quality-of-life, TTS generation w
 - Karaoke subtitle mode — `story/wordtimes.json` merges into talk.js; `SUB_KARAOKE` in style.js highlights spoken words left-to-right (default off)
 - `mux.mjs --bed-duck` — sidechain auto-ducking: the music bed dips under speech and rises in pauses (opt-in; tunables `--duck-*`)
 - Spring subtitle entrance — exact damped-spring pop on subtitle blocks (golden stills re-initialized)
+- `rvw(o, n, needle)` / `wordT(ln, needle)` in `core/motion.js` — keyword-beat reveals: scene elements pop when the keyword is SPOKEN, not at line start; hard fallback contract degrades to `rv()` exactly when word timing is absent
+- `tools/auto-segment` now emits `wordtimes.auto.json` from whisper word data alongside its segments draft — karaoke/keyword timing for recorded voices, zero new dependencies
+- `tools/phoneme-align/` — optional heavy-deps-isolated tool: wav2vec2 CTC forced alignment of vo files against their known transcripts (no ASR), Thai model `airesearch/wav2vec2-large-xlsr-53-th` via `--model`; phoneme-grade `wordtimes.phoneme.json` in the mix-merge schema
 - `tools/auto-segment/` — optional whisper-based drafter of `segments.json` + sliced `vo/*.wav` from one long recording per speaker; manual workflow untouched
 - `docs/authoring/05-parameterized.md` — data-driven variants pattern under an audio-derived timing backbone
 - `docs/acknowledgements.md` — provenance for remotion-dev/remotion, MN-Lizard-Team/aiyu-multi-agent, and harry0703/MoneyPrinterTurbo: what travelled, what was rejected, why
@@ -115,7 +118,7 @@ Cinematic upgrade — techniques proven in the `thai-origins` production, extrac
 - Copy `engine/*` and `template/rig.js` into existing projects to get the walk, mouth and render fixes
 - Existing `style.js` files need no changes; `rv()` and the cinematic modules are optional
 
-## [0.1.0] - 2026-11-25
+## [0.1.0] - 2026-11-26
 
 First public release — extracted from the real production of `jensen-legend` (v3–v7), verified end-to-end.
 

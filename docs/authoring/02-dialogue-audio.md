@@ -91,6 +91,18 @@ If you prefer recording **one long take per speaker** over generating per-segmen
 
 When `story/wordtimes.json` exists (rename the tts-gen draft, or write your own — `{ "0": [["word", start, end], ...] }` with times relative to that line's audio file), `npm run mix` merges it into talk.js as absolute per-word timing. Setting `SUB_KARAOKE = true` in `story/style.js` then renders karaoke subtitles: spoken words highlight left-to-right, active word pops. Default is off. Honest caveat: Thai "words" from TTS/whisper are subword-ish segmentation — visually fine, not linguistic-grade — and silence trimming makes timing approximate by tens of milliseconds, which is invisible in practice.
 
+### Word timing for non-TTS voices (backfill paths) — v0.5.0
+
+`wordtimes.json` is not TTS-exclusive. Two more generators write the same schema:
+
+- **auto-segment** now emits `wordtimes.auto.json` alongside its segments draft — whisper's own
+  word timestamps, cut-relative. Fuzzy-grade: solid for karaoke highlighting and `rvw` reveal beats.
+- **tools/phoneme-align** (optional, heavy isolated deps) runs wav2vec2 CTC forced alignment of each
+  vo file against the transcript segments.json already says it contains — no ASR involved, the text
+  is known exactly. Phoneme-grade precision even for TTS voices that refuse word boundaries.
+  Thai default model: `airesearch/wav2vec2-large-xlsr-53-th`. Spaceless scripts yield fixed-size
+  subword chunks (max 6 chars), not linguistic words — same honesty caveat as edge-tts Thai.
+
 ## 7. Music bed — the second mux input
 
 - `npm run mux -- --bed-duck` auto-ducks the bed under speech and lets it rise in pauses (ffmpeg sidechaincompress) — opt-in; static mixing stays the default. See [qc-publish.md](../delivery/01-qc-publish.md) for how the QC semantics change.

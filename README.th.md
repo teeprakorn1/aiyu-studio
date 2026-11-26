@@ -47,6 +47,7 @@
 - **auto-segmentation แบบ optional** — `tools/auto-segment` ร่าง `segments.json` และตัดไฟล์เสียงย่อยจากเสียงยาวไฟล์เดียวต่อผู้พูดด้วย whisper word-alignment วิถี manual เดิมยังเป็น first-class เต็มตัว
 - **generate เสียง TTS คำสั่งเดียว** — `tools/tts-gen` สังเคราะห์บทพูดทั้งเรื่องเป็นไฟล์เสียงทีละบรรทัดพร้อม segments ที่แม่นตั้งแต่เกิด (ไม่ต้อง align อะไรเลย) edge-tts ฟรีไม่ต้องมี key ยืนยันเสียงไทยแล้ว ส่วน ElevenLabs/Gemini ต่อผ่าน provider interface เดียวกัน
 - **ซับคาราโอเกะ** — word timing ติดมากับการสังเคราะห์เสียง (หรือเขียน `story/wordtimes.json` เอง) เปิด `SUB_KARAOKE` แล้วคำที่พูดจะไฮไลต์ไล่จากซ้ายไปขวาตามจังหวะเสียงจริง
+- **reveal ตามจังหวะคำพูด** — `rvw(o, n, needle)` ให้กราฟ/ตัวเลขเด้งเป๊ะตอนพากย์พูดคำสำคัญ (fallback เป็น `rv()` แบบเดิมเมื่อไม่มี word timing) เวลารายคำมาจาก tts-gen, auto-segment หรือ phoneme alignment แบบ opt-in
 
 ## 🏗️ การทำงาน
 

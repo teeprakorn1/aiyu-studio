@@ -81,3 +81,28 @@ The pipeline was hardened through real production (`jensen-legend` v3–v7, docu
 ## Fonts
 
 The bundled Kanit fonts in `template/assets/fonts/` are by **Cadson Demak**, licensed under the [SIL Open Font License 1.1](../template/assets/fonts/OFL.txt). Everything else in this repository is MIT — see [LICENSE](../LICENSE).
+
+## m-bain/whisperX — studied for v0.5.0
+
+[whisperX](https://github.com/m-bain/whisperX) (BSD-4-Clause) — batched whisper transcription
+with wav2vec2 forced phoneme alignment, VAD preprocessing, and pyannote speaker diarization.
+
+**Adopted:**
+
+- **Forced alignment of KNOWN transcripts** — the core insight: when the text is already known
+  exactly (our dialogue.txt), you do not transcribe at all; you align. `tools/phoneme-align`
+  implements this with torchaudio-tutorial CTC trellis/backtracking directly on torch+transformers.
+- The inspiration for word-granular creative use: karaoke-grade timing feeding `rvw()` keyword reveals.
+
+**Adapted away from:**
+
+- **Did not depend on whisperx itself** — its pinned chain (ctranslate2==4.4.0, pyannote.audio==3.1.1)
+  is heavyweight and pyannote drags in a model-license acceptance flow. We implement the alignment
+  math directly (trellis/backtrack/merge is ~100 lines); deps shrink to torch+transformers.
+- **Diarization rejected for now** — auto-segment's one-file-per-speaker recording discipline already
+  solves speaker separation at zero cost. Revisit if users actually record multi-speaker single takes.
+- **Batched inference / VAD preprocessing rejected** — narration-scale audio (minutes per production)
+  gains nothing from 70x batching; VAD guards against hallucination in transcription, which we do not do.
+
+**Thai gap:** whisperX's built-in align-model table covers 30+ languages but not Thai; the VISTEC
+`airesearch/wav2vec2-large-xlsr-53-th` model fills it via the tool's `--model` flag.

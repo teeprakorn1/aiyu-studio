@@ -130,3 +130,21 @@ Open `preview.html` and scrub — catches layout/safe-zone/lip-sync problems in 
 | Preview | Actually scrubbed the scene in preview.html — not just "should be fine"? |
 
 > ❌ Declaring done without previewing = the scene is not done. ✅ Scrub first, then stills, then render.
+
+## Keyword-beat reveals (rvw) — v0.5.0
+
+`rv(o, n)` reveals at line start. `rvw(o, n, needle)` reveals when the narration SPEAKS the keyword —
+the chart pops exactly on "42", not at the top of the line. Requires word timing in talk.js
+(from tts-gen, auto-segment, or phoneme-align — any source).
+
+```
+// the number pops exactly when the narrator says the figure
+const p = rvw(o, 4, '42');
+if (p > 0) drawBigNumber(ctx, easeBack(p), '42%');
+```
+
+**THE IRON RULE — fallback contract:** if the line has no word timing or the needle is absent,
+`rvw` degrades to plain `rv()` exactly — scenes never break. This means you may use `rvw` freely,
+but NEVER depend on word timing existing for correctness; design scenes so the line-granular
+fallback still reads well. Prefer short distinctive needles (they match Thai subword chunks via
+substring tolerance); repeated words in one line match the FIRST occurrence.

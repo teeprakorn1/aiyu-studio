@@ -48,6 +48,7 @@ Vertical documentaries are repetitive to produce: sync subtitles by hand, resize
 - **Optional auto-segmentation** — `tools/auto-segment` drafts `segments.json` and sliced voice files from one long recording per speaker via whisper word-alignment; the manual voice-file workflow stays fully first-class
 - **One-command TTS generation** — `tools/tts-gen` synthesizes the whole dialogue into per-line voice files with an exact segments mapping (no alignment anywhere); edge-tts is free and keyless with verified Thai voices, ElevenLabs/Gemini plug in behind the same provider interface
 - **Karaoke subtitles** — word-level timing rides along with TTS synthesis (or `story/wordtimes.json` by hand); flip `SUB_KARAOKE` and spoken words highlight left-to-right as the film plays
+- **Keyword-beat reveals** — `rvw(o, n, needle)` pops scene elements exactly when the narrator speaks the keyword (falls back to line-granular `rv()` when timing is absent); word timing flows from tts-gen, auto-segment, or optional phoneme-grade forced alignment
 
 ## 🏗️ How it works
 

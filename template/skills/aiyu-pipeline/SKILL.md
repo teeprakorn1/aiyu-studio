@@ -111,3 +111,17 @@ Recommended order: write dialogue → stub → finish scenes → generate voices
 - `--crf` / `--preset` — encoding quality/speed, validated and forwarded to every chunk
 - `npm run render -- --range=0:10` — single-range test render (see `--help`)
 - `npm run mux -- --verify-tp` — documented in mux `--help`
+
+## Word timing sources (karaoke + rvw) — v0.5.0
+
+`story/wordtimes.json` is the single input; three ways to produce it, pick per voice type:
+
+| Voice source | Path | Precision |
+|---|---|---|
+| tts-gen edge voice WITH word boundaries (e.g. th-TH-NiwatNeural) | automatic — wordtimes.auto.json | word-grade |
+| tts-gen voice WITHOUT boundaries / recorded voice | `tools/auto-segment` emits wordtimes.auto.json from whisper data | fuzzy-grade |
+| maximum precision, heavy deps acceptable | `tools/phoneme-align` (torch venv, opt-in) | phoneme-grade |
+
+All three write the SAME schema mix-studio.py merges into talk.js. Rename the draft to
+`story/wordtimes.json`, re-run `npm run mix`, enable `SUB_KARAOKE` in style.js and/or use
+`rvw()` in scenes. Grades compose honestly: fuzzy is fine for reveal beats, phoneme for tight karaoke.

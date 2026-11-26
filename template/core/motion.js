@@ -29,5 +29,51 @@ const springy = (p, stiffness = 170, damping = 12) => {
 
 const rv = (o, n, r = 1.7) => o.i < n ? 0 : o.i === n ? Math.min(1, o.lp * r) : 1;
 
-Object.assign(globalThis, { ease,easeInOut,easeBack,easeElastic,springy,rv });
+/* Word-level reveal helpers — keyword-beat triggering: scene elements pop exactly when the
+ * narration speaks a keyword, not at line start. Word timing comes from talk.js line.words
+ * (tts-gen word boundaries, auto-segment emission, or phoneme alignment).
+ * IRON RULE — fallback contract: if the line has no word timing or the needle is not found,
+ * rvw degrades to plain rv(). Scenes must never break because word data is absent. */
+
+// normalize for fuzzy word matching — lowercase, strip non-letters (Thai subword tolerance)
+const wnorm = s => String(s == null ? '' : s).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '');
+
+/** Find the absolute time (seconds) of the first word in line ln matching needle.
+ * @param {object} ln - talk.js line object with optional .words [{w,t0,t1}]
+ * @param {string} needle - keyword to find; matches if either contains the other after normalization
+ * @returns {number|null} absolute seconds of word start, or null when unavailable/unmatched */
+const wordT = (ln, needle) => {
+  if (!ln || !ln.words || !ln.words.length) return null;
+  const target = wnorm(needle);
+  if (!target) return null;
+  for (const wd of ln.words) {
+    const cand = wnorm(wd.w != null ? wd.w : wd[0]);
+    if (cand && (cand.includes(target) || target.includes(cand))) return wd.t0 != null ? wd.t0 : wd[1];
+  }
+  return null;
+};
+
+/** Reveal progress keyed to a spoken keyword inside line n — same shape as rv():
+ * 0 before the word, ramps up after it, 1 once the line ends. Falls back to rv() exactly
+ * when word timing is missing or the needle is absent — scenes never break.
+ * @param {object} o - render context (.i current line index, .lp line progress 0..1, .line current line)
+ * @param {number} n - line index the reveal belongs to
+ * @param {string} needle - keyword whose spoken moment starts the reveal
+ * @param {number} [r=1.7] - ramp rate, same meaning as rv()
+ * @returns {number} progress 0..1 */
+const rvw = (o, n, needle, r = 1.7) => {
+  if (o.i !== n) return o.i < n ? 0 : 1;
+  const ln = o.line;
+  const wt = wordT(ln, needle);
+  if (wt == null || !ln || !ln.dur) return rv(o, n, r);
+  const tline = o.lp * ln.dur;              // seconds into the line
+  const woff = Math.max(0, wt - ln.t0);     // word offset within the line (seconds)
+  const remain = ln.dur - woff;
+  if (remain <= 0.001) return rv(o, n, r);
+  const wp = (tline - woff) / remain;       // word-relative progress through the remainder
+  if (wp <= 0) return 0;
+  return Math.min(1, wp * r);
+};
+
+Object.assign(globalThis, { ease,easeInOut,easeBack,easeElastic,springy,rv,wordT,rvw });
 })();

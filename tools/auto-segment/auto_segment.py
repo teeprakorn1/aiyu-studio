@@ -125,6 +125,7 @@ def main():
 
     model = None
     all_cuts = []
+    spk_words = {}
     report = []
     low_conf = []
     unmatched = []
@@ -136,6 +137,7 @@ def main():
         if model is None:
             model, lang = load_whisper(args.model, args.lang)
         words = transcribe_words(model, raws[spk], lang)
+        spk_words[spk] = words
         aligned = lib_align.align_lines(words, [ln['txt'] for ln in spk_lines])
         # realign indices: align_lines positions correspond to this speaker's line subset
         for a, ln in zip(aligned, spk_lines):
@@ -179,6 +181,20 @@ def main():
         dst = os.path.join(vo_dir, c['file'])
         slice_audio(c['src'], dst, *c['cut'])
         print(f"auto-segment: cut {c['file']}  {c['cut'][0]:.2f}–{c['cut'][1]:.2f}s  lines {c['lines'][0]}–{c['lines'][-1]}")
+
+    # wordtimes draft: whisper words inside each cut, relative to the cut file start,
+    # keyed by the group's first line — the exact schema mix-studio.py merges into talk.js
+    # for karaoke/keyword timing. Fuzzy-grade: good enough for highlight/reveal beats.
+    wt = lib_align.wordtimes_for_cuts(all_cuts, spk_words)
+    if wt:
+        wt_target = os.path.join(proj, 'story', 'wordtimes.auto.json')
+        if os.path.exists(wt_target) and not args.force:
+            print('auto-segment: wordtimes.auto.json exists — skipped (use --force)')
+        else:
+            with open(wt_target, 'w', encoding='utf-8', newline='\n') as f:
+                json.dump(wt, f, ensure_ascii=False, indent=2)
+                f.write('\n')
+            print(f'auto-segment: wrote story/wordtimes.auto.json ({len(wt)} groups timed) — rename to wordtimes.json for karaoke/keyword beats')
 
     target = os.path.join(proj, 'story', 'segments.json' if args.write else 'segments.auto.json')
     if os.path.exists(target) and not args.force:

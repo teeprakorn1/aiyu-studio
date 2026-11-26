@@ -33,6 +33,7 @@ aiyu-studio/  (repo: github.com/teeprakorn1/aiyu-studio)
 ├── tests/                the pyramid — unit (node:test + python unittest) + e2e; never scaffolded
 ├── tools/auto-segment/   optional whisper-based segments.json drafter — own dependencies, never scaffolded
 ├── tools/tts-gen/        optional multi-provider TTS synthesizer (edge/elevenlabs/gemini) — per-line vo files, exact segments, wordtimes; own dependencies, never scaffolded
+├── tools/phoneme-align/  optional wav2vec2 forced-alignment wordtiming (heavy torch deps, isolated venv) — phoneme-grade wordtimes for any voice; never scaffolded
 ├── docs/                 documentation system — topical folders, numbered files, per-folder indexes
 ├── examples/
 │   ├── active/           future productions on the current architecture (empty until first)

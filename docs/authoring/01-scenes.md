@@ -202,3 +202,18 @@ g.restore();
 Runtime files are IIFE-wrapped and expose their public API through `window`/`globalThis` (`W`, `H`, `g`, `ease`, `springy`, `personTH`, `skyStops`, `rv`, …). They do **not** create top-level lexical bindings, so copied legacy code that declares `const srnd` or `const mixHex` no longer throws a cross-script redeclaration `SyntaxError`.
 
 That does not make shadowing safe: a local `const ease`, `const srnd`, or `const personTH` in `style.js` wins inside that file and can silently change which implementation your scene uses. When copying old production code, remove duplicate helper declarations unless the copy intentionally overrides the runtime helper. Prefer the shared implementations in `core/base.js` and the optional modules.
+
+## Keyword-beat reveals: rvw()
+
+`rv(o, n)` starts every reveal at line start. When the line carries word timing (see
+dialogue-audio §6b), `rvw(o, n, needle)` starts the reveal at the moment the keyword is SPOKEN:
+
+```
+const p = rvw(o, 4, '42');         // pops exactly on the spoken figure
+if (p > 0) statCard(ctx, easeBack(p));
+```
+
+Fallback contract: missing word timing or an unmatched needle degrades to `rv(o, n)` exactly —
+scenes never break, they just become line-granular. Needles match with substring tolerance both
+directions (Thai subword chunks); repeated words hit the first occurrence. `wordT(ln, needle)`
+returns the absolute seconds for custom logic.

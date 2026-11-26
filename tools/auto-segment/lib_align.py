@@ -142,3 +142,26 @@ def segments_rows(cuts):
     rows = [[c['file'], c['lines'][0], c['lines'][-1]] for c in cuts]
     rows.sort(key=lambda r: r[1])
     return rows
+
+
+def wordtimes_for_cuts(cuts, spk_words):
+    """Collect whisper words inside each cut into the mix-studio wordtimes schema.
+
+    @param {list[dict]} cuts - cut dicts with keys lines, cut=[a,b], spk (seconds, absolute in source)
+    @param {dict[str, list[list]]} spk_words - per-speaker whisper words as [word, start, end] (seconds)
+    @returns {dict[str, list[list]]} - keyed by the group's first line number (as string),
+        values [word, start, end] relative to the cut file start (seconds) — the exact schema
+        mix-studio.py merges into talk.js for karaoke/keyword timing. Fuzzy-grade precision.
+    """
+    out = {}
+    for c in cuts:
+        words = spk_words.get(c.get('spk'))
+        if not words:
+            continue
+        a, b = c['cut']
+        inside = [[w, round(s - a, 3), round(e - a, 3)]
+                  for w, s, e in words
+                  if a <= (s + e) / 2 <= b and e > s]
+        if inside:
+            out[str(c['lines'][0])] = inside
+    return out

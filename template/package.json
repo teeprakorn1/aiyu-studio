@@ -1,6 +1,15 @@
 {
   "name": "video-project",
   "private": true,
+  "scripts": {
+    "mix": "py engine/mix-studio.py || python3 engine/mix-studio.py || python engine/mix-studio.py",
+    "stub": "py engine/mix-studio.py --stub || python3 engine/mix-studio.py --stub || python engine/mix-studio.py --stub",
+    "stills": "node engine/render.mjs stills",
+    "render": "node engine/render.mjs",
+    "publish": "node engine/publish.mjs",
+    "mux": "node engine/mux.mjs",
+    "check-subs": "node engine/measure-subs.mjs"
+  },
   "dependencies": {
     "playwright-core": "^1.63.0"
   }

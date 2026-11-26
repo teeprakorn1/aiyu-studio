@@ -1,0 +1,218 @@
+<!doctype html>
+<!--
+  preview.html — live scrubber for scene/lip-sync checking. Open directly in Chrome (file:// is fine).
+  Renders through the exact production path (same scripts as index.html) so what you see is what render.mjs captures.
+  Waveform: true narration peaks when talk.js carries `wave` (real-mode mix), otherwise synthesized from line envelopes.
+  Keys: space play/pause · ←/→ ±1s · shift+←/→ ±5s · home/end
+-->
+<html><head><meta charset="utf-8">
+<title>preview — aiyu studio</title>
+<style>
+@font-face{font-family:'Kanit';src:url('assets/fonts/Kanit-Regular.ttf');font-weight:400}
+@font-face{font-family:'Kanit';src:url('assets/fonts/Kanit-Medium.ttf');font-weight:500}
+@font-face{font-family:'Kanit';src:url('assets/fonts/Kanit-Bold.ttf');font-weight:700}
+@font-face{font-family:'Kanit';src:url('assets/fonts/Kanit-ExtraBold.ttf');font-weight:800 900}
+html,body{margin:0;height:100%;background:#0b0c10;color:#d8d4ca;font-family:'Kanit',sans-serif;overflow:hidden}
+body{display:flex;flex-direction:column}
+#stage{flex:1;display:flex;align-items:center;justify-content:center;overflow:hidden;min-height:0}
+#bar{background:#14161c;border-top:1px solid #262a35;padding:8px 14px 10px}
+#transport{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+button,select{background:#1e222c;color:#d8d4ca;border:1px solid #333949;border-radius:6px;font-family:inherit;font-size:15px;padding:3px 12px;cursor:pointer}
+button:hover,select:hover{background:#262b38}
+#playBtn{width:44px;font-size:16px}
+#time{font-variant-numeric:tabular-nums;font-size:15px;min-width:130px}
+#lineinfo{flex:1;font-size:14px;color:#9aa0ae;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#lineinfo b{color:#e8b84c;font-weight:600}
+#tl{width:100%;height:84px;display:block;cursor:crosshair;border-radius:6px;background:#0e1015}
+#hint{font-size:12px;color:#5c6270;margin-top:4px}
+#noaudio{color:#c9863c;font-size:13px;display:none}
+</style>
+</head><body>
+<div id="stage"><canvas id="c" width="1080" height="1920"></canvas></div>
+<div id="bar">
+  <div id="transport">
+    <button id="playBtn">▶</button>
+    <span id="time">0:00.0 / 0:00</span>
+    <select id="rate">
+      <option value="0.5">0.5×</option>
+      <option value="1" selected>1×</option>
+      <option value="1.5">1.5×</option>
+      <option value="2">2×</option>
+    </select>
+    <span id="noaudio">no narration.wav — clock mode (run engine/mix-studio.py in real mode for audio + true waveform)</span>
+    <span id="lineinfo"></span>
+  </div>
+  <canvas id="tl"></canvas>
+  <div id="hint">space play/pause · ←/→ ±1s · shift+←/→ ±5s · home/end · click/drag timeline to scrub</div>
+</div>
+<audio id="aud" src="narration.wav" preload="auto"></audio>
+<script src="talk.js"></script>
+<script src="story/srchips.js"></script>
+<script src="core/base.js"></script>
+<script src="core/motion.js"></script>
+<script src="core/camera.js"></script>
+<script src="features/subtitles.js"></script>
+<script src="features/character.js"></script>
+<script src="features/environment.js"></script>
+<script src="features/cards.js"></script>
+<script src="features/atmosphere.js"></script>
+<script src="features/people.js"></script>
+<script src="core/runtime.js"></script>
+<script src="story/style.js"></script>
+<script>
+'use strict';
+const DUR = TALK.dur, LINES = TALK.lines;
+const aud = document.getElementById('aud');
+const tl = document.getElementById('tl'), tlx = tl.getContext('2d');
+const stage = document.getElementById('stage');
+const tlBase = document.createElement('canvas');   // cached waveform+ticks layer, blitted per frame
+const tlb = tlBase.getContext('2d');
+let audioOk = false, playing = false, timeT = 0, lastFrameT = -1, lastTick = 0, clockRate = 1, lastLineKey = '';
+
+aud.addEventListener('canplaythrough', () => { audioOk = true; document.getElementById('noaudio').style.display = 'none'; });
+aud.addEventListener('error', () => { audioOk = false; document.getElementById('noaudio').style.display = 'inline'; });
+aud.addEventListener('ended', () => setPlaying(false));
+
+/* wave data — resampled once into 2048 uniform buckets over the timeline.
+ * real mode: TALK.wave true peaks (spans waveDur) · stub: synthesized from per-line envelopes */
+const WAVE = new Float32Array(2048);
+(function buildWave() {
+  if (TALK.wave && TALK.wave.length) {
+    const wd = TALK.waveDur || DUR;
+    for (let i = 0; i < 2048; i++) {
+      const pos = (i / 2048) * DUR / wd;
+      if (pos <= 1) WAVE[i] = TALK.wave[Math.min(TALK.wave.length - 1, Math.floor(pos * TALK.wave.length))] || 0;
+    }
+  } else for (const ln of LINES) {
+    if (!ln.env) continue;
+    const a = Math.floor(ln.t0 / DUR * 2048), b = Math.ceil((ln.t0 + ln.dur) / DUR * 2048);
+    for (let i = a; i < b && i < 2048; i++) {
+      const lt = (i / 2048 * DUR - ln.t0) / ln.dur;
+      const v = ln.env[Math.min(29, Math.floor(lt * ln.env.length))] || 0;
+      WAVE[i] = Math.max(WAVE[i], v > 0 ? v * .9 : .25);  // zero env (stub mode) still shows the line's presence
+    }
+  }
+  // normalize so quiet masters still show their shape — silence stays 0 either way
+  let mx = 0;
+  for (let i = 0; i < 2048; i++) mx = Math.max(mx, WAVE[i]);
+  if (mx > .01 && mx < .95) for (let i = 0; i < 2048; i++) WAVE[i] /= mx;
+})();
+
+function fmt(t) {
+  const m = Math.floor(t / 60), s = t - m * 60;
+  return `${m}:${s.toFixed(1).padStart(4, '0')}`;
+}
+function paintBase() {
+  const w = tl.clientWidth, h = 84, mid = 34, amp = 30, dpr = window.devicePixelRatio || 1;
+  tlBase.width = Math.round(w * dpr); tlBase.height = Math.round(h * dpr);
+  tlb.setTransform(dpr, 0, 0, dpr, 0, 0);
+  tlb.fillStyle = '#3d4d68';
+  for (let x = 0; x < w; x++) {
+    const a = Math.floor(x / w * 2048), b = Math.max(a + 1, Math.ceil((x + 1) / w * 2048));
+    let peak = 0;
+    for (let i = a; i < b && i < 2048; i++) peak = Math.max(peak, WAVE[i]);
+    if (peak > .01) tlb.fillRect(x, mid - peak * amp, 1, peak * amp * 2);
+  }
+  tlb.fillStyle = '#262a35'; tlb.fillRect(0, mid - .5, w, 1);
+  const sceneLines = new Set();
+  try { if (typeof SC !== 'undefined') for (const [till] of SC) if (till < LINES.length) sceneLines.add(till); } catch (e) { }
+  const spkCol = {}, palette = ['#e8b84c', '#6ea8e0', '#d97a8a', '#8ac98a', '#b89ae0', '#e0a06e'];
+  let pi = 0;
+  for (const ln of LINES) {
+    if (!(ln.spk in spkCol)) spkCol[ln.spk] = palette[pi++ % palette.length];
+    const x = ln.t0 / DUR * w, isScene = sceneLines.has(ln.i);
+    tlb.fillStyle = isScene ? '#e8b84c' : spkCol[ln.spk] + '66';
+    tlb.fillRect(x, h - (isScene ? 22 : 13), isScene ? 2 : 1, isScene ? 22 : 13);
+  }
+}
+function fit() {
+  const r = stage.getBoundingClientRect();
+  const s = Math.min(r.width / 1080, r.height / 1920) * .98;
+  const cv = document.getElementById('c');
+  cv.style.width = Math.round(1080 * s) + 'px';
+  cv.style.height = Math.round(1920 * s) + 'px';
+  const dpr = window.devicePixelRatio || 1, tw = tl.clientWidth;
+  if (tl.width !== Math.round(tw * dpr)) {
+    tl.width = Math.round(tw * dpr); tl.height = Math.round(84 * dpr);
+    tlx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    paintBase();
+  }
+}
+window.addEventListener('resize', fit);
+
+function drawTimeline() {
+  const w = tl.clientWidth, h = 84;
+  tlx.clearRect(0, 0, w, h);
+  tlx.drawImage(tlBase, 0, 0, w, h);
+  const px = timeT / DUR * w;
+  tlx.fillStyle = '#e05252'; tlx.fillRect(px - 1, 0, 2, h);
+  tlx.beginPath(); tlx.moveTo(px - 5, 0); tlx.lineTo(px + 5, 0); tlx.lineTo(px, 8); tlx.fill();
+}
+function lineAt(t) {
+  for (let i = 0; i < LINES.length; i++)
+    if (t >= LINES[i].t0 && t < LINES[i].t0 + LINES[i].dur) return LINES[i];
+  return null;
+}
+function syncUI() {
+  document.getElementById('time').textContent = `${fmt(timeT)} / ${fmt(DUR)}`;
+  document.getElementById('playBtn').textContent = playing ? '⏸' : '▶';
+  const ln = lineAt(timeT);
+  const key = ln ? `L${ln.i}` : '-';
+  if (key !== lastLineKey) {
+    lastLineKey = key;
+    document.getElementById('lineinfo').innerHTML = ln
+      ? `<b>L${ln.i} · ${ln.spk}</b> ${ln.txt.replace(/</g, '&lt;').slice(0, 90)}`
+      : '<b>—</b> gap / silence';
+  }
+}
+function setPlaying(v) {
+  playing = v;
+  if (audioOk) { if (v) aud.play().catch(() => { }); else aud.pause(); }
+  lastTick = performance.now();
+  syncUI();
+}
+function seek(t) {
+  timeT = Math.min(DUR, Math.max(0, t));
+  if (audioOk) aud.currentTime = timeT;
+  syncUI();
+}
+document.getElementById('playBtn').onclick = e => { setPlaying(!playing); e.target.blur(); };
+document.getElementById('rate').onchange = e => { clockRate = +e.target.value; aud.playbackRate = clockRate; };
+
+let scrubbing = false;
+function seekEvent(e) {
+  const r = tl.getBoundingClientRect();
+  seek((e.clientX - r.left) / r.width * DUR);
+}
+tl.addEventListener('pointerdown', e => { scrubbing = true; tl.setPointerCapture(e.pointerId); seekEvent(e); });
+tl.addEventListener('pointermove', e => { if (scrubbing) seekEvent(e); });
+tl.addEventListener('pointerup', () => { scrubbing = false; });
+
+window.addEventListener('keydown', e => {
+  if (e.target.tagName === 'SELECT') return;
+  if (e.code === 'Space') { e.preventDefault(); setPlaying(!playing); }
+  else if (e.key === 'ArrowLeft') seek(timeT - (e.shiftKey ? 5 : 1));
+  else if (e.key === 'ArrowRight') seek(timeT + (e.shiftKey ? 5 : 1));
+  else if (e.key === 'Home') seek(0);
+  else if (e.key === 'End') seek(DUR);
+});
+
+function tick(now) {
+  const dt = Math.min(.1, (now - lastTick) / 1000); lastTick = now;
+  if (playing) {
+    if (audioOk) timeT = Math.min(DUR, aud.currentTime);
+    else timeT = Math.min(DUR, timeT + dt * clockRate);
+    if (timeT >= DUR) setPlaying(false);
+  }
+  if (timeT !== lastFrameT) { render(timeT); lastFrameT = timeT; syncUI(); }
+  drawTimeline();
+  requestAnimationFrame(tick);
+}
+
+window.ready = document.fonts.ready.then(() => { render(0); return true; });
+fit();
+paintBase();
+syncUI();
+requestAnimationFrame(t => { lastTick = t; tick(t); });
+</script>
+</body></html>

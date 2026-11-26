@@ -37,23 +37,10 @@
 
 (() => {
 // ── Seeded randomness (deterministic, no flicker) ─────────
-const srnd = i => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
 
 // ── Color helpers ─────────────────────────────────────────
 // mix hex color a toward b by p (0..1) — the atmospheric-perspective workhorse
-function mixHex(a, b, p) {
-  const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
-  const r = Math.round(lerp(pa >> 16, pb >> 16, p));
-  const gg = Math.round(lerp((pa >> 8) & 255, (pb >> 8) & 255, p));
-  const bl = Math.round(lerp(pa & 255, pb & 255, p));
-  return `rgb(${r},${gg},${bl})`;
-}
 // hex + alpha → rgba string (passes through non-hex colors unchanged)
-function hexA(hex, a) {
-  if (!hex.startsWith('#')) return hex;
-  const v = parseInt(hex.slice(1), 16);
-  return `rgba(${v >> 16},${(v >> 8) & 255},${v & 255},${a})`;
-}
 
 // ── Sky / atmosphere / frame treatments ───────────────────
 // multi-stop vertical sky gradient, bleeds beyond camera bounds

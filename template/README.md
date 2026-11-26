@@ -13,15 +13,15 @@ This folder is the starting point of every production (copied by `py new-project
 
 ## Files you never edit
 
-- `rig.js` — all machinery: person/cam/helpers/subtitles/chips (for extra props, copy from `examples/jensen-legend/style-v4.js` into style.js)
-- `render.mjs` `publish-v4.mjs` `mux-v4.mjs` `mix_studio.py` `measure-subs.mjs` — the engine
+- `core/` + `features/` — all machinery: person/cam/helpers/subtitles/chips (for extra props, copy from `examples/legacy/jensen-legend/style-v4.js` into `story/style.js`)
+- `render.mjs` `publish.mjs` `mux.mjs` `mix-studio.py` `measure-subs.mjs` — the engine
 
 ## Optional modules (loaded by index.html)
 
-- `atmos.js` — skies, haze, hills, trees, clouds, birds, water, smoke, grain, vignette, caption scrim, label plates. Call them bare from style.js (`skyStops(...)`, `waterBody(...)`, `grainLayer()`)
-- `people.js` — `personTH(id, o)` realistic humans with characters defined in `PCH`
+- `features/atmosphere.js` — skies, haze, hills, trees, clouds, birds, water, smoke, grain, vignette, caption scrim, label plates. Call them bare from style.js (`skyStops(...)`, `waterBody(...)`, `grainLayer()`)
+- `features/people.js` — `personTH(id, o)` realistic humans with characters defined in `PCH`
 
-Both declare nothing at global scope. Copied code that redeclares their helpers, including `rv` from rig.js, shadows them silently. Details: `docs/guide-cinematic.md` and `docs/guide-scenes.md` §10–11.
+Both declare nothing at global scope. Copied code that redeclares their helpers, including `rv` from the runtime, shadows them silently. Details: `docs/authoring/03-cinematic.md` and `docs/authoring/01-scenes.md` §6 + §12.
 
 ## Scene cheatsheet (in style.js)
 
@@ -48,8 +48,8 @@ const SC = [[3, scExample], [Infinity, scEnd]];  // first scene covers lines 0�
 
 - Top: keep 0–260 px empty (footnote already sits at y≈268) — headings/cards must stay below 260
 - Bottom: last subtitle row at y≈1490, max width 840 px with 120 px side margins — nothing important below 1500
-- **Key trap:** cam() zoom shifts real positions — `actual = cy + (val − cy) × zoom`; always verify with stills. Details in `docs/guide-scenes.md`
+- **Key trap:** cam() zoom shifts real positions — `actual = cy + (val − cy) × zoom`; always verify with stills. Details in `docs/authoring/01-scenes.md`
 
 ## person() full parameters
 
-`x y scale flip back walk sit t look(-1..1) blink mood mouth pose arms` — see moods/poses in rig.js (face fn / POSE). `walk: true` alternates the legs; `sit: true` hides them
+`x y scale flip back walk sit t look(-1..1) blink mood mouth pose arms` — see moods/poses in the runtime (face fn / POSE). `walk: true` alternates the legs; `sit: true` hides them

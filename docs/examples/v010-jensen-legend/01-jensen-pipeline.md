@@ -4,12 +4,12 @@
 >
 > | In this document (original production) | Current template |
 > |---|---|
-> | `SEGMENTS` hardcoded in mix-studio.py | moved to `segments.json` — see [guide-audio.md](../../authoring/02-dialogue-audio.md) |
-> | new projects copied the jensen-legend folder | use `python new-project.py` — see [quickstart.md](../../getting-started/01-quickstart.md) |
-> | single `style-v4.js` file (rig + scenes mixed) | split into the `core/` + `features/` runtime (never edit) / `style.js` — see [guide-scenes.md](../../authoring/01-scenes.md) |
-> | filenames `index-v4.html` / `dialogue-v5.txt` | `index.html` / `dialogue.txt` |
+> | `SEGMENTS` hardcoded in mix-studio.py | moved to `story/segments.json` — see [02-dialogue-audio.md](../../authoring/02-dialogue-audio.md) |
+> | new projects copied the jensen-legend folder | use `python new-project.py` — see [01-quickstart.md](../../getting-started/01-quickstart.md) |
+> | single `style-v4.js` file (rig + scenes mixed) | split into the `core/` + `features/` runtime (never edit) / `story/style.js` — see [01-scenes.md](../../authoring/01-scenes.md) |
+> | filenames `index-v4.html` / `dialogue-v5.txt` | `index.html` / `story/dialogue.txt` |
 > | mux output in `../video/` | `final.mp4` in the project folder (`--out` to change) |
-> | bed-vs-speech check at fixed 40.4–41.4 s | opt-in: `--pause=a-b --speech=c-d` — see [qc-publish.md](../../delivery/01-qc-publish.md) |
+> | bed-vs-speech check at fixed 40.4–41.4 s | opt-in: `--pause=a-b --speech=c-d` — see [01-qc-publish.md](../../delivery/01-qc-publish.md) |
 > | — | sheet.jpg now displays vertical frames correctly (render.mjs bug fixed) |
 >
 > Everything about safe zones, the cam() zoom trap, QC, and the audio workflow applies unchanged.
@@ -60,7 +60,7 @@ video/jensen-legend-vN.mp4
 
 ### 3. Audio workflow (the heart of the system)
 
-- Voice files are **segments** covering multiple lines each (e.g. `n000-004.wav` = lines 0–4) — `SEGMENTS` in mix-studio.py must cover 0..106 contiguously, enforced by assert
+- Voice files are **segments** covering multiple lines each (e.g. `n000-004.wav` = lines 0–4) — `SEGMENTS` in mix-studio.py had to cover 0..106 contiguously (then enforced by assert; the current `segments.json` is validated with explicit errors)
 - Time within a segment distributes by character-count weighting — subtitles match speech approximately, not per-word
 - Real character voices (J/T) live in separate files `c015_J.wav` etc. so spk tags line up
 - Old voice files can be reused when their lines haven't changed — compare byte-for-byte against the older set first
@@ -100,12 +100,12 @@ Originally the narrator's envelope fed every character's mouth → characters ch
 
 ### 8. Starting a new project on this system
 
-1. Write the script as `dialogue-*.txt` in the same format, adding spk for real speaking characters
+1. Write the script as `story/dialogue.txt` in the same format, adding spk for real speaking characters
 2. Generate voices in AI Studio segment by segment (voices used: Orus=narrator, Iapetus/Charon=characters) into `vo/`
-3. Edit `segments.json` to cover 0..n-1 → run mix → check overlaps/env
-4. Write/adjust `style.js` (scenes reusable from this project; the `core/` + `features/` runtime stays untouched) — bind SC to line numbers
+3. Edit `story/segments.json` to cover 0..n-1 → `npm run mix` → check overlaps/env
+4. Write/adjust `story/style.js` (scenes reusable from this project; the `core/` + `features/` runtime stays untouched) — wire scenes to line numbers with `defineScenes()`
 5. Render stills of every scene + safe-zone lines → fix collisions before any real render (huge time saver)
-6. publish 6 chunks → mux → QC per section 6 → watch once on a real phone before publishing
+6. `npm run publish` chunks → `npm run mux` → QC per section 6 → watch once on a real phone before publishing
 
 ### 9. Legal/editorial requirements to carry into every project
 

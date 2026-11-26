@@ -2,9 +2,9 @@
 
 ## 0. Machine setup (once)
 
-- Node.js, Python 3, ffmpeg + ffprobe on PATH, Chrome **or Chromium**
+- Node.js 20+, Python 3, ffmpeg + ffprobe on PATH, Chrome **or Chromium**
 - No Chrome? Either install Chromium and set env `CHROME_PATH` to its binary, or use playwright's managed build: `npx playwright-core install chromium` (the engine falls back to it automatically). Override anytime with `--browser=path`
-- Verify: `node -v && py --version && ffmpeg -version`
+- Verify: `node -v && ffmpeg -version`, plus `py --version` on Windows or `python3 --version` on macOS/Linux
 
 ## 1. Create a project
 
@@ -13,7 +13,7 @@
 ```bash
 python new-project.py path/to/my-story
 cd path/to/my-story
-npm install        # playwright-core
+npm ci             # playwright-core from the committed lockfile
 ```
 
 You get:
@@ -44,7 +44,7 @@ If you see characters + subtitles in the sheet, everything works. Delete the dem
 
 1. **Dialogue** — `story/dialogue.txt` in `index|spk|text` format, see [02-dialogue-audio.md](../authoring/02-dialogue-audio.md)
 2. **Audio mapping** — `story/segments.json` maps voice files to line ranges
-3. **Scenes** — `story/style.js`, see [01-scenes.md](../authoring/01-scenes.md) (edit CH, write sc* functions, set SC, FOOTNOTE_TEXT)
+3. **Scenes** — `story/style.js`, see [01-scenes.md](../authoring/01-scenes.md) (register characters with `defineCharacters()`, write sc* functions, wire them with `defineScenes()`, set disclosure text with `setFootnote()`)
 4. **Source chips** — `story/srchips.js` (delete all rows if unused)
 
 ## 4. Real audio
@@ -66,16 +66,16 @@ npm run stills -- 2,8,15,22,30
 ```
 
 Review every scene in stills/: headings must sit below y≈260, nothing may collide with subtitles, chips must not overlap headings.
-**Trap:** cam() zoom shifts real positions — compute `actual = cy + (val − cy) × zoom`, see [guide-scenes.md](../authoring/01-scenes.md#safe-zone)
+**Trap:** cam() zoom shifts real positions — compute `actual = cy + (val − cy) × zoom`, see [01-scenes.md](../authoring/01-scenes.md)
 
 ## 6. Full render
 
 ```bash
-npm run publish -- --duration=<TALK.dur+1> --chunks=6 --out=v1
-# or a single range when fixing one scene: node engine/render.mjs video 0,100 --out=v1
+npm run publish -- --chunks=6 --out=v1        # duration is read from talk.js automatically
+# or a single range when fixing one scene: npm run render -- video 0,100 --out=v1
 ```
 
-(arguments after `--` pass straight through to the engine script — `npm run publish -- …` is `node engine/publish.mjs …`)
+(arguments after `--` pass straight through to the underlying engine script)
 
 ## 7. Mux with audio
 
@@ -83,7 +83,7 @@ npm run publish -- --duration=<TALK.dur+1> --chunks=6 --out=v1
 npm run mux -- --concat=out/v1concat.txt --out=final-v1.mp4   # narration.wav/bed.wav are the defaults
 ```
 
-- `--bed` is **required** — the template does not ship a music bed. Put any audio file at `bed.wav` (quiet music or silence; it is looped under the narration). See [guide-audio.md §7](../authoring/02-dialogue-audio.md).
+- `bed.wav` is **required** — the template does not ship a music bed. Put any audio file at `bed.wav` (quiet music or silence; it is looped under the narration). See [02-dialogue-audio.md](../authoring/02-dialogue-audio.md).
 - `--out` defaults to `final.mp4` in the project folder.
 - Mux normalizes to −15.5 LUFS, applies faststart, and runs ffprobe verification automatically.
 - The bed-vs-speech check runs only if you pass `--pause=a-b --speech=c-d` at real regions of your film — see [qc-publish.md](../delivery/01-qc-publish.md).

@@ -8,7 +8,7 @@
  */
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { resolvePlaywright, launchBrowser } from './lib/playwright-env.mjs';
+import { resolvePlaywright, launchBrowser, awaitPageReady } from './lib/playwright-env.mjs';
 
 /** project root — engine scripts always run from the project root (npm scripts guarantee it) */
 const ROOT = process.cwd();
@@ -19,7 +19,8 @@ const page = await browser.newPage({ viewport: { width: 1080, height: 1920 } });
 let pageError = '';
 page.on('pageerror', e => { pageError = e.message; console.error('PAGE ERROR', e.message); });
 await page.goto(pathToFileURL(path.join(ROOT, process.argv[2] ?? 'index.html')).href);
-await page.evaluate(() => window.ready);
+await awaitPageReady(page);
+if (pageError) throw new Error(`page script error: ${pageError}`);
 
 const rows = await page.evaluate(() => TALK.lines.map(line => {
   const lay = layoutSubs(line.txt);

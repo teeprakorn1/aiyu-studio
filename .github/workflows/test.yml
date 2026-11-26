@@ -30,6 +30,8 @@ jobs:
       # at the end so an image change fails here, not deep inside a test.
       - name: install ffmpeg
         run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg && ffmpeg -version | head -1 && ffprobe -version | head -1
+      - name: install locked root dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
       # npm test is the single source of truth — add new unit test files in
       # package.json only, never here.
       - name: unit tests (node + python)
@@ -53,7 +55,7 @@ jobs:
       - name: install ffmpeg
         run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg && ffmpeg -version | head -1 && ffprobe -version | head -1
       - name: install playwright cli
-        run: npm install --no-save playwright-core
+        run: npm install --no-save playwright-core@$(node -p "require('./template/package-lock.json').packages['node_modules/playwright-core'].version")
       - name: resolve playwright version (for browser cache key)
         id: pw
         run: echo "version=$(node -p "require('playwright-core/package.json').version")" >> "$GITHUB_OUTPUT"

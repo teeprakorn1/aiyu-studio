@@ -3,6 +3,8 @@
  * Part of the aiyu template runtime. Layer rules: core ← features ← story.
  */
 
+(() => {
+
 const POSE = {
   idle: [[.14, .28], [.14, .28]],
   fold: [[.16, -2.65], [.16, -2.65]],
@@ -145,8 +147,8 @@ function face(c, o) {
   }
 }
 /**
- * Draw a character defined in CH.
- * @param {string} id - key of CH (e.g. 'host')
+ * Draw a character registered with defineCharacters().
+ * @param {string} id - registered character key (e.g. 'host')
  * @param {object} o
  * @param {number} o.x - center x (feet baseline) @param {number} o.y - feet baseline y
  * @param {number} [o.scale=1] @param {number} o.t - time in seconds (drives idle bob)
@@ -159,7 +161,7 @@ function face(c, o) {
  * @param {string} [o.pose] - 'idle'|'fold'|'point'|'open' (or pass o.arms=[[a,b],[a,b]])
  */
 function person(id, o) {
-  const c = CH[id], t = o.t || 0, s = o.scale || 1, bw = c.bw || 1, bob = o.sit ? 0 : Math.sin(t * 2.1) * 3;
+  const c = characterOf(id), t = o.t || 0, s = o.scale || 1, bw = c.bw || 1, bob = o.sit ? 0 : Math.sin(t * 2.1) * 3;
   g.save(); g.translate(o.x, o.y); g.scale(o.flip ? -s : s, s);
   if (!o.sit) { g.beginPath(); g.ellipse(0, 6, 108 * bw, 18, 0, 0, 7); g.fillStyle = 'rgba(0,0,0,.22)'; g.fill(); }
   const wv = o.walk ? Math.sin(t * 7) * 24 : 0;
@@ -207,9 +209,19 @@ function person(id, o) {
 }
 
 
+function mascotPortrait(c) {
+  hairBack(c);
+  g.beginPath(); g.arc(0, 0, 98, 0, 7); g.fillStyle = c.skin; g.fill(); g.lineWidth = OW; g.strokeStyle = OL; g.stroke();
+  hairFront(c); face(c, { look: 1 });
+}
+registerPortraitRenderer(mascotPortrait);
+
 const ms = o => o.em * 1.6;
 /** Mouth openness for one character: envelope only while lines carry this spk, else 0.
  *  Always use this for lip sync — feeding o.em directly makes every character chew along.
  *  @param {string} who - single-letter speaker id matching spk in dialogue.txt
  *  @param {object} o - scene object @returns {number} 0..1 mouth openness */
 const mouthFor = (who, o) => (o.line && o.line.spk === who ? ms(o) : 0);
+
+Object.assign(globalThis, { person,mouthFor });
+})();

@@ -12,7 +12,7 @@ with something stronger than good intentions.
         ┌──────────────┐
         │   e2e  (3)   │  minutes — real scaffold, real ffmpeg renders, real browser
         ├──────────────┤
-        │  unit  (~40) │  seconds — pure logic, no browser, no renders
+        │  unit  (~70) │  seconds — pure logic, no browser, no renders
         └──────────────┘
 ```
 
@@ -33,7 +33,7 @@ named failure mode — not because coverage metrics demand it.
    `cli-args`, `loudness`, `ffmpeg`, `mp4-verify`, `chunking` are importable modules.
    Before that, the logic lived inside executable scripts and could not be imported at all.
 2. **Motion curves are pure functions** — `ease`/`springy` never touch the DOM, so they
-   run in plain Node through the eval harness.
+   run in plain Node through the load-script harness.
 3. **Classic scripts share global scope the same way script tags do** —
    `tests/helpers/load-script.mjs` reproduces that in Node, so browser runtime files can
    be tested without a browser (details in [02-unit-tests.md](02-unit-tests.md)).
@@ -44,7 +44,7 @@ named failure mode — not because coverage metrics demand it.
 
 | Not tested | Why | What covers it instead |
 |---|---|---|
-| Visual features by value (`person()`, cards, environments) | asserting pixel values of organic shapes is brittle noise — a 1px anti-alias shift is not a bug | golden stills smoke test (tolerant byte-size comparison) + the determinism hash |
+| Visual features by value (`person()`, cards, environments) | asserting pixel values of organic shapes is brittle noise — a 1px anti-alias shift is not a bug | golden stills smoke test (tolerant sampled-pixel comparison) + the determinism hash |
 | TTS voice quality | AI cannot hear language — this is written in the QC guide for a reason | human ears, every time, per [../delivery/01-qc-publish.md](../delivery/01-qc-publish.md) |
 | ffmpeg itself | we test *our usage* of it (graphs, parsing, box layout), not the tool | — |
 | Platform upload behavior | outside the system's control | the phone-watch rule in the QC checklist |

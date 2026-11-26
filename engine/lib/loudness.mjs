@@ -37,7 +37,9 @@ export function regionSpec(s, fallback) {
   const text = String(s ?? fallback).trim();
   const m = text.match(/^([0-9.]+)\s*-\s*([0-9.]+)$/);
   if (!m) throw new Error(`Invalid time region '${text}'; expected START-END`);
-  return { start: Number(m[1]), end: Number(m[2]) };
+  const start = Number(m[1]), end = Number(m[2]);
+  if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) throw new Error(`Invalid time region '${text}'; end must be greater than start`);
+  return { start, end };
 }
 
 /**

@@ -1,24 +1,29 @@
 # Guide: writing scenes in style.js
 
-`story/style.js` is the only file rewritten per project — the `core/` + `features/` runtime already contains all machinery. **Never edit core/ or features/** (if you need extra props/backgrounds, copy them from `examples/legacy/jensen-legend/style-v4.js` into your `story/style.js`)
+`story/style.js` is the main scene file rewritten per project — the `core/` + `features/` runtime already contains all machinery. **Never edit core/ or features/** (if you need extra props/backgrounds, copy them from `examples/legacy/jensen-legend/style-v4.js` into your `story/style.js`)
 
-## 1. File anatomy — 4 parts
+## 1. File anatomy — configuration and scenes
 
 ```js
-const FOOTNOTE_TEXT = '...';   // faint fine print at y≈268 (empty = hidden)
-const CH = { ... };            // character definitions
+const CH = { ... };            // mascot/presenter character definitions
+defineCharacters(CH);          // explicit runtime registration
 function scXxx(o) { ... }      // one function per scene
-const SC = [ ... ];            // which lines belong to which scene
+defineScenes([[3, scOpening], [Infinity, scXxx]]);
+setFootnote('...');            // faint fine print at y≈268 (empty = hidden)
 ```
+
+`defineCharacters()`, `defineScenes()`, `definePeople()`, `defineSourceChips()`, and `setFootnote()` are the public story-configuration API. Registration is explicit in new projects. Legacy `CH`/`SC`/`PCH` globals are still adopted as a compatibility fallback, but new work should use the registration functions directly.
 
 ## 2. The SC table — wiring scenes to the script
 
 ```js
-const SC = [[3, scOpening], [8, scTalk], [Infinity, scClosing]];
+defineScenes([[3, scOpening], [8, scTalk], [Infinity, scClosing]]);
 ```
 
 Read as: **scOpening covers lines 0–2, scTalk covers 3–7, scClosing covers 8–end**
 (each number is "the first line of the NEXT scene" — always end with Infinity)
+
+Rows must be sorted by increasing line number and end with `Infinity`; `defineScenes()` validates this loudly instead of letting a misordered table render the wrong scene.
 
 Scenes are not defined in seconds — **they bind to dialogue lines**, because line timing shifts with the real audio. Speed up the tempo and scenes shrink automatically. This is why the whole system rescales from a single parameter.
 
@@ -69,7 +74,7 @@ person('host', { x: 540, y: 1600, scale: 1, t: o.t,
 rim(540, 1600, 1, 1, 'rgba(118,185,0,.4)');   // rim light — separates character from dark backgrounds
 ```
 
-Character definitions live in CH — key fields: `hs` hairstyle (`jensen|swoop|bob|blonde|longF|pony|none`), clothing `jacket|suit+tie|blazer|dress+floral`, extras `glasses lashes earring ghost bw young`
+Character definitions are plain objects registered with `defineCharacters()` — key fields: `hs` hairstyle (`jensen|swoop|bob|blonde|longF|pony|none`), clothing `jacket|suit+tie|blazer|dress+floral`, extras `glasses lashes earring ghost bw young`
 
 ### The lip sync lesson (paid for in production)
 
@@ -194,5 +199,6 @@ g.restore();
 
 ## 12. Name collisions when copying code
 
-- the runtime (`core/` + `features/`) provides top-level names (`W`, `H`, `g`, `L`, `ease`, `springy`, …). Do not redeclare them in style.js.
-- `features/atmosphere.js`, `features/people.js`, and the runtime's `rv` declare nothing at top level (they are `window` properties). Copied code that re-declares them, such as `const srnd`, `mixHex`, `hillsLayer`, `personTH`, or `const rv`, **shadows them silently** and still runs.
+Runtime files are IIFE-wrapped and expose their public API through `window`/`globalThis` (`W`, `H`, `g`, `ease`, `springy`, `personTH`, `skyStops`, `rv`, …). They do **not** create top-level lexical bindings, so copied legacy code that declares `const srnd` or `const mixHex` no longer throws a cross-script redeclaration `SyntaxError`.
+
+That does not make shadowing safe: a local `const ease`, `const srnd`, or `const personTH` in `style.js` wins inside that file and can silently change which implementation your scene uses. When copying old production code, remove duplicate helper declarations unless the copy intentionally overrides the runtime helper. Prefer the shared implementations in `core/base.js` and the optional modules.

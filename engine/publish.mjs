@@ -10,8 +10,10 @@ import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import os from 'node:os';
-import { parseArgs } from './lib/cli-args.mjs';
+import { parseArgs, assertKnownFlags } from './lib/cli-args.mjs';
+import { readTalk } from './lib/talk.mjs';
 import { makeBoundaries, escapeConcatPath } from './lib/chunking.mjs';
+import { validateX264 } from './lib/encoding.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 /** project root — engine scripts always run from the project root (npm scripts guarantee it) */
@@ -22,7 +24,7 @@ function usage() {
   console.log(`Usage: node publish.mjs [options]
 
 Options:
-  --duration=<sec>        REQUIRED timeline end in seconds (rounded to whole seconds)
+  --duration=<sec>        Timeline end override in seconds (default: ceil(TALK.dur); ceiled to whole seconds)
   --chunks=6              Number of parallel chunks/renderer processes
   --page=index.html       Page passed through to render.mjs
   --browser=path          Chrome/Chromium binary passed through to render.mjs (env CHROME_PATH also propagates to all chunks)
@@ -30,6 +32,8 @@ Options:
   --list=<path>           Concat list output path (default out/<out>concat.txt)
   --pw-pkg=<path>         package.json whose sibling node_modules has playwright-core
   --baseline-fps=<fps>    Optional single-process baseline for true scaling/speedup report
+  --crf=20                x264 CRF passed through to every chunk
+  --preset=medium         x264 preset passed through to every chunk
   --dry-run               Print chunk commands without rendering
   --help                  Show this help
 
@@ -61,27 +65,29 @@ function attachPrefixedLines(stream, label, sink) {
 }
 
 const { flags } = parseArgs(process.argv.slice(2));
+assertKnownFlags(flags, ['duration','chunks','page','browser','out','list','pw-pkg','baseline-fps','dry-run','help','crf','preset'], 'publish.mjs');
 if (flags.help) {
   usage();
   process.exit(0);
 }
 
-if (flags.duration === undefined) { console.error('Missing required --duration=<sec> (read it from talk.js meta.totalSec)'); process.exit(1); }
-const durationArg = Number(flags.duration);
-const end = Math.round(durationArg);
-const chunks = Math.max(1, Math.floor(Number(flags.chunks ?? 6)));
+const durationArg = flags.duration === undefined ? readTalk(path.join(ROOT, 'talk.js')).dur : Number(flags.duration);
+const end = Math.ceil(durationArg);
+const chunks = Number(flags.chunks ?? 6);
 const page = String(flags.page ?? 'index.html');
 const outPrefix = String(flags.out ?? 'v1');
 const listPath = path.resolve(ROOT, String(flags.list ?? path.join('out', outPrefix + 'concat.txt')));
 const pwPkg = String(flags['pw-pkg'] ?? process.env.PW_PKG ?? path.join(ROOT, 'package.json'));
 const renderScript = path.join(here, 'render.mjs');
 
-if (!Number.isFinite(durationArg) || durationArg <= 0) throw new Error(`Invalid --duration: ${flags.duration}`);
+if (!Number.isFinite(durationArg) || durationArg <= 0) throw new Error(`Invalid --duration: ${flags.duration ?? 'missing talk.js'}`);
 if (!Number.isFinite(end) || end < chunks) throw new Error(`Need at least one whole second per chunk (end=${end}, chunks=${chunks})`);
-if (outPrefix.includes('/') || outPrefix.includes('\\')) throw new Error('--out must be a file-name prefix, not a path');
+if (!outPrefix || outPrefix.includes('/') || outPrefix.includes('\\')) throw new Error('--out must be a file-name prefix, not a path');
 if (!existsSync(renderScript)) throw new Error(`render.mjs not found at ${renderScript}`);
 if (!existsSync(pwPkg)) throw new Error(`playwright package.json not found: ${pwPkg}`);
 
+if (!Number.isInteger(chunks) || chunks < 1) throw new Error(`Invalid --chunks: ${flags.chunks}`);
+const encoding = validateX264(flags.crf ?? 20, flags.preset ?? 'medium');
 const bounds = makeBoundaries(end, chunks);
 const jobs = [];
 for (let k = 0; k < chunks; k++) {
@@ -98,7 +104,7 @@ for (let k = 0; k < chunks; k++) {
     output,
     relOutput: path.relative(ROOT, output).replaceAll('\\', '/'),
     frames: Math.round((to - from) * FPS),
-    args: [renderScript, 'video', range, `--page=${page}`, `--out=${outPrefix}`, ...(flags.browser ? [`--browser=${flags.browser}`] : [])],
+    args: [renderScript, 'video', range, `--page=${page}`, `--out=${outPrefix}`, ...(flags.browser ? [`--browser=${flags.browser}`] : []), `--crf=${encoding.crf}`, `--preset=${encoding.preset}`],
   });
 }
 

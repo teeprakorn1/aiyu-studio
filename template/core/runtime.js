@@ -3,8 +3,23 @@
  * Part of the aiyu template runtime. Layer rules: core ← features ← story.
  */
 
+(() => {
+
+
+let legacyAdopted = false;
+function adoptLegacyConfig() {
+  if (legacyAdopted) return;
+  legacyAdopted = true;
+  const st = runtimeConfig();
+  if (!Object.keys(st.characters).length && typeof CH !== 'undefined') defineCharacters(CH);
+  if (typeof PCH !== 'undefined') definePeople(PCH);
+  if (!st.scenes && typeof SC !== 'undefined') defineScenes(SC);
+  if (!st.sourceChips.length && typeof SRCCHIPS !== 'undefined') defineSourceChips(SRCCHIPS);
+  if (!st.footnote && typeof FOOTNOTE_TEXT !== 'undefined') setFootnote(FOOTNOTE_TEXT);
+}
+
 function sourceChips(o) {
-  const rows = typeof SRCCHIPS !== 'undefined' && Array.isArray(SRCCHIPS) ? SRCCHIPS : [];
+  const rows = runtimeConfig().sourceChips;
   if (!rows.length) return;
   const active = rows.filter(r => Array.isArray(r) && o.i >= r[0] && o.i <= r[1] && r[2]).slice(0, 2);
   if (!active.length) return;
@@ -29,20 +44,22 @@ function sourceChips(o) {
     g.restore();
   });
 }
-// footnote — set text in style.js via const FOOTNOTE_TEXT = '...' (empty = hidden)
+// footnote — set text in story/style.js via setFootnote() (empty = hidden)
 function footnote() {
-  const txt = typeof FOOTNOTE_TEXT !== 'undefined' ? FOOTNOTE_TEXT : '';
+  const txt = runtimeConfig().footnote;
   if (!txt) return;
   TXT(txt, W / 2, 268, 22, 'rgba(255,255,255,.42)', 'center', 500);
 }
 
-// generic shot/render — SC comes from style.js: [[nextSceneFirstLine, sceneFn], ...] sorted ascending, ending with Infinity
+// generic shot/render — scenes come from defineScenes(): [[nextSceneFirstLine, sceneFn], ...] sorted ascending, ending with Infinity
 function shot(t) {
   let li = 0, lp = 0, line = null, inside = false;
   for (let i = 0; i < L.length; i++) {
     if (t >= L[i].t0 && t < L[i].t0 + L[i].dur) { li = i; line = L[i]; lp = (t - L[i].t0) / L[i].dur; inside = true; break; }
     if (t >= L[i].t0) { li = i; line = L[i]; lp = 1; }
   }
+  const SC = runtimeConfig().scenes;
+  if (!SC) throw new Error('no scenes registered — call defineScenes() in story/style.js');
   const k = SC.findIndex(([till]) => li < till);
   const from = k === 0 ? 0 : SC[k - 1][0];
   const g0 = L[from].t0, g1 = SC[k][0] < L.length ? L[SC[k][0]].t0 : TALK.dur;
@@ -51,6 +68,7 @@ function shot(t) {
   return { t, p, i: li, lp, line, em, fn: SC[k][1] };
 }
 function render(t) {
+  adoptLegacyConfig();
   g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
   g.__t = t;
   const s = shot(t);
@@ -59,3 +77,6 @@ function render(t) {
   subs(s);
   footnote();
 }
+
+Object.assign(globalThis, { sourceChips,footnote,shot,render });
+})();

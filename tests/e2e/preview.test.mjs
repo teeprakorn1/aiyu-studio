@@ -4,30 +4,24 @@
  */
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
 import { existsSync, rmSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { run, npmInstall, npmRun, PY } from '../helpers/proc.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.join(here, '..', '..');
 const PROJ = path.join(here, '.tmp-preview');
-const PY = process.env.PYTHON || 'py';
-const NPM = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-
-function run(cmd, args, cwd = PROJ) {
-  return execFileSync(cmd, args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
-}
 
 let browser, page, errors;
 
 before(async function () {
   rmSync(PROJ, { recursive: true, force: true });
   run(PY, [path.join(REPO, 'new-project.py'), PROJ], REPO);
-  execFileSync(NPM, ['install', '--no-fund', '--no-audit', '--silent'], { cwd: PROJ, shell: true, stdio: 'ignore' });
-  run(PY, ['engine/mix-studio.py', '--stub']);
+  npmInstall(PROJ);
+  npmRun('stub', [], PROJ);
   const require = createRequire(path.join(PROJ, 'package.json'));
   const { chromium } = require('playwright-core');
   for (const opts of [{ channel: 'chrome' }, {}, { channel: 'chromium' }]) {
@@ -67,6 +61,25 @@ test('video canvas paints non-black content', async () => {
     return n;
   });
   assert.ok(lit > 100, `canvas too dark: ${lit}`);
+});
+
+
+test('optional atmosphere and people modules execute real drawing paths', async () => {
+  const lit = await page.evaluate(() => {
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+    skyStops([[0, '#182638'], [.6, '#5d4a38'], [1, '#151820']]);
+    waterBody(1220, '#263c48', '#091018');
+    ripples(1240, 1650, 2.5);
+    personTH('merchant', { x: 540, y: 1500, scale: .65, t: 2, walk: true, look: 1 });
+    grainLayer(.02);
+    const d = g.getImageData(0, 0, W, H).data;
+    let n = 0;
+    for (let i = 0; i < d.length; i += 4000) if (d[i] + d[i + 1] + d[i + 2] > 60) n++;
+    render(0);
+    return n;
+  });
+  assert.ok(lit > 100, `optional module scene too dark: ${lit}`);
 });
 
 test('waveform layer painted on timeline', async () => {

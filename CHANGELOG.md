@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-11-26
+
+Bugfix and hardening release — no intentional visual output changes; determinism and golden stills remain green.
+
+### Added
+
+- Runtime registry in `core/registry.js` (`defineCharacters()`, `defineScenes()`, `definePeople()`, `defineSourceChips()`, `setFootnote()`) — explicit story configuration replacing hidden globals; legacy `CH`/`SC`/`PCH` globals still work as a compatibility fallback
+- Committed root and template `package-lock.json` — scaffolded projects install with `npm ci`; CI uses the locked Playwright version
+- `engine/run-py.mjs` cross-platform Python launcher, `engine/lib/encoding.mjs` x264 validation, `engine/lib/talk.mjs` safe talk parsing, `engine/lib/mix_audio.py` importable audio helpers
+
+### Changed
+
+- Runtime files are IIFE-wrapped with explicit `globalThis` exports — no more cross-script lexical redeclaration crashes, still classic-script `file://` compatible
+- `publish.mjs` reads duration from `talk.js` automatically (ceiled); `--duration` is now just an override
+- e2e tests exercise the real npm-script interface; golden comparison uses pixel drift instead of JPEG byte size
+
+### Fixed
+
+- `publish` referenced nonexistent `meta.totalSec`, rounded duration down (truncating the ending), silently dropped `--crf`, and accepted invalid chunk counts/unknown flags
+- `render` lacked `--help` and input validation, ignored ffmpeg exit codes, and could report success on missing/empty output
+- `mix-studio.py` used asserts and silent failures for malformed dialogue, bad segment coverage, invalid settings, and voice path traversal; generated `talk.js` could break out of its script tag on `</script>` in dialogue
+- `mux` accepted invalid loudness/encoding values and inverted verification regions; ffmpeg stderr capture was uncapped
+- `preview.html` injected dialogue via `innerHTML`; character/personTH resolution was coupled through hidden globals
+
+
 ## [0.3.0] - 2026-11-26
 
 Architecture release — engine and template restructured into testable layers, plus live preview, spring motion, Chromium support, and a full test pyramid. **Breaking for scaffolded projects** — see Upgrading.
@@ -91,7 +116,8 @@ First public release — extracted from the real production of `jensen-legend` (
 - `examples/jensen-legend/` reference implementation (code only)
 
 
-[Unreleased]: https://github.com/teeprakorn1/aiyu-studio/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/teeprakorn1/aiyu-studio/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/teeprakorn1/aiyu-studio/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/teeprakorn1/aiyu-studio/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/teeprakorn1/aiyu-studio/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/teeprakorn1/aiyu-studio/releases/tag/v0.1.0

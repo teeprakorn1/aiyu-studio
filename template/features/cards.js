@@ -3,24 +3,24 @@
  * Part of the aiyu template runtime. Layer rules: core ← features ← story.
  */
 
+(() => {
+
 /**
  * Caption card with a small character portrait — for introducing people.
  * @param {number} x @param {number} y @param {number} w
- * @param {string} id - CH character id for the portrait
+ * @param {string} id - registered character id for the portrait
  * @param {string} cap - name text @param {string} sub - subtitle/role @param {number} [p=1]
  */
 function nameCard(x, y, w, id, cap, sub, p = 1) {
   const e = ease(p); if (!e) return;
-  const h = w * 1.34, c = CH[id];
+  const h = w * 1.34, c = characterOf(id);
   g.save(); g.translate(x, y); g.rotate(.045); const sp = springy(p); g.scale(sp, sp); g.globalAlpha = e;
   g.shadowColor = 'rgba(0,0,0,.4)'; g.shadowBlur = 20; g.shadowOffsetY = 8;
   RRECT(-w / 2, -h / 2, w, h, 12, '#f4f1ea'); g.shadowColor = 'transparent';
   g.save(); g.beginPath(); g.roundRect(-w / 2 + 18, -h / 2 + 18, w - 36, w * .8, 8); g.clip();
   g.fillStyle = '#24303a'; g.fillRect(-w / 2 + 18, -h / 2 + 18, w - 36, w * .8);
   g.translate(0, -h / 2 + w * .66); g.scale(.52, .52);
-  hairBack(c);
-  g.beginPath(); g.arc(0, 0, 98, 0, 7); g.fillStyle = c.skin; g.fill(); g.lineWidth = OW; g.strokeStyle = OL; g.stroke();
-  hairFront(c); face(c, { look: 1 });
+  runtimeConfig().portrait(c);
   g.restore();
   g.beginPath(); g.roundRect(-w / 2 + 18, -h / 2 + 18, w - 36, w * .8, 8); g.lineWidth = 6; g.strokeStyle = OL; g.stroke();
   TXT(cap, 0, h / 2 - 82, 38, '#2a2420');
@@ -115,3 +115,5 @@ function chartCard(x, y, w, h, pts, col, label, labCol = '#e8dede') {
   TXT(label, x, y + h / 2 - 30, 34, labCol, 'center', 800);
 }
 
+Object.assign(globalThis, { nameCard,newsCard,emailCard,quoteCard,pop,chip,chartCard });
+})();

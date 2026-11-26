@@ -3,9 +3,12 @@
  * Part of the aiyu template runtime. Layer rules: core ← features ← story.
  */
 
+(() => {
+
 const W = 1080, H = 1920, OL = '#1d1a17', OW = 9;
-const g = document.getElementById('c').getContext('2d');
-const L = TALK.lines;
+const canvas = typeof document !== 'undefined' ? document.getElementById('c') : null;
+const g = canvas ? canvas.getContext('2d') : null;
+const L = typeof TALK !== 'undefined' ? TALK.lines : [];
 const FONT = '"Kanit","Leelawadee UI",sans-serif';
 const SUB_FRAME_MAX = 840, SUB_PAD_X = 24, SUB_STROKE = 10, SUB_TEXT_MAX = SUB_FRAME_MAX - SUB_PAD_X * 2 - SUB_STROKE;
 const SUB_BASE = 52, SUB_MIN = 40, SUB_MAX_ROWS = 3;
@@ -43,3 +46,6 @@ function hexA(hex, a) {
   const v = parseInt(hex.slice(1), 16);
   return `rgba(${v >> 16},${(v >> 8) & 255},${v & 255},${a})`;
 }
+
+Object.assign(globalThis, { W,H,OL,OW,g,L,FONT,SUB_FRAME_MAX,SUB_PAD_X,SUB_STROKE,SUB_TEXT_MAX,SUB_BASE,SUB_MIN,SUB_MAX_ROWS,clamp01,lerp,SEG_WORD,SEG_GRAPH,PATH,SHAPE,CIRC,LIMB,LINE,RRECT,TXT,srnd,mixHex,hexA });
+})();

@@ -5,7 +5,7 @@
 **Video-as-code สำหรับสารคดีแนวตั้ง** — เขียนฉากด้วย JavaScript พากย์ด้วย TTS แล้วเรนเดอร์วิดีโอ 1080×1920 พร้อมลง Reels & TikTok โดยไม่ต้องเปิดโปรแกรมตัดต่อ ไม่ต้องไล่ไทม์ไลน์ ไม่ต้องซิงก์ซับมือ
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.3.0-blue.svg?style=for-the-badge)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.3.1-blue.svg?style=for-the-badge)](CHANGELOG.md)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg?style=for-the-badge)](#ความต้องการระบบ)
 
 <table>
@@ -55,11 +55,11 @@
   python new-project.py my-story ............ scaffold ครั้งเดียวต่อเรื่อง
           |
           v
-  [1] อินพุต (ทั้งหมดใน story/) ....................... ส่วนที่คุณเขียน
-          dialogue.txt ....... บทพูด บรรทัดละ cue พร้อมรหัสผู้พูด
-          segments.json ...... กลุ่ม ไฟล์เสียง → ช่วงบรรทัด + tempo รวม
-          style.js ........... ฉากเป็นโค้ด canvas บน core/ + features/
-          vo/*.wav + bed.wav . เสียงพากย์ + เพลงประกอบ (mux ใช้)
+  [1] อินพุต ......................................... ส่วนที่คุณเขียน
+          story/dialogue.txt ... บทพูด บรรทัดละ cue พร้อมรหัสผู้พูด
+          story/segments.json .. กลุ่ม ไฟล์เสียง → ช่วงบรรทัด + tempo รวม
+          story/style.js ....... ฉากเป็นโค้ด canvas บน core/ + features/
+          vo/*.wav + bed.wav ... เสียงพากย์ + เพลงประกอบ อยู่ที่ root โปรเจกต์
           |
           v
   [2] TIMING BACKBONE ...................... npm run stub / npm run mix
@@ -71,7 +71,7 @@
           stills/sheet.jpg ... เช็กเลย์เอาต์ก่อนเสียเวลาเรนเดอร์จริง
           |
           v
-  [4] เรนเดอร์ขนาน ......................... npm run publish -- --duration=N
+  [4] เรนเดอร์ขนาน ......................... npm run publish -- --chunks=N
           out/v1_*.mp4 ....... browser headless N ตัว คนละช่วงเวลา
           |
           v
@@ -91,7 +91,7 @@
 ```bash
 python new-project.py path/to/my-story   # scaffold โปรเจกต์ใหม่
 cd path/to/my-story
-npm install                              # playwright-core
+npm ci                                   # playwright-core (locked)
 npm run stub                             # timing ประมาณการ — ยังไม่ต้องมีเสียง
 npm run stills -- 1,5,10                 # แล้วเปิด stills/sheet.jpg
 ```
@@ -102,9 +102,9 @@ npm run stills -- 1,5,10                 # แล้วเปิด stills/sheet
 
 ## 📋 ความต้องการระบบ
 
-- **Node.js** · **Python 3** · **ffmpeg** + **ffprobe** บน PATH
+- **Node.js 20+** · **Python 3** · **ffmpeg** + **ffprobe** บน PATH
 - **Chrome หรือ Chromium** — engine ลอง Chrome ที่ติดตั้งไว้ก่อน ตามด้วย headless shell ของ playwright แล้วจึง chromium build เต็ม (`npx playwright-core install chromium`) หรือชี้ binary เองด้วย env `CHROME_PATH` / `--browser=path`
-- `playwright-core` — ติดตั้งผ่าน `npm install` ในโฟลเดอร์โปรเจกต์แต่ละเรื่อง
+- `playwright-core` — ติดตั้งด้วย `npm ci` ในโฟลเดอร์โปรเจกต์แต่ละเรื่อง
 
 ## 📚 เอกสาร
 
@@ -127,7 +127,7 @@ npm run stills -- 1,5,10                 # แล้วเปิด stills/sheet
 
 ## 🧭 หลักการหลัก
 
-1. **ทุกอย่างสืบจาก `talk.js`** — ห้ามแก้มือเด็ดขาด ให้รัน `mix-studio.py` ใหม่เสมอ
+1. **ทุกอย่างสืบจาก `talk.js`** — ห้ามแก้มือเด็ดขาด ให้รัน mix ใหม่เสมอ (`npm run mix` / `npm run stub`)
 2. **scrub ใน `preview.html` ก่อน แล้วยืนยันด้วยภาพนิ่งก่อนเรนเดอร์จริงทุกครั้ง** — cam() zoom ทำตำแหน่งบนจอขยับ
 3. **ห้ามทับวิดีโอเวอร์ชันเก่า** — เลื่อน v1/v2/v3 เสมอ
 4. **ห้าม commit มีเดีย** — vo/*.wav, out/, *.mp4 ถูกคุมโดย .gitignore แล้ว
@@ -138,7 +138,7 @@ npm run stills -- 1,5,10                 # แล้วเปิด stills/sheet
 ├── new-project.py            # scaffold โปรเจกต์คำสั่งเดียว
 ├── engine/                   # สคริปต์ pipeline (thin shells) + lib/ (logic รวมทั้งหมด)
 ├── template/                 # โครงเรื่องที่ผู้ใช้ได้รับ
-│   ├── core/                 #   runtime kernel — primitives, motion, camera (ห้ามแก้)
+│   ├── core/                 #   runtime kernel — primitives, registry, motion, camera (ห้ามแก้)
 │   ├── features/             #   character/subtitles/environment/cards/atmosphere/people (ห้ามแก้)
 │   ├── story/                #   ส่วนที่เขียนเอง: style.js, dialogue.txt, segments.json, srchips.js
 │   ├── preview.html          #   live scrubber — ไม่ต้องมี server

@@ -23,3 +23,17 @@ export function parseArgs(argv) {
   }
   return { flags, pos };
 }
+
+/**
+ * Reject unknown CLI flags with a deterministic error.
+ *
+ * @param {Object<string, string|true>} flags - parsed flags
+ * @param {string[]} allowed - allowed flag names without leading dashes
+ * @param {string} script - script name for the error message
+ * @returns {void}
+ */
+export function assertKnownFlags(flags, allowed, script) {
+  const ok = new Set(allowed);
+  const bad = Object.keys(flags).filter(k => !ok.has(k));
+  if (bad.length) throw new Error(`${script}: unknown flag(s): ${bad.map(k => '--' + k).join(', ')}`);
+}

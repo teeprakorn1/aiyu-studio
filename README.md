@@ -5,7 +5,7 @@
 **Video-as-code for vertical documentaries.** Write scenes in JavaScript, narrate with TTS, and render publish-ready 1080×1920 videos for Reels & TikTok — no video editor, no timeline scrubbing, no manual subtitle sync.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.3.0-blue.svg?style=for-the-badge)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.3.1-blue.svg?style=for-the-badge)](CHANGELOG.md)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg?style=for-the-badge)](#requirements)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge)](#contributing)
 
@@ -56,11 +56,11 @@ Vertical documentaries are repetitive to produce: sync subtitles by hand, resize
   python new-project.py my-story ............ scaffold once per story
           |
           v
-  [1] INPUTS (all in story/) .......................... you write this
-          dialogue.txt ....... script, one cue per line, with speaker ids
-          segments.json ...... voice file -> line range groups + global tempo
-          style.js ........... scenes as canvas code over core/ + features/
-          vo/*.wav + bed.wav . voice takes + music bed (mux input)
+  [1] INPUTS .................................. you write this
+          story/dialogue.txt ... script, one cue per line, with speaker ids
+          story/segments.json .. voice file -> line range groups + global tempo
+          story/style.js ....... scenes as canvas code over core/ + features/
+          vo/*.wav + bed.wav ... voice takes + music bed, at project root
           |
           v
   [2] TIMING BACKBONE ...................... npm run stub / npm run mix
@@ -72,7 +72,7 @@ Vertical documentaries are repetitive to produce: sync subtitles by hand, resize
           stills/sheet.jpg ... verify layout BEFORE burning render time
           |
           v
-  [4] PARALLEL RENDER ...................... npm run publish -- --duration=N
+  [4] PARALLEL RENDER ...................... npm run publish -- --chunks=N
           out/v1_*.mp4 ....... N headless browsers, disjoint timeline chunks
           |
           v
@@ -92,7 +92,7 @@ Vertical documentaries are repetitive to produce: sync subtitles by hand, resize
 ```bash
 python new-project.py path/to/my-story   # scaffold a new project
 cd path/to/my-story
-npm install                              # playwright-core
+npm ci                                   # playwright-core (locked)
 npm run stub                             # estimated timing — no audio needed yet
 npm run stills -- 1,5,10                 # then open stills/sheet.jpg
 ```
@@ -103,9 +103,9 @@ If the sheet shows characters and subtitles, the pipeline works — or open `pre
 
 ## 📋 Requirements
 
-- **Node.js** · **Python 3** · **ffmpeg** + **ffprobe** on PATH
+- **Node.js 20+** · **Python 3** · **ffmpeg** + **ffprobe** on PATH
 - **Chrome or Chromium** — the engine tries installed Chrome first, then playwright's headless shell, then the full chromium build (`npx playwright-core install chromium`); override anytime with env `CHROME_PATH` or `--browser=path`
-- `playwright-core` — installed via `npm install` in each project folder
+- `playwright-core` — installed with `npm ci` in each project folder
 
 ## 📚 Documentation
 
@@ -128,7 +128,7 @@ If the sheet shows characters and subtitles, the pipeline works — or open `pre
 
 ## 🧭 Core principles
 
-1. **Everything derives from `talk.js`** — never hand-edit it; always re-run `mix-studio.py`
+1. **Everything derives from `talk.js`** — never hand-edit it; always re-run the mix (`npm run mix` / `npm run stub`)
 2. **Scrub in `preview.html` first, verify with stills before every real render** — cam() zoom shifts on-screen positions
 3. **Never overwrite older video versions** — always increment v1/v2/v3
 4. **Never commit media** — vo/*.wav, out/, *.mp4 are covered by .gitignore
@@ -139,7 +139,7 @@ If the sheet shows characters and subtitles, the pipeline works — or open `pre
 ├── new-project.py            # one-command project scaffolding
 ├── engine/                   # pipeline scripts (thin shells) + lib/ (all shared logic)
 ├── template/                 # the project skeleton users receive
-│   ├── core/                 #   runtime kernel — primitives, motion, camera (never edit)
+│   ├── core/                 #   runtime kernel — primitives, registry, motion, camera (never edit)
 │   ├── features/             #   character/subtitles/environment/cards/atmosphere/people (never edit)
 │   ├── story/                #   author inputs: style.js, dialogue.txt, segments.json, srchips.js
 │   ├── preview.html          #   live scrubber — no server needed

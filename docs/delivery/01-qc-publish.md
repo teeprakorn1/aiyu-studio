@@ -36,7 +36,7 @@
 
 1. **Tick "AI-generated content" during upload** — both Meta and TikTok require disclosure of synthetic media; skipping risks distribution limits or takedown
 2. **The caption must state** that visuals/characters are simulated + character voices are synthetic (when imitating real people)
-3. The in-video footnote (`FOOTNOTE_TEXT`) — never remove it; it's your disclosure evidence inside the media itself
+3. The in-video footnote (registered with `setFootnote()`) — never remove it; it's your disclosure evidence inside the media itself
 4. Real-person stories: unverified allegations must be phrased as "reported/unverified" in the script itself, not just in disclaimers
 
 ### Final check before publishing — on a real phone only

@@ -47,8 +47,8 @@ button:hover,select:hover{background:#262b38}
 </div>
 <audio id="aud" src="narration.wav" preload="auto"></audio>
 <script src="talk.js"></script>
-<script src="story/srchips.js"></script>
 <script src="core/base.js"></script>
+<script src="core/registry.js"></script>
 <script src="core/motion.js"></script>
 <script src="core/camera.js"></script>
 <script src="features/subtitles.js"></script>
@@ -58,6 +58,7 @@ button:hover,select:hover{background:#262b38}
 <script src="features/atmosphere.js"></script>
 <script src="features/people.js"></script>
 <script src="core/runtime.js"></script>
+<script src="story/srchips.js"></script>
 <script src="story/style.js"></script>
 <script>
 'use strict';
@@ -115,7 +116,7 @@ function paintBase() {
   }
   tlb.fillStyle = '#262a35'; tlb.fillRect(0, mid - .5, w, 1);
   const sceneLines = new Set();
-  try { if (typeof SC !== 'undefined') for (const [till] of SC) if (till < LINES.length) sceneLines.add(till); } catch (e) { }
+  try { const sc = runtimeConfig().scenes || (typeof SC !== 'undefined' ? SC : []); for (const [till] of sc) if (till < LINES.length) sceneLines.add(till); } catch (e) { }
   const spkCol = {}, palette = ['#e8b84c', '#6ea8e0', '#d97a8a', '#8ac98a', '#b89ae0', '#e0a06e'];
   let pi = 0;
   for (const ln of LINES) {
@@ -160,9 +161,11 @@ function syncUI() {
   const key = ln ? `L${ln.i}` : '-';
   if (key !== lastLineKey) {
     lastLineKey = key;
-    document.getElementById('lineinfo').innerHTML = ln
-      ? `<b>L${ln.i} · ${ln.spk}</b> ${ln.txt.replace(/</g, '&lt;').slice(0, 90)}`
-      : '<b>—</b> gap / silence';
+    const el = document.getElementById('lineinfo');
+    el.textContent = '';
+    const b = document.createElement('b');
+    b.textContent = ln ? `L${ln.i} · ${ln.spk}` : '—';
+    el.append(b, document.createTextNode(ln ? ' ' + ln.txt.slice(0, 90) : ' gap / silence'));
   }
 }
 function setPlaying(v) {

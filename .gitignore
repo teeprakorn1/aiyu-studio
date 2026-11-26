@@ -31,7 +31,7 @@
 *.orig
 
 # ── GENERATED — always rebuildable, never stored ────────────────────
-# timing backbone — rebuild with: py mix_studio.py
+# timing backbone — rebuild with: npm run mix (or npm run stub)
 talk.js
 # render chunks + cues.json
 out/

@@ -3,6 +3,8 @@
  * Part of the aiyu template runtime. Layer rules: core ← features ← story.
  */
 
+(() => {
+
 const SUB_CACHE = new Map();
 /** Split subtitle text into wrappable units. Punctuation-only units merge into the
  *  preceding word so no row ever starts with a bare "," or "." — applies to all languages. */
@@ -101,3 +103,6 @@ function subs(o) {
 /** Line-scoped reveal progress: 0 before line n, ramps 0→1 during line n, stays 1 after.
  *  Use for any element that appears at a line and must NOT re-animate on later lines —
  *  feeding o.lp directly re-triggers the animation every time the narration advances. */
+
+Object.assign(globalThis, { layoutSubs,subs });
+})();

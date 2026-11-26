@@ -6,16 +6,19 @@ Fast, deterministic, no browser, no video renders. Run with `npm test` (node + p
 
 | File | Covers | Representative cases |
 |---|---|---|
-| `cli-args.test.mjs` | `lib/cli-args.mjs` `parseArgs` — the one CLI parser shared by every engine script | `--key=value` and `--key value` forms, boolean flags, positional collection, `--key value` must consume the next token so it is never mistaken for a positional |
-| `loudness.test.mjs` | `lib/loudness.mjs` — the ffmpeg filter-graph builders and measurement parsers | loudnorm JSON extraction from noisy stderr (including failure with tail context), `regionSpec` whitespace variants + rejection of malformed input, first-pass vs final audio graph shape, limiter/bed-gain presence, floating-noise trimming in duration formatting |
-| `ffmpeg.test.mjs` | `lib/ffmpeg.mjs` + `lib/mp4-verify.mjs` | `parseRational` on ffmpeg fractional rates (`30000/1001`), `shellQuote` safety, and `scanMp4Boxes` proving moov-before-mdat on a **real faststart mp4 fixture** (built with actual ffmpeg in a temp dir during the test) |
-| `motion.test.mjs` | `core/motion.js` — every easing curve | finite output across all of [0,1] (no NaN ever), exact endpoints, monotonicity where required, `easeBack`/`springy` overshoot-then-settle exactly at 1, parameter sensitivity, and **purity** — same input, same output, always |
+| `cli-args.test.mjs` | `lib/cli-args.mjs` `parseArgs` — the one CLI parser shared by every engine script | `--key=value` and `--key value` forms, boolean flags, positional collection, `--key value` consumes the next token so it is never mistaken for a positional |
+| `engine-cli.test.mjs` | engine CLI behavior that can be tested without rendering | `publish` reads duration from `talk.js`, ceilings overrides, forwards encoding flags, rejects unknown flags; `render` rejects invalid modes, malformed time specs, output paths, and encoding flags before browser launch |
+| `loudness.test.mjs` | `lib/loudness.mjs` — ffmpeg filter-graph builders and measurement parsers | loudnorm JSON extraction from noisy stderr (including failure with tail context), `regionSpec` whitespace variants + rejection of malformed/inverted input, first-pass vs final audio graph shape, limiter/bed-gain presence, floating-noise trimming |
+| `ffmpeg.test.mjs` | `lib/ffmpeg.mjs` + `lib/mp4-verify.mjs` | nonzero process propagation with stderr tail, stderr capture cap, `parseRational` on ffmpeg fractional rates, `shellQuote` safety, and `scanMp4Boxes` proving moov-before-mdat on a **real faststart mp4 fixture** built in a temp dir |
+| `motion.test.mjs` | `core/motion.js` — every easing curve plus reveal behavior | finite output across [0,1] (no NaN ever), exact endpoints, monotonicity where required, `easeBack`/`springy` overshoot-then-settle exactly at 1, parameter sensitivity, and purity |
+| `runtime-registry.test.mjs` | the explicit runtime configuration API | character/people registration, unknown-id errors, scene-table shape/order/`Infinity` validation, source chips and footnote registration, portrait-renderer registration |
+| `architecture.test.mjs` | static guardrails for layer direction and module shape | cards do not depend on character internals or story globals, cast resolution goes through the registry, core/features are IIFE-wrapped with explicit `globalThis` exports |
 
 ## Python tests (`unittest` — stdlib only)
 
 | File | Covers |
 |---|---|
-| `mix_studio_test.py` | `wave_peaks` / `trim_edges` from `mix-studio.py` — the audio math behind the waveform and silence trimming, exercised on **synthetic PCM generated inside the test** |
+| `mix_studio_test.py` | importable pure functions in `engine/lib/mix_audio.py`: waveform peak extraction, silence trimming, dialogue validation, tempo/gap validation, voice filename/path traversal rejection, safe talk.js script serialization — exercised on synthetic PCM generated inside the test |
 
 **Rule: never commit real audio fixtures.** Voice material is large, copyrighted-adjacent,
 and unnecessary — synthetic PCM with known amplitude envelopes tests the math better
@@ -24,18 +27,14 @@ because the expected values are computable exactly.
 ## The load-script harness (`tests/helpers/load-script.mjs`)
 
 The browser runtime is deliberately **classic scripts, not ES modules** — ES modules
-cannot load over `file://`, and preview.html must work by double-clicking. But classic
-scripts cannot be `import`ed in Node either.
-
-The harness reproduces what script tags do: it evaluates the file's source in a shared
-context, so top-level `const`/`function` declarations land in the same lexical scope the
-browser would give them — including cross-file visibility when several files are loaded
-in order. This is what lets `motion.test.mjs` call `springy()` directly and assert on
-`rv()`'s line-scoped reveal behavior.
+cannot load over `file://`, and preview.html must work by double-clicking. Runtime files
+are IIFE-wrapped and export through `globalThis`, so the harness concatenates the same
+files inside one function and captures the exported names. This reproduces the browser's
+shared classic-script visibility closely enough for logic-only tests that do not touch
+the DOM.
 
 ```
-loadScript('template/core/base.js')   // primitives first — same order as index.html
-loadScript('template/core/motion.js') // now ease/springy/rv exist in the shared scope
+loadScripts(['core/base.js', 'core/motion.js'], ['springy', 'ease'])
 ```
 
 When writing tests for runtime files, mirror the script-tag order in
@@ -47,7 +46,7 @@ When writing tests for runtime files, mirror the script-tag order in
    `engine/lib/` first (law 3), then test the lib module. Untestable placement is a
    design smell, not a test problem.
 2. For runtime features: only test what is pure. If the function paints, it belongs to
-   golden stills, not assertions.
+   golden stills or preview/e2e coverage, not assertions.
 3. Use temp directories for anything that writes files (the ffmpeg test builds its
    fixture mp4 in the OS temp dir and cleans up).
 4. Name tests as behavior sentences — the existing files are the style guide.

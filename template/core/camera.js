@@ -3,6 +3,8 @@
  * Part of the aiyu template runtime. Layer rules: core ← features ← story.
  */
 
+(() => {
+
 const zoom = (o, fn, z0, z1, cx = W / 2, cy = H * .6) => {
   const z = z0 + (z1 - z0) * ease(o.p);
   g.save(); g.translate(cx, cy); g.scale(z, z); g.translate(-cx, -cy); fn(); g.restore();
@@ -31,3 +33,6 @@ function cam(o, cfg, fn) {
   const cx = cfg.cx ?? W / 2, cy = cfg.cy ?? H * .58;
   g.save(); g.translate(cx + px, cy + py); g.scale(z, z); g.translate(-cx, -cy); fn(); g.restore();
 }
+
+Object.assign(globalThis, { zoom,cam });
+})();

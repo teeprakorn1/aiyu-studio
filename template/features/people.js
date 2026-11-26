@@ -1,8 +1,8 @@
 /**
- * people.js — realistic-stylized human renderer (optional module)
+ * features/people.js — realistic-stylized human renderer (optional module)
  * ----------------------------------------------------------------
- * Extracted from the real production of `thai-origins` (examples/thai-origins/).
- * An alternative to rig.js person() when mascot proportions don't fit the story:
+ * Extracted from the real production of `thai-origins` (examples/legacy/thai-origins/).
+ * An alternative to the core person() when mascot proportions don't fit the story:
  *
  *   person()      — 3-heads-tall mascot, big googly eyes, capsule limbs.
  *                   Great for presenter/news formats (jensen-legend).
@@ -10,29 +10,29 @@
  *                   two-segment limbs WITH knees/elbows, correct alternating walk
  *                   cycle, whole-body bob. Great for historical/cinematic stories.
  *
- * LOAD ORDER: after rig.js (needs g, OL, lerp), before style.js.
+ * LOAD ORDER: after core/ runtime files (needs g, OL, lerp), before story/style.js.
  * Usage:  personTH('merchant', { x, y, scale, t, walk, walkSpeed, look, blink, mood, phase })
  *   - feet baseline is y, up is negative; total height ~520 local units before scale
  *   - walk cycle: phase 0..1, sin-driven; phase .25 = maximum leg spread mid-stride
- *   - define your own characters in PCH below (skin/hair/cloth/sash/hairStyle)
+ *   - register your own characters with definePeople() in story/style.js (skin/hair/cloth/sash/hairStyle)
  *   - background figures: draw opaque with mixHex() toward the background color —
  *     alpha-faded humans read as ghosts
  */
-// NOTE: same IIFE/window-export pattern as atmos.js — declares nothing at global
+// NOTE: same IIFE/window-export pattern as atmosphere.js — declares nothing at global
 // scope, so copied code re-declaring these names never collides.
 
 (() => {
 // Local units: feet baseline y=0, up is negative.
 // Total height ~520 units; head ~130 (about 5.5 heads tall, incl. hair mass).
 
-const PCH = {
+const DEFAULT_PCH = {
   merchant: { skin: '#B97B50', skinShade: '#9A6340', hair: '#211B18', cloth: '#8F3F34', sash: '#D6A03D', hairStyle: 'topknot', fillet: true },
   monk:     { skin: '#9A6340', skinShade: '#7C4B32', hair: '#211B18', cloth: '#C77B32', sash: '#A85F22', hairStyle: 'shaved', robe: true },
   villager: { skin: '#B97B50', skinShade: '#9A6340', hair: '#211B18', cloth: '#4A5A52', sash: '#C9B48A', hairStyle: 'topknot' },
   laborer:  { skin: '#8F5A3A', skinShade: '#7C4B32', hair: '#211B18', cloth: '#5A4A38', sash: null, hairStyle: 'topknot' },
 };
 
-// thin-outlined filled path helper (local scale, not rig's heavy OW)
+// thin-outlined filled path helper (local scale, not the core heavy OW)
 function thFS(fill, lw = 5) {
   g.fillStyle = fill; g.fill();
   if (lw) { g.lineWidth = lw; g.strokeStyle = OL; g.lineJoin = 'round'; g.stroke(); }
@@ -204,12 +204,12 @@ function thFoot(x, y, sd, skin) {
 
 /**
  * personTH — period human renderer
- * @param {string} id - key of PCH
+ * @param {string} id - key registered with definePeople()
  * @param {object} o - {x, y, scale, t, walk, walkSpeed, look, flip, blink, mood, mouth, phase, sway}
  *   x,y = feet baseline. look: -1 left, 0 front, 1 right (pupil shift + slight head hint).
  */
 function personTH(id, o) {
-  const c = PCH[id];
+  const c = personConfigOf(id);
   const t = o.t || 0, s = o.scale || 1;
   const detail = s >= .42 && !o.noFace;
   g.save();
@@ -312,5 +312,6 @@ function personTH(id, o) {
   g.restore();
 }
 
-Object.assign(window, { personTH, PCH });
+definePeople(DEFAULT_PCH);
+Object.assign(globalThis, { personTH });
 })();

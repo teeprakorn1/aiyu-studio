@@ -2,8 +2,8 @@
   "name": "video-project",
   "private": true,
   "scripts": {
-    "mix": "py engine/mix-studio.py || python3 engine/mix-studio.py || python engine/mix-studio.py",
-    "stub": "py engine/mix-studio.py --stub || python3 engine/mix-studio.py --stub || python engine/mix-studio.py --stub",
+    "mix": "node engine/run-py.mjs engine/mix-studio.py",
+    "stub": "node engine/run-py.mjs engine/mix-studio.py --stub",
     "stills": "node engine/render.mjs stills",
     "render": "node engine/render.mjs",
     "publish": "node engine/publish.mjs",

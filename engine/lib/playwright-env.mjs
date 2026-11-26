@@ -17,7 +17,7 @@ export function resolvePlaywright(root) {
   const candidates = [process.env.PW_PKG, path.join(root, 'package.json')].filter(Boolean);
   const pwPkg = candidates.find(p => existsSync(p.replace(/package\.json$/, 'node_modules/playwright-core')));
   if (!pwPkg) {
-    console.error('playwright-core not found: run npm install in the project folder (or set env PW_PKG to a package.json that has playwright-core installed)');
+    console.error('playwright-core not found: run npm ci in the project folder (or set env PW_PKG to a package.json that has playwright-core installed)');
     process.exit(1);
   }
   return createRequire(pwPkg)('playwright-core').chromium;
@@ -40,4 +40,22 @@ export async function launchBrowser(chromium, explicitPath) {
   console.error('No browser found. Install Google Chrome, or run: npx playwright-core install chromium');
   console.error('(or point to any Chrome/Chromium binary with env CHROME_PATH / --browser=path)');
   process.exit(1);
+}
+
+/**
+ * Wait for a render page's window.ready promise with a bounded timeout.
+ *
+ * @param {import('playwright-core').Page} page - playwright page after navigation
+ * @param {number} [timeoutMs=10000] - maximum wait in milliseconds
+ * @returns {Promise<void>} resolves when the page reports ready
+ */
+export async function awaitPageReady(page, timeoutMs = 10000) {
+  let timer;
+  try {
+    const ready = await Promise.race([
+      page.evaluate(() => window.ready),
+      new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`page readiness timeout after ${timeoutMs}ms`)), timeoutMs); timer.unref(); }),
+    ]);
+    if (ready !== true) throw new Error('page did not expose a truthy window.ready promise');
+  } finally { clearTimeout(timer); }
 }

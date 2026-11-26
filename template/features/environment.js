@@ -3,6 +3,8 @@
  * Part of the aiyu template runtime. Layer rules: core ← features ← story.
  */
 
+(() => {
+
 const rim = (x, y, s, side = 1, col = 'rgba(180,200,255,.28)') => {
   g.save(); g.translate(x, y); g.scale(s, s); g.strokeStyle = col; g.lineWidth = 14; g.lineCap = 'round';
   g.beginPath(); g.arc(side * 70, -440, 90, side > 0 ? -1.2 : Math.PI + .4, side > 0 ? .9 : Math.PI + 1.5); g.stroke();
@@ -64,3 +66,5 @@ const lamp = (x, y, s = 1) => {
   CIRC(x + 60 * s, y - 285 * s, 20, '#c94f3d'); glow(x + 60 * s, y - 285 * s, 110, '255,120,80', .55);
 };
 
+Object.assign(globalThis, { rim,vig,tint,rain,circuitField,wall,floorY,win,glow,city,stars,lamp });
+})();

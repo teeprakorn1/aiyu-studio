@@ -25,7 +25,7 @@ docs/
 │   ├── 02-unit-tests.md          unit suite · load-script harness · adding tests
 │   ├── 03-e2e-tests.md           pipeline · determinism · preview · golden stills · platform traps
 │   └── 04-ci.md                  workflow anatomy · reproducing CI locally
-└── images/                       screenshots used by the guides
+└── images/                       demo screenshots + pipeline diagram used by the repo READMEs
 ```
 
 ## Recommended path

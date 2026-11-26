@@ -14,18 +14,21 @@ This is a **template repository**: users do not work here, they scaffold indepen
 aiyu-studio/  (repo: github.com/teeprakorn1/aiyu-studio)
 ├── new-project.py        scaffolder — copies template/ + engine/ into a new project folder
 ├── template/             what users receive — the render runtime + author workspace
-│   ├── core/             LAYER 1 kernel: canvas primitives, motion curves, camera, composition root
+│   ├── core/             LAYER 1 kernel: canvas primitives, explicit registry, motion curves, camera, composition root
 │   ├── features/         LAYER 2 domain: character, subtitles, environment, cards, atmosphere, people
 │   ├── story/            LAYER 3 author inputs: style.js, srchips.js, dialogue.txt, segments.json
+│   ├── assets/fonts/     bundled Kanit fonts (SIL OFL 1.1)
+│   ├── package.json + package-lock.json   npm scripts (the user interface) + locked playwright-core
 │   ├── index.html        the render page (production path)
 │   └── preview.html      live scrubber — same scripts, same render(t), no server needed
 ├── engine/               pipeline machinery — thin executable shells over engine/lib/
 │   ├── mix-studio.py     dialogue+voices → talk.js (single timing truth) + narration.wav
+│   ├── run-py.mjs        cross-platform Python launcher used by scaffolded npm scripts
 │   ├── render.mjs        headless stills / single-range video
 │   ├── publish.mjs       parallel chunk rendering
 │   ├── mux.mjs           concat + loudness + faststart + self-verification → final.mp4
 │   ├── measure-subs.mjs  subtitle overflow acceptance
-│   └── lib/              all shared logic (cli-args, playwright-env, ffmpeg, loudness, mp4-verify, chunking)
+│   └── lib/              all shared logic (cli-args, playwright-env, ffmpeg, encoding, loudness, mp4-verify, chunking, talk, mix_audio)
 ├── tests/                the pyramid — unit (node:test + python unittest) + e2e; never scaffolded
 ├── docs/                 documentation system — topical folders, numbered files, per-folder indexes
 ├── examples/
@@ -36,7 +39,7 @@ aiyu-studio/  (repo: github.com/teeprakorn1/aiyu-studio)
 
 ## The three planes
 
-1. **Data** — `story/dialogue.txt` + `segments.json` → `mix-studio.py` → `talk.js` + `narration.wav`. talk.js is the single timing truth; everything visual derives from it.
+1. **Data** — `story/dialogue.txt` + `story/segments.json` → `mix-studio.py` → `talk.js` + `narration.wav`. talk.js is the single timing truth; everything visual derives from it.
 2. **Runtime** — browser classic scripts (no ES modules — `file://` forbids them): `core/ ← features/ ← story/`, every visual a pure function of time `t` so parallel chunks join seamlessly.
 3. **Execution** — engine scripts drive `index.html` headless via playwright, render chunks in parallel, mux with loudness normalization and self-verification.
 

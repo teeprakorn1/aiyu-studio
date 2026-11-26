@@ -6,7 +6,7 @@
 index|spk|text
 ```
 
-- `index` runs 0..N-1 contiguously, no gaps (enforced by assert)
+- `index` runs 0..N-1 contiguously, no gaps (validated with an explicit error)
 - `spk` is a single character: `M` = narrator, anything else = a character — **must match `mouthFor('X', o)` in style.js** or mouths won't move
 - Keep lines short and speakable — subtitles re-wrap automatically by width; no manual line breaks needed
 
@@ -30,7 +30,7 @@ Example (Thai content, since this pipeline targets Thai-language videos):
 }
 ```
 
-- Each segment is `[file in vo/, first line, last line]` — **must cover 0..N-1 in order with no overlaps or gaps** (enforced by assert)
+- Each segment is `[file directly inside vo/, first line, last line]`; paths and `..` traversal are rejected — **must cover 0..N-1 in order with no overlaps or gaps** (validated with an explicit error)
 - Narration can bundle several lines per file (saves generation time) — the system distributes time within a file by **character weight** of each line
 - **Character lines should be one file per line** — they're short and need precise timing
 
@@ -84,5 +84,5 @@ Recommended: write dialogue → stub → finish scenes → generate voices → r
 `mux.mjs` mixes the narration with a looped music bed (`bed.wav` in the project folder by default, +3 dB before mixing). The bed is a **required** input — the template does not ship one, so create or copy it before muxing.
 
 - Keep it quiet: the target is 20–24 dB below speech (measured in the mux verification — see [qc-publish.md](../delivery/01-qc-publish.md))
-- The narration is never truncated: mux refuses to run if the narration is longer than the rendered video, so render the full timeline (`--duration` ≥ talk.js `dur`)
+- The narration is never truncated: mux refuses to run if the narration is longer than the rendered video, so render the full timeline (`npm run publish` reads and ceils talk.js `dur` automatically)
 - Voice limiting: narration peaks are limited before mixing (`--voice-limit`, default 0.35) because raw TTS peaks sit above 0 dBTP

@@ -1,5 +1,6 @@
-// style.js — the only file rewritten per project: characters (CH), scenes (sc*), scene table (SC), footnote.
-// rig.js provides all machinery: person/cam/TXT/RRECT/pop/chip/cards/subs — never edit rig.js.
+// story/style.js — main per-story scene file: characters, scenes, scene registration, footnote.
+// core/features provide all machinery: person/cam/TXT/RRECT/pop/chip/cards/subs — never edit those layers.
+// Configuration is explicit: defineCharacters(), defineScenes(), and setFootnote() register this story with the runtime.
 // This file is a working teaching demo: 3 scenes covering every core pattern (delete and write your own).
 
 const FOOTNOTE_TEXT = 'Template demo · simulated visuals and characters';
@@ -12,7 +13,7 @@ const CH = {
   guest: { skin: '#e8bf9a', hair: '#6e6257', top: '#5d6d7e', hs: 'bob', lashes: true },
 };
 
-// ── Backgrounds (composed from rig primitives) ─────────────
+// ── Backgrounds (composed from core primitives) ─────────────
 function bgNight() {
   wall('#101623', '#05070d');
   stars(40);
@@ -32,7 +33,7 @@ function bgStudio() {
 //   o.i    current dialogue line index (progressive reveals: if (o.i >= n))
 //   o.lp   progress within the line · o.line  access spk/txt · mouthFor('X', o) = lipsync
 // ⚠ safe zone: keep clear of 0–260px top and below y≈1490 (except subtitles) —
-//   cam() zoom shifts real positions, see docs/guide-scenes.md §7
+//   cam() zoom shifts real positions, see docs/authoring/01-scenes.md safe-zone section
 
 // Opening scene (lines 0–2): back-turned figure + hook text — the cold-open pattern
 function scOpening(o) {
@@ -77,6 +78,9 @@ function scClosing(o) {
   }
 }
 
-// ── Scene table: [first line of NEXT scene, scene fn] — always end with Infinity ──
+// ── Scene table rows: [first line of NEXT scene, scene fn] — sorted and always ending with Infinity ──
 // scOpening covers lines 0–2 · scTalk covers 3–7 · scClosing covers 8–9
 const SC = [[3, scOpening], [8, scTalk], [Infinity, scClosing]];
+defineCharacters(CH);
+defineScenes(SC);
+setFootnote(FOOTNOTE_TEXT);

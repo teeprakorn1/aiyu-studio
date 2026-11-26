@@ -6,22 +6,22 @@ This folder is the starting point of every production (copied by `py new-project
 
 | File | Role |
 |---|---|
-| `dialogue.txt` | script in `index\|spk\|text` — index runs 0..N-1; spk: `M`=narrator, other letters=characters (must match `mouthFor` in style.js) |
-| `segments.json` | maps `vo/*.wav` voice files to line ranges + tempo/gap settings — must cover all lines in order |
-| `srchips.js` | source chips `[first line, last line, label]` — remove all rows if unused |
-| `style.js` | **the main file rewritten every project**: CH characters, sc* scenes, SC table, FOOTNOTE_TEXT |
+| `story/dialogue.txt` | script in `index\|spk\|text` — index runs 0..N-1; spk: `M`=narrator, other letters=characters (must match `mouthFor` in style.js) |
+| `story/segments.json` | maps `vo/*.wav` voice files to line ranges + tempo/gap settings — must cover all lines in order |
+| `story/srchips.js` | source-chip rows passed to `defineSourceChips()` — remove all rows if unused |
+| `story/style.js` | **the main file rewritten every project**: character config, sc* scenes, `defineScenes()` table, `setFootnote()` |
 
 ## Files you never edit
 
 - `core/` + `features/` — all machinery: person/cam/helpers/subtitles/chips (for extra props, copy from `examples/legacy/jensen-legend/style-v4.js` into `story/style.js`)
-- `render.mjs` `publish.mjs` `mux.mjs` `mix-studio.py` `measure-subs.mjs` — the engine
+- `engine/` — render/publish/mux/mix/measure scripts + shared `lib/` (invoke through the npm scripts in `package.json`)
 
 ## Optional modules (loaded by index.html)
 
 - `features/atmosphere.js` — skies, haze, hills, trees, clouds, birds, water, smoke, grain, vignette, caption scrim, label plates. Call them bare from style.js (`skyStops(...)`, `waterBody(...)`, `grainLayer()`)
-- `features/people.js` — `personTH(id, o)` realistic humans with characters defined in `PCH`
+- `features/people.js` — `personTH(id, o)` realistic humans; project-specific appearances are registered with `definePeople()` in `story/style.js`
 
-Both declare nothing at global scope. Copied code that redeclares their helpers, including `rv` from the runtime, shadows them silently. Details: `docs/authoring/03-cinematic.md` and `docs/authoring/01-scenes.md` §6 + §12.
+Both are IIFE-wrapped and export through `window`/`globalThis`. Copied legacy helper declarations can shadow them inside `story/style.js`, so remove duplicate helpers unless an override is intentional. Details: `docs/authoring/03-cinematic.md` and `docs/authoring/01-scenes.md` §6 + §12.
 
 ## Scene cheatsheet (in style.js)
 
@@ -41,7 +41,7 @@ function scExample(o) {
   if (o.i >= 2) TXT('appears from line 2', 540, 400, 60, '#e8dede');
   // rv(o, n) ramps 0→1 during line n and stays 1 after — prefer it over o.lp for anything that must not re-animate
 }
-const SC = [[3, scExample], [Infinity, scEnd]];  // first scene covers lines 0–2
+defineScenes([[3, scExample], [Infinity, scEnd]]);  // first scene covers lines 0–2
 ```
 
 ## Safe zones (1080×1920)

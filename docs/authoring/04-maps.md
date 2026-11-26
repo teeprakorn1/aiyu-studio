@@ -196,7 +196,7 @@ bar — the only reliable way to keep labels readable over a busy map.
 const rv = (o, n, r = 1.7) => o.i < n ? 0 : o.i === n ? Math.min(1, o.lp * r) : 1;
 ```
 
-`rv` lives in the `core/` + `features/` runtime as a `window` property (see [guide-scenes.md §3](../authoring/01-scenes.md)). It returns 0 before line `n`, ramps 0→1 during it, and stays 1 after. Every map element's reveal is tied to a dialogue line index, so when the narrator mentions a city the city appears and stays. Binding to **line indices**, not seconds, means re-timed audio re-times the whole choreography automatically.
+`rv` lives in the `core/` + `features/` runtime as a `window` property (see [01-scenes.md §3](../authoring/01-scenes.md#3-the-o-object-each-scene-receives)). It returns 0 before line `n`, ramps 0→1 during it, and stays 1 after. Every map element's reveal is tied to a dialogue line index, so when the narrator mentions a city the city appears and stays. Binding to **line indices**, not seconds, means re-timed audio re-times the whole choreography automatically.
 
 > `rv` is exported through `window`, so the copy in `examples/legacy/thai-origins/style.js` (or any copied `const rv`) shadows it without an error.
 

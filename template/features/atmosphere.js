@@ -1,12 +1,12 @@
 /**
- * atmos.js — cinematic atmosphere & nature library (optional module)
+ * features/atmosphere.js — cinematic atmosphere & nature library (optional module)
  * ------------------------------------------------------------------
- * Extracted from the real production of `thai-origins` (examples/thai-origins/).
+ * Extracted from the real production of `thai-origins` (examples/legacy/thai-origins/).
  * These helpers upgrade scenes from "flat stickers on a gradient" to cinematic
  * frames: multi-stop skies, atmospheric depth, living water, vegetation,
  * weather, and film-grain frame treatments.
  *
- * LOAD ORDER: after rig.js, before style.js — it uses rig globals (g, W, H, CIRC, lerp).
+ * LOAD ORDER: after core/ runtime files, before story/style.js — it uses core globals (g, W, H, CIRC, lerp).
  * Everything is deterministic: animation derives from time `t` and seeded randomness
  * (`srnd`), never Math.random(), so frames are reproducible and chunk-parallel-safe.
  *
@@ -29,11 +29,11 @@
  *   lowering alpha — alpha-faded objects read as ghosts, color-mixed objects read as distance.
  */
 
-// NOTE: this module deliberately declares NOTHING at global scope — everything is
-// wrapped in an IIFE and attached to window. Scene code uses the names bare
-// (srnd(...), skyStops(...)) because window properties resolve globally, BUT if you
-// copy code that re-declares them (e.g. `const srnd` from older projects), your
-// declaration simply shadows the module's — no SyntaxError, nothing breaks.
+// NOTE: this module deliberately declares NOTHING at global lexical scope — everything is
+// wrapped in an IIFE and exported explicitly. Scene code uses the names bare
+// (skyStops(...), waterBody(...)) because globalThis/window properties resolve globally.
+// Copied legacy `const` helpers can shadow those names inside story/style.js, so remove
+// duplicate declarations unless an override is intentional.
 
 (() => {
 // ── Seeded randomness (deterministic, no flicker) ─────────
@@ -119,7 +119,7 @@ function focusGlow(x, y, r, col, a) {
 }
 
 // ── Typography helpers ────────────────────────────────────
-// text with soft shadow (no heavy stroke/pill — gentler than rig TXT at large sizes)
+// text with soft shadow (no heavy stroke/pill — gentler than core TXT at large sizes)
 function TXTW(s, x, y, size, fill, align = 'center', weight = 700) {
   g.save();
   g.font = `${weight} ${size}px ${FONT}`;
@@ -298,8 +298,7 @@ function smokeColumn(x, y, t, seed = 0) {
   g.restore();
 }
 
-Object.assign(window, {
-  srnd, mixHex, hexA,
+Object.assign(globalThis, {
   skyStops, hazeBand, starField, grainLayer, screenVig, captionScrim, focusGlow,
   TXTW, labelPlate,
   hillsLayer, treeMass, cloudsDusk, birdsFlock,

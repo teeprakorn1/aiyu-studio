@@ -22,9 +22,9 @@ mux.mjs           chunks + narration.wav + bed ─→ final.mp4 (loudness + self
 measure-subs.mjs  subtitle QC — reads the same runtime
 ```
 
-- Template runtime layers: `core/` (kernel — base/motion/camera/runtime) ← `features/` (character/subtitles/environment/cards + optional atmosphere/people) ← `story/` (style.js, srchips.js, dialogue.txt, segments.json — everything an author edits). Lower layers never know about upper ones; features must not depend on each other (shared primitives belong in `core/base.js`). Classic scripts only — ES modules are impossible over file://.
+- Template runtime layers: `core/` (kernel — base/registry/motion/camera/runtime) ← `features/` (character/subtitles/environment/cards + optional atmosphere/people) ← `story/` (style.js, srchips.js, dialogue.txt, segments.json — everything an author edits). Story configuration uses the explicit registry (`defineCharacters()`, `defineScenes()`, `definePeople()`, `defineSourceChips()`, `setFootnote()`); legacy global adoption exists only as a compatibility fallback. Lower layers never know about upper ones; features must not depend on each other (shared primitives belong in `core/base.js`). Classic scripts only — ES modules are impossible over file://.
 - `preview.html` loads the exact same scripts as `index.html` and drives the same `render(t)` — it is a debugging surface, not a second render path. Never implement preview-only rendering logic.
-- `engine/lib/` — shared infrastructure: `cli-args.mjs` (the one CLI parser), `playwright-env.mjs` (browser resolution + launch fallback chain), `ffmpeg.mjs` (process helpers), `loudness.mjs` (filter graphs + measurement), `mp4-verify.mjs` (container structure), `chunking.mjs` (parallel boundary math). Never duplicate logic that lives here.
+- `engine/lib/` — shared infrastructure: `cli-args.mjs` (the one CLI parser), `playwright-env.mjs` (browser resolution + launch fallback chain + page readiness), `ffmpeg.mjs` (process helpers), `encoding.mjs` (x264 option validation), `loudness.mjs` (filter graphs + measurement), `mp4-verify.mjs` (container structure), `chunking.mjs` (parallel boundary math), `talk.mjs` (generated talk parsing), plus Python audio helpers in `mix_audio.py`. Never duplicate logic that lives here.
 - Engine scripts are thin shells over `engine/lib/` and run from the **project root** (CWD); npm scripts in package.json are the stable user interface — documentation must teach them, not raw `node engine/...` invocations.
 
 ## The five laws
@@ -43,7 +43,7 @@ measure-subs.mjs  subtitle QC — reads the same runtime
 
 ## Naming
 
-- Engine scripts: kebab-case, no version suffixes (`publish.mjs` not `publish-v4.mjs`). Version fossils are forbidden in new files — and in defaults: `--out` defaults to `v1`.
+- Engine scripts: kebab-case, no version suffixes (`publish.mjs` not `publish-v4.mjs`). Version fossils are forbidden in new files — and in defaults: publish `--out` defaults to `v1`, never a fossil like `v4`.
 - `engine/lib/` modules: kebab-case `.mjs`, one concern per file.
 
 ## Testing (see docs/testing/ for the full guide)

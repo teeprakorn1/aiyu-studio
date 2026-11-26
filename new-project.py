@@ -42,18 +42,18 @@ print(f"""scaffold complete at {target}
 
 Next steps:
   1. cd {target}
-  2. npm install                        (install playwright-core)
+  2. npm ci                             (install locked playwright-core)
   3. npm run stub                       (estimated talk.js — lets you build scenes before audio exists)
   4. open preview.html in Chrome        (live scrubbing: play/scrub animation+audio, waveform timeline)
-     npm run stills 1,3,5               (see the demo scenes in stills/sheet.jpg)
-  5. Write your story: edit dialogue.txt / segments.json / srchips.js / style.js
-     (never edit rig.js — for extra props/scenes see examples/jensen-legend/style-v4.js in the main repo)
+     npm run stills -- 1,3,5            (see the demo scenes in stills/sheet.jpg)
+  5. Write your story: edit story/dialogue.txt / story/segments.json / story/srchips.js / story/style.js
+     (never edit core/ or features/ — for reference see examples/legacy/jensen-legend/ in the main repo)
      Optional modules already loaded by index.html:
-       - atmos.js  — cinematic skies, water, hills, weather, grain/vignette (see its header for recipes)
-       - people.js — personTH() realistic humans with knees/elbows and a walk cycle
-       (for a full production using both, see examples/thai-origins/ in the main repo)
+       - features/atmosphere.js — cinematic skies, water, hills, weather, grain/vignette
+       - features/people.js — personTH() realistic humans with knees/elbows and a walk cycle
+       (for a full production using both, see examples/legacy/thai-origins/ in the main repo)
   6. Drop real voice files into vo/ per segments.json names, then run npm run mix (real mode)
-  7. Full render: npm run publish -- --duration=<TALK.dur+1> --chunks=6 --out=v1
+  7. Full render: npm run publish -- --chunks=6 --out=v1   (duration auto-reads talk.js)
   8. Mux:         npm run mux -- --concat=out/v1concat.txt --out=final-v1.mp4
   9. QC per docs/delivery/01-qc-publish.md, then watch once on a real phone before publishing
 """)

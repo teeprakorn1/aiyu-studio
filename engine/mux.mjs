@@ -6,10 +6,11 @@
 
 import { existsSync, mkdirSync, statSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { parseArgs } from './lib/cli-args.mjs';
+import { parseArgs, assertKnownFlags } from './lib/cli-args.mjs';
 import { runProcess, printCommand, ffprobeJson, parseRational } from './lib/ffmpeg.mjs';
 import { scanMp4Boxes } from './lib/mp4-verify.mjs';
 import { extractLoudnormJson, regionSpec, measureAstats, audioMixGraph, finalAudioGraph, fmtDurationValue } from './lib/loudness.mjs';
+import { validateX264 } from './lib/encoding.mjs';
 
 /** project root — engine scripts always run from the project root (npm scripts guarantee it) */
 const here = process.cwd();
@@ -32,6 +33,7 @@ Options:
   --loudness-i=-15.5       Integrated loudness target, LUFS
   --loudness-tp=-1.5       True-peak ceiling target, dBTP
   --loudness-lra=11        Loudness-range target, LU
+  --verify-tp=<db>         Post-encode true-peak ceiling (default: loudness target)
   --pause=a-b              Verification pause region, seconds (omit = skip bed-gap check;
                            measure at a REAL narration pause in your film or the reading is meaningless)
   --speech=a-b             Verification speech region, seconds
@@ -62,6 +64,7 @@ function parseConcatList(listPath) {
 }
 
 const { flags } = parseArgs(process.argv.slice(2));
+assertKnownFlags(flags, ['concat','narration','bed','out','bed-gain-db','voice-limit','crf','preset','loudness-i','loudness-tp','loudness-lra','verify-tp','pause','speech','skip-audio-verify','help'], 'mux.mjs');
 if (flags.help) {
   usage();
   process.exit(0);
@@ -78,8 +81,7 @@ const bed = path.resolve(here, String(flags.bed ?? 'bed.wav'));
 const output = path.resolve(here, String(flags.out ?? 'final.mp4'));
 const bedGainDb = Number(flags['bed-gain-db'] ?? 3);
 const voiceLimit = Number(flags['voice-limit'] ?? 0.35);
-const crf = String(flags.crf ?? 19);
-const preset = String(flags.preset ?? 'medium');
+const { crf, preset } = validateX264(flags.crf ?? 19, flags.preset ?? 'medium');
 const targetI = Number(flags['loudness-i'] ?? -15.5);
 const targetTP = Number(flags['loudness-tp'] ?? -1.5);
 const verifyTP = Number(flags['verify-tp'] ?? targetTP);
@@ -92,6 +94,7 @@ for (const [label, file] of [['concat list', concatList], ['narration', narratio
 }
 if (!(voiceLimit >= 0.0625 && voiceLimit <= 1)) throw new Error('--voice-limit must be in ffmpeg alimiter range 0.0625..1');
 if (!Number.isFinite(bedGainDb)) throw new Error('--bed-gain-db must be numeric');
+for (const [name, x] of [['--loudness-i', targetI], ['--loudness-tp', targetTP], ['--verify-tp', verifyTP], ['--loudness-lra', targetLRA]]) if (!Number.isFinite(x)) throw new Error(`${name} must be numeric`);
 
 const chunks = parseConcatList(concatList);
 console.log(`mux: concat list ${concatList}`);

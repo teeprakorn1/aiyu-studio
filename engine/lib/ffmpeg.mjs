@@ -38,11 +38,13 @@ export function runProcess(cmd, args, opts = {}) {
     const child = spawn(cmd, args, { windowsHide: true });
     let stdout = '';
     let stderr = '';
+    const cap = 1024 * 1024;
     let lastProgress = 0;
     child.stdout.on('data', d => { stdout += d.toString(); });
     child.stderr.on('data', d => {
       const text = d.toString();
       stderr += text;
+      if (stderr.length > cap) stderr = stderr.slice(-cap);
       if (opts.progress) {
         const m = text.match(/time=(\d+):(\d+):(\d+(?:\.\d+)?)/);
         if (m) {

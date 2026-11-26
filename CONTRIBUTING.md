@@ -1,83 +1,82 @@
 # Contributing to aiyu-studio
 
-Thank you for your interest in contributing! This guide covers everything you need to get started.
-
----
+Thank you for your interest in contributing. This guide covers the workflow; **AGENTS.md is the binding architecture and quality contract**.
 
 ## Quick start
 
 ```bash
-# 1. Fork & clone
 git clone https://github.com/YOUR_USERNAME/aiyu-studio.git
 cd aiyu-studio
 
-# 2. Scaffold a test project — this is your dev sandbox
-python new-project.py /tmp/my-test
-cd /tmp/my-test
-npm install
+# fast verification layer
+npm test
 
-# 3. Verify the pipeline end-to-end
-python engine/mix-studio.py --stub
-node engine/render.mjs stills 1,5,10 --page=index.html
-# open stills/sheet.jpg — characters + subtitles visible = setup works
+# full verification layer (minutes; needs ffmpeg + Chrome/Chromium)
+npm run test:e2e
 ```
 
-> **Python command:** use `py` on Windows, `python3` on macOS/Linux if `python` is not found.
+For manual exploration, scaffold a scratch project outside the repo:
 
-> Chrome must be installed (scripts use `channel: 'chrome'`), along with Node.js, Python 3, and ffmpeg/ffprobe on PATH.
+```bash
+python new-project.py ../my-test      # use py on Windows, python3 on macOS/Linux if needed
+cd /tmp/my-test
+npm ci                               # uses the committed package-lock.json
+npm run stub
+npm run stills -- 1,3,5
+```
+
+The scaffolded npm scripts are the stable user interface. Use them in docs and examples instead of raw `node engine/...` commands.
 
 ## What to contribute
 
 Especially welcome:
 
-- **New rig card/scene patterns** — reusable visual components in `template/core/` + `template/features/`
-- **TTS provider integrations** — making voice generation easier
-- **Documentation improvements** — clearer guides, more examples, translations
-- **Bug fixes** — with a reproduction case
+- reusable scene/card patterns for `template/core/` or `template/features/`
+- TTS provider integrations
+- clearer documentation, examples, and translations
+- bug fixes with a reproduction case
 
-Please **open an issue first** for anything beyond a small fix so we can agree on direction.
+Please open an issue first for anything beyond a small fix so direction can be agreed before implementation.
 
 ## Project structure rules
 
 | Path | Rule |
 |---|---|
-| `engine/` | **Conservative** — these scripts ship into every generated project. Changes affect all users. |
-| `template/core/` + `template/features/` | **Conservative** — the reusable machinery. Never project-specific content here. |
-| `template/style.js` | Demo scenes — improvements welcome, keep it small and renderable. |
-| `template/atmos.js`, `template/people.js` | Optional cinematic modules. Keep them IIFE-wrapped with `window` exports, so copied code that redeclares a helper name shadows it instead of crashing. |
-| `docs/` | Documentation — keep English as the primary language. |
-| `examples/` | Reference implementations (`jensen-legend`, `thai-origins`). Code only; media is generated per project. Keep `core/features runtime` identical to `template/core/` + `template/features/`. |
+| `engine/` | Conservative — these scripts ship into every generated project. Shared logic belongs in `engine/lib/`. |
+| `template/core/` | Kernel primitives and runtime registry. Never project-specific. |
+| `template/features/` | Reusable feature systems. Features must not depend on one another. Optional modules must remain IIFE-wrapped with explicit `globalThis`/`window` exports. |
+| `template/story/` | Author-editable demo configuration: dialogue, segment mapping, source chips, and scenes. |
+| `docs/` | Documentation — English is the primary language. Update docs in the same change as behavior. |
+| `examples/legacy/` | Frozen historical productions. Do not edit or modernize them. |
 
 ## Coding guidelines
 
-- **JavaScript:** plain ES2020+, no build step. Everything must run directly in Chrome via playwright-core.
-- **JSDoc** on all public rig/engine functions — see `template/core/` + `template/features/` for the established style.
-- **Python:** stdlib only where possible; `mix-studio.py` must stay dependency-free.
-- **Comments and docs in English.** Sample dialogue content may be any language.
-- Follow the existing style — compact, no over-engineering, no unnecessary comments.
+- JavaScript: plain ES2020+, no build step. Runtime files must remain classic scripts because projects are opened over `file://`.
+- Python: stdlib only; keep `mix-studio.py` dependency-free.
+- Public/exported engine and runtime functions need JSDoc with units (`seconds`, `px`, `0..1`).
+- Comments and docs in English. Sample dialogue may be any language.
+- Follow the existing compact style: no over-engineering and no unnecessary comments.
 
 ## Testing your changes
 
-There is no test framework — verification is end-to-end rendering:
-
 ```bash
-# 1. Syntax
+# syntax for touched JavaScript files
 node --check engine/render.mjs
-node --check template/the runtime
-node --check template/atmos.js
-node --check template/people.js
+node --check template/core/runtime.js
 
-# 2. Full pipeline in a scratch project
-python new-project.py /tmp/verify && cd /tmp/verify
-cp path/to/repo/engine/* .   # copy YOUR modified engine
-npm install
-python engine/mix-studio.py --stub
-node engine/render.mjs stills 1,5,10 --page=index.html
+# unit layer: node:test + python unittest
+npm test
 
-# 3. Open stills/sheet.jpg and visually confirm nothing broke
+# full user-journey tests: scaffold, render, mux, determinism, preview
+npm run test:e2e
 ```
 
-If your change affects subtitles, timing, or layout — include before/after stills in your PR.
+Rules:
+
+- Put new pure logic in an importable `engine/lib/` module first, then unit-test it. Do not test production logic by extracting source text with regex/`eval`.
+- Runtime visual behavior belongs in golden stills and preview/e2e coverage, not brittle pixel-value assertions.
+- If a visual change is intentional, delete `tests/e2e/fixtures/golden/`, run e2e once to reinitialize it, review the new stills visually, then commit them.
+- If the change affects subtitles, timing, or layout, include before/after stills in the PR.
 
 ## Commit conventions
 
@@ -85,9 +84,9 @@ We use [Conventional Commits](https://www.conventionalcommits.org):
 
 ```
 feat: add transition support to chartCard
-fix: subtitle wrapping orphans punctuation at line start
-docs: clarify cam() zoom trap in guide-scenes
-refactor: extract loudnorm pass into function
+fix: reject reversed render ranges
+docs: clarify cam zoom safe-zone trap
+refactor: move runtime configuration into registry
 ```
 
 - `feat` new capability · `fix` bug fix · `docs` documentation · `refactor` no behavior change · `chore` maintenance
@@ -98,29 +97,21 @@ refactor: extract loudnorm pass into function
 1. Branch from `main`: `git checkout -b feat/my-change`
 2. Keep PRs focused — one concern per PR
 3. Describe **why**, not just what
-4. If the change is visual, attach rendered stills
-5. Never commit media files (.wav/.mp4/stills output) — .gitignore covers them; do not weaken it
+4. Attach rendered stills for visual changes
+5. Never commit generated media (`.wav`, `.mp4`, render stills output). `.gitignore` covers them; do not weaken it.
 
 ## Reporting bugs
 
 Open an issue with:
 
-- What you ran (exact commands) and what happened vs. expected
-- Your OS, Node/Python/ffmpeg versions
-- If render-related: the stills output or a screenshot
+- exact commands run, what happened, and what was expected
+- OS plus Node/Python/ffmpeg/browser versions
+- render-related output stills or screenshots when available
 
-## License
+## License and conduct
 
-By contributing, you agree that your contributions are licensed under the [MIT License](LICENSE).
-
-## Code of Conduct
-
-All participants are expected to follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+By contributing, you agree that your contributions are licensed under the [MIT License](LICENSE). All participants are expected to follow the [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Architecture and conventions
 
 See **AGENTS.md** — it defines the dependency-direction law, the five development laws (determinism, talk.js truth, DRY engine, no per-project engine edits, verification gate), the mandatory JSDoc policy, and file naming rules. It binds all contributors, human or AI.
-
-## Testing
-
-`npm test` runs the unit layer (node:test + python unittest). `npm run test:e2e` runs the pipeline/determinism/preview end-to-end tests (minutes, needs ffmpeg + a browser). The verification gate in AGENTS.md requires green tests before merge.

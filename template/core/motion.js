@@ -3,6 +3,8 @@
  * Part of the aiyu template runtime. Layer rules: core ← features ← story.
  */
 
+(() => {
+
 const ease = p => 1 - Math.pow(1 - Math.min(1, Math.max(0, p)), 3);
 
 /* Motion curves — deterministic pure functions of progress p (0..1), safe for parallel
@@ -25,4 +27,7 @@ const springy = (p, stiffness = 170, damping = 12) => {
 };
 
 
-window.rv = (o, n, r = 1.7) => o.i < n ? 0 : o.i === n ? Math.min(1, o.lp * r) : 1;
+const rv = (o, n, r = 1.7) => o.i < n ? 0 : o.i === n ? Math.min(1, o.lp * r) : 1;
+
+Object.assign(globalThis, { ease,easeInOut,easeBack,easeElastic,springy,rv });
+})();

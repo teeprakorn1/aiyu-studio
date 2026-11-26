@@ -2,13 +2,14 @@
 
 Slow and worth it. These scaffold real projects into temporary workspaces and run the
 actual pipeline — every stage a user would run, asserted the way a user would check it.
-Run with `npm run test:e2e` (minutes, needs ffmpeg + chrome/chromium).
+Run with `npm run test:e2e` (minutes, needs ffmpeg + Chrome/Chromium).
 
 ## The three files
 
 ### `pipeline.test.mjs` — the whole assembly line
 
-Scaffolds a fresh project with `new-project.py`, then walks the real user journey:
+Scaffolds a fresh project with `new-project.py`, installs dependencies with `npm ci`,
+then walks the real user journey through the public npm interface:
 
 | Stage | Asserts |
 |---|---|
@@ -17,6 +18,7 @@ Scaffolds a fresh project with `new-project.py`, then walks the real user journe
 | `npm run stills` | rendered frames are not black |
 | `npm run check-subs` | subtitle acceptance passes on the template's own demo |
 | `npm run publish` | parallel chunks render **disjoint** frame ranges — no overlap, no gap |
+| invalid render input | reversed/invalid video ranges fail loudly and never print a success message |
 | `npm run mux` | the full mux pipeline self-verifies: loudness, faststart moov-before-mdat, output shape per ffprobe |
 
 ### `determinism.test.mjs` — the law with teeth
@@ -37,6 +39,7 @@ Opens `preview.html` in a real browser and tests the transport like a user:
 - page loads without errors
 - seek updates the time display and current line
 - the video canvas paints non-black content
+- optional atmosphere/people modules execute real drawing paths rather than merely loading
 - the waveform layer is painted on the timeline
 - clicking at 75% of the timeline seeks to ~75% of duration
 
@@ -49,22 +52,26 @@ Opens `preview.html` in a real browser and tests the transport like a user:
 
 - The first run finds no goldens, **writes them, and skips** the comparison. This is
   initialization, not a pass — the suite is honest about it.
-- Subsequent runs compare within **15% byte-size tolerance**. This is deliberately a
-  smoke test, not pixel-perfect equality: anti-aliasing differs across GPUs, OSes and
-  browser builds, and a flaky test teaches people to ignore tests.
+- Subsequent runs decode the JPEGs in a browser canvas and compare sampled RGB pixels.
+  The current tolerance is mean channel difference ≤ 8 plus no more than 15% of sampled
+  pixels differing by more than 8 intensity levels. This is deliberately tolerant rather
+  than pixel-perfect: anti-aliasing differs across GPUs, OSes, and browser builds, and a
+  flaky test teaches people to ignore tests. It is still much stronger than the old
+  byte-size comparison because structural visual changes move the pixel metrics.
 - When an **intentional** visual change breaks the comparison, delete `fixtures/golden/`
   and re-run once to re-initialize — then review the new goldens with your eyes before
   committing them.
 
 ## Platform notes (learned the hard way)
 
-- **Windows npm spawn:** engine scripts must invoke npm as `npm.cmd` with `shell: true` —
-  plain `spawn('npm')` fails on Windows (CVE-2024-27980 mitigation). The e2e suite runs
-  the real npm commands, so it catches this class of bug.
+- **Windows npm spawn:** tests invoke npm as `npm.cmd` on Windows without a shell. Plain
+  `spawn('npm')` is unreliable there, while `shell: true` triggers Node's DEP0190 warning
+  and adds an unnecessary shell-parsing layer.
+- **Python resolution:** scaffolded projects use `engine/run-py.mjs`; tests use the same
+  `py`/`python3`/`python` fallback order. CI sets `PYTHON=python` to make resolution explicit.
 - **Browser fallback chain:** playwright's default chromium target may be the headless
   shell, a separate binary. `launchBrowser` chains installed Chrome → headless shell →
   full chromium build. The preview test exercises whichever the machine has.
-- **`PYTHON` env var:** CI sets `PYTHON=python`; locally the fallback chain tries
-  `py`/`python3`/`python`. Engine scripts and tests share this resolution.
-- **Isolation:** every e2e test scaffolds into the OS temp dir and cleans up. Nothing
-  writes into the repo — if you find a test that does, that is a bug in the test.
+- **Isolation:** every e2e test scaffolds into a temporary workspace and cleans up. Nothing
+  writes into the repo except intentional golden-fixture updates — if you find a test that
+  does otherwise, that is a bug in the test.

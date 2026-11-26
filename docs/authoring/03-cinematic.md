@@ -17,7 +17,7 @@ the original production code.
 
 They can mix in one film — mascot for a host, realistic for story characters.
 
-Both modules load automatically in template projects (see [guide-scenes.md §10–11](../authoring/01-scenes.md) for the global-name rules when copying code).
+Both modules load automatically in template projects (see [01-scenes.md §12](../authoring/01-scenes.md#12-name-collisions-when-copying-code) for the global-name rules when copying code).
 
 ## 2. personTH anatomy
 
@@ -50,15 +50,15 @@ Key measurements (useful when compositing):
 
 ### Characters are configuration, not code
 
-`PCH` defines appearance per role — add your own entries instead of branching draw code:
+`definePeople()` registers appearance per role — add your own entries instead of branching draw code:
 
 ```js
-const PCH = {
+definePeople({
   merchant: { skin:'#B97B50', skinShade:'#9A6340', hair:'#211B18',
               cloth:'#8F3F34', sash:'#D6A03D', hairStyle:'topknot', fillet:true },
   monk:     { ..., hairStyle:'shaved', robe:true },
-  ...
-};
+  // ...
+});
 ```
 
 `skinShade` is used for the neck and shadowed areas; `sash` draws a diagonal shoulder

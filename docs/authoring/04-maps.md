@@ -209,3 +209,5 @@ out-of-window points (`if (lo < 98.6 || ...) { started = false; return; }` — n
 must restart the path after clipping gaps or lines will spider across the card).
 Plus parchment texture: 26 seeded hair-thin fiber strokes at alpha .05, and a shadowed
 rounded card. Cards enter with `ease(p)` alpha.
+
+Hand-drawn routes: `sketchArrow(x1, y1, x2, y2, {seed: 970 + i, rough: 1.4})` from `features/sketch.js` gives the expedition-map tell — seeded, chunk-safe, see `01-scenes.md`.

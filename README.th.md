@@ -46,7 +46,7 @@
 - **agent skills ในทุกโปรเจกต์** — กฎฉบับย่อ (`aiyu-authoring` / `aiyu-pipeline` / `aiyu-cinematic`) ถูก scaffold ไปใน `skills/` เสมอ coding agent เขียนโค้ดฉากถูกตั้งแต่พรอมป์แรก แทนที่จะค่อย ๆ เรียนรู้กฎจากความผิดพลาด
 - **auto-segmentation แบบ optional** — `tools/auto-segment` ร่าง `segments.json` และตัดไฟล์เสียงย่อยจากเสียงยาวไฟล์เดียวต่อผู้พูดด้วย whisper word-alignment วิถี manual เดิมยังเป็น first-class เต็มตัว
 - **generate เสียง TTS คำสั่งเดียว** — `tools/tts-gen` สังเคราะห์บทพูดทั้งเรื่องเป็นไฟล์เสียงทีละบรรทัดพร้อม segments ที่แม่นตั้งแต่เกิด (ไม่ต้อง align อะไรเลย) edge-tts ฟรีไม่ต้องมี key ยืนยันเสียงไทยแล้ว ส่วน ElevenLabs/Gemini ต่อผ่าน provider interface เดียวกัน
-- **ซับคาราโอเกะ** — word timing ติดมากับการสังเคราะห์เสียง (หรือเขียน `story/wordtimes.json` เอง) เปิด `SUB_KARAOKE` แล้วคำที่พูดจะไฮไลต์ไล่จากซ้ายไปขวาตามจังหวะเสียงจริง
+- **ซับคาราโอเกะ** — เปิด `SUB_KARAOKE` แล้วคำที่พูดไฮไลต์ไล่ซ้ายไปขวาตามเสียงจริง word timing มาจาก tts-gen, auto-segment, phoneme alignment แบบ opt-in หรือเขียน `story/wordtimes.json` เอง
 - **reveal ตามจังหวะคำพูด** — `rvw(o, n, needle)` ให้กราฟ/ตัวเลขเด้งเป๊ะตอนพากย์พูดคำสำคัญ (fallback เป็น `rv()` แบบเดิมเมื่อไม่มี word timing) เวลารายคำมาจาก tts-gen, auto-segment หรือ phoneme alignment แบบ opt-in
 
 ## 🏗️ การทำงาน
@@ -152,6 +152,8 @@ npm run stills -- 1,5,10                 # แล้วเปิด stills/sheet
 │   └── assets/fonts/         #   Kanit 4 weights (SIL OFL)
 ├── tests/                    # pyramid unit + e2e (ไม่ถูก copy ไปในโปรเจกต์)
 ├── tools/auto-segment/       # ตัวช่วย draft segments.json ด้วย whisper (optional มี deps ของตัวเอง ไม่ถูก scaffold)
+├── tools/tts-gen/            # ตัวสังเคราะห์เสียง TTS หลาย provider (optional deps แยก ไม่ถูก scaffold)
+├── tools/phoneme-align/      # forced alignment ระดับ phoneme ด้วย wav2vec2 (deps หนัก venv แยก)
 ├── docs/                     # ระบบเอกสาร — โฟลเดอร์ตามหมวด ไฟล์ numbered
 ├── examples/
 │   ├── active/               # production อนาคตบนสถาปัตยกรรมปัจจุบัน

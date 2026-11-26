@@ -217,3 +217,19 @@ Fallback contract: missing word timing or an unmatched needle degrades to `rv(o,
 scenes never break, they just become line-granular. Needles match with substring tolerance both
 directions (Thai subword chunks); repeated words hit the first occurrence. `wordT(ln, needle)`
 returns the absolute seconds for custom logic.
+## Hand-drawn sketch annotations
+
+`features/sketch.js` gives five drop-in primitives — conversions are one-line changes:
+
+```
+// before: plain card frame          // after: hand-drawn frame
+g.strokeRect(x, y, w, h);            sketchRect(x, y, w, h, {seed: 901});
+// bar chart bar edge                 sketchLine(x, yBase, x, yTop, {seed: 940 + i});
+// map route                          sketchArrow(x1, y1, x2, y2, {seed: 970, rough: 1.4});
+// number emphasis                    sketchCircle(cx, cy, r, {seed: 988, boil: 3, t});
+```
+
+Options: `rough` (1 = subtle hand shake), `bow` (line warp), `boil` (frames per redraw — squigglevision,
+pure function of t, chunk-safe but costs bitrate). **Seed law:** derive from the shape's role
+(`9000 + sceneIdx*37 + shapeIdx`), never the frame — frame-derived seeds break parallel chunks.
+Technique adopted from rough.js; dense fills deliberately excluded (compression shimmer).

@@ -8,22 +8,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [0.4.0] - 2026-11-26
 
-Feature release — agent-readability, preview quality-of-life, TTS generation with exact timing, karaoke subtitles, auto-ducking, keyword-beat scene reveals, word timing for every voice type, optional phoneme-grade alignment, data-driven variants documentation, and optional audio helpers. No breaking changes.
+Feature release — word timing everywhere (karaoke, keyword-beat reveals, three generator paths), TTS generation, auto-ducking, hand-drawn sketch annotations, agent skills, and preview quality-of-life. No breaking changes.
 
 ### Added
 
-- Agent Skills pack in `template/skills/` scaffolded into every project (`aiyu-authoring` / `aiyu-pipeline` / `aiyu-cinematic`) — operational rules for coding agents, with ❌/✅ pattern tables, gates, and self-checks
-- `preview.html` A-B loop marks (`[`/`]`/`\`) and a scene-jump menu built from the registered scene table
-- `tools/tts-gen/` — optional multi-provider TTS: synthesizes the dialogue into per-line `vo/*.wav` with exact-by-construction `segments.json` and word-level timing. edge-tts verified live (free, keyless, Thai voices — word timing is voice-specific and detected at runtime); ElevenLabs/Gemini experimental
-- Karaoke subtitle mode — `story/wordtimes.json` merges into talk.js; `SUB_KARAOKE` in style.js highlights spoken words left-to-right (default off)
-- `mux.mjs --bed-duck` — sidechain auto-ducking: the music bed dips under speech and rises in pauses (opt-in; tunables `--duck-*`)
-- Spring subtitle entrance — exact damped-spring pop on subtitle blocks (golden stills re-initialized)
-- `rvw(o, n, needle)` / `wordT(ln, needle)` in `core/motion.js` — keyword-beat reveals: scene elements pop when the keyword is SPOKEN, not at line start; hard fallback contract degrades to `rv()` exactly when word timing is absent
-- `tools/auto-segment` now emits `wordtimes.auto.json` from whisper word data alongside its segments draft — karaoke/keyword timing for recorded voices, zero new dependencies
-- `tools/phoneme-align/` — optional heavy-deps-isolated tool: wav2vec2 CTC forced alignment of vo files against their known transcripts (no ASR), Thai model `airesearch/wav2vec2-large-xlsr-53-th` via `--model`; phoneme-grade `wordtimes.phoneme.json` in the mix-merge schema
-- `tools/auto-segment/` — optional whisper-based drafter of `segments.json` + sliced `vo/*.wav` from one long recording per speaker; manual workflow untouched
-- `docs/authoring/05-parameterized.md` — data-driven variants pattern under an audio-derived timing backbone
-- `docs/acknowledgements.md` — provenance for remotion-dev/remotion, MN-Lizard-Team/aiyu-multi-agent, and harry0703/MoneyPrinterTurbo: what travelled, what was rejected, why
+- Runtime & scenes:
+  - `rvw(o, n, needle)` / `wordT(ln, needle)` in `core/motion.js` — keyword-beat reveals: scene elements pop when the keyword is SPOKEN, not at line start; falls back to `rv()` exactly when word timing is absent
+  - `features/sketch.js` — hand-drawn annotation primitives (line/rect/circle/arrow/underline) on `srnd` (rough.js technique, zero deps); role-derived seeds keep parallel chunks bitwise-safe, optional quantized `boil` for squigglevision
+  - Karaoke subtitle mode — `SUB_KARAOKE` in style.js highlights spoken words left-to-right (default off)
+  - Spring subtitle entrance — exact damped-spring pop on subtitle blocks (golden stills re-initialized)
+
+- Voice & word timing:
+  - `tools/tts-gen/` — optional multi-provider TTS: per-line `vo/*.wav` with exact-by-construction `segments.json` and word timing; edge-tts verified live (free, keyless, Thai — word timing is voice-specific, detected at runtime), ElevenLabs/Gemini experimental
+  - `tools/auto-segment/` — optional whisper-based drafter of `segments.json` + sliced `vo/*.wav` from one long recording per speaker; now also emits `wordtimes.auto.json` — karaoke timing for recorded voices, zero new deps; manual workflow untouched
+  - `tools/phoneme-align/` — optional heavy-deps-isolated wav2vec2 forced alignment of vo files against their known transcripts (no ASR); phoneme-grade word timing, Thai model verified live
+  - `mux.mjs --bed-duck` — sidechain auto-ducking: the music bed dips under speech and rises in pauses (opt-in; tunables `--duck-*`)
+
+- Agent experience & docs:
+  - Agent Skills pack in `template/skills/` (`aiyu-authoring` / `aiyu-pipeline` / `aiyu-cinematic`) — operational rules for coding agents, with ❌/✅ pattern tables, gates, and self-checks
+  - `preview.html` A-B loop marks (`[`/`]`/`\`) and a scene-jump menu built from the registered scene table
+  - `docs/authoring/05-parameterized.md` — data-driven variants pattern under an audio-derived timing backbone
+  - `docs/acknowledgements.md` — provenance of every influence (remotion, aiyu-multi-agent, MoneyPrinterTurbo, whisperX, rough.js): what was adopted, what was rejected, and why
 
 ## [0.3.1] - 2026-11-26
 
@@ -48,7 +53,6 @@ Bugfix and hardening release — no intentional visual output changes; determini
 - `mix-studio.py` used asserts and silent failures for malformed dialogue, bad segment coverage, invalid settings, and voice path traversal; generated `talk.js` could break out of its script tag on `</script>` in dialogue
 - `mux` accepted invalid loudness/encoding values and inverted verification regions; ffmpeg stderr capture was uncapped
 - `preview.html` injected dialogue via `innerHTML`; character/personTH resolution was coupled through hidden globals
-
 
 ## [0.3.0] - 2026-11-26
 

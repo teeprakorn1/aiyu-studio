@@ -33,7 +33,7 @@ test('legacy people config adoption is not blocked by built-in personTH defaults
 test('core and regular feature files use explicit IIFE/globalThis export wrappers', () => {
   for (const f of [
     'template/core/base.js', 'template/core/motion.js', 'template/core/camera.js', 'template/core/runtime.js',
-    'template/features/subtitles.js', 'template/features/character.js', 'template/features/environment.js', 'template/features/cards.js',
+    'template/features/subtitles.js', 'template/features/character.js', 'template/features/environment.js', 'template/features/cards.js', 'template/features/sketch.js',
   ]) {
     const src = read(f).trim();
     assert.match(src, /^\/\*\*[\s\S]*?\*\/\s*\(\(\) => \{/, `${f} must be IIFE-wrapped after its file header`);

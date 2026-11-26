@@ -47,7 +47,7 @@ Vertical documentaries are repetitive to produce: sync subtitles by hand, resize
 - **Agent skills in every project** — condensed operational rules (`aiyu-authoring` / `aiyu-pipeline` / `aiyu-cinematic`) are scaffolded into `skills/`, so a coding agent writes correct scene code from the first prompt instead of learning the laws by trial and error
 - **Optional auto-segmentation** — `tools/auto-segment` drafts `segments.json` and sliced voice files from one long recording per speaker via whisper word-alignment; the manual voice-file workflow stays fully first-class
 - **One-command TTS generation** — `tools/tts-gen` synthesizes the whole dialogue into per-line voice files with an exact segments mapping (no alignment anywhere); edge-tts is free and keyless with verified Thai voices, ElevenLabs/Gemini plug in behind the same provider interface
-- **Karaoke subtitles** — word-level timing rides along with TTS synthesis (or `story/wordtimes.json` by hand); flip `SUB_KARAOKE` and spoken words highlight left-to-right as the film plays
+- **Karaoke subtitles** — flip `SUB_KARAOKE` and spoken words highlight left-to-right; word timing flows from tts-gen synthesis, auto-segment emission, optional phoneme-grade alignment, or `story/wordtimes.json` by hand
 - **Keyword-beat reveals** — `rvw(o, n, needle)` pops scene elements exactly when the narrator speaks the keyword (falls back to line-granular `rv()` when timing is absent); word timing flows from tts-gen, auto-segment, or optional phoneme-grade forced alignment
 
 ## 🏗️ How it works
@@ -153,6 +153,8 @@ If the sheet shows characters and subtitles, the pipeline works — or open `pre
 │   └── assets/fonts/         #   Kanit 4 weights (SIL OFL)
 ├── tests/                    # unit + e2e pyramid (not scaffolded into projects)
 ├── tools/auto-segment/       # optional whisper-based segments.json drafter (own deps, not scaffolded)
+├── tools/tts-gen/            # optional multi-provider TTS synthesizer (own deps, not scaffolded)
+├── tools/phoneme-align/      # optional wav2vec2 forced alignment — phoneme-grade word timing (heavy deps, isolated venv)
 ├── docs/                     # documentation system — topical folders, numbered files
 ├── examples/
 │   ├── active/               # future productions on the current architecture

@@ -87,3 +87,5 @@ Don't scatter raw hex through scenes. Define per-story palette objects (`const P
 - [ ] walk cycles use `walk:true` + `walkSpeed`, never manual leg math
 - [ ] safe zones still respected — cinematic is no excuse for unreadable text
 - [ ] verified in preview.html scrub + stills before any render
+
+Map routes read beautifully hand-drawn: `sketchArrow(x1, y1, x2, y2, {seed: 970+i, rough: 1.4})` instead of straight vector lines — the documentary expedition-map tell.

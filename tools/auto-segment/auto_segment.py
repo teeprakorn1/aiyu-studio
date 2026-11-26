@@ -176,6 +176,11 @@ def main():
         print('\nauto-segment: dry run — no files written')
         return
 
+    target = os.path.join(proj, 'story', 'segments.json' if args.write else 'segments.auto.json')
+    wt_target = os.path.join(proj, 'story', 'wordtimes.auto.json')
+    if os.path.exists(target) and not args.force:
+        fail(f'{os.path.basename(target)} already exists — pass --force to overwrite (never clobbering by default)')
+
     vo_dir = os.path.join(proj, 'vo')
     for c in all_cuts:
         dst = os.path.join(vo_dir, c['file'])
@@ -187,7 +192,6 @@ def main():
     # for karaoke/keyword timing. Fuzzy-grade: good enough for highlight/reveal beats.
     wt = lib_align.wordtimes_for_cuts(all_cuts, spk_words)
     if wt:
-        wt_target = os.path.join(proj, 'story', 'wordtimes.auto.json')
         if os.path.exists(wt_target) and not args.force:
             print('auto-segment: wordtimes.auto.json exists — skipped (use --force)')
         else:
@@ -196,9 +200,6 @@ def main():
                 f.write('\n')
             print(f'auto-segment: wrote story/wordtimes.auto.json ({len(wt)} groups timed) — rename to wordtimes.json for karaoke/keyword beats')
 
-    target = os.path.join(proj, 'story', 'segments.json' if args.write else 'segments.auto.json')
-    if os.path.exists(target) and not args.force:
-        fail(f'{os.path.basename(target)} already exists — pass --force to overwrite (never clobbering by default)')
     settings = {'tempo': 1.0, 'gap': 0.15, 'trimThresh': 500, 'lineGap': 0.06}
     payload = {'settings': settings, 'segments': rows}
     with open(target, 'w', encoding='utf-8', newline='\n') as f:

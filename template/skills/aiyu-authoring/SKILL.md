@@ -148,3 +148,14 @@ if (p > 0) drawBigNumber(ctx, easeBack(p), '42%');
 but NEVER depend on word timing existing for correctness; design scenes so the line-granular
 fallback still reads well. Prefer short distinctive needles (they match Thai subword chunks via
 substring tolerance); repeated words in one line match the FIRST occurrence.
+## Hand-drawn sketch annotations (features/sketch.js)
+
+Five opt-in primitives for documentary emphasis: `sketchLine/sketchRect/sketchCircle/sketchArrow/sketchUnderline(x…, {seed, rough, bow, width, color, boil, t})`.
+
+**THE SEED LAW:** seed derives from the shape's ROLE, never the frame — `seed: 9000 + sceneIdx*37 + shapeIdx`.
+Frame-derived seeds break parallel chunk rendering (chunk seams). Optional `boil` (frames per redraw)
+gives squigglevision — re-seeds quantized as a pure function of t, so it is chunk-safe, but it costs
+bitrate: use sparingly, never on dense diagrams.
+
+✅ emphasis circles on numbers, underlines on keywords, arrows, sketchy map routes, hand-drawn bar edges
+❌ whole-scene sketching (readability), hachure-style dense fills (compression shimmer), tiny text sketches

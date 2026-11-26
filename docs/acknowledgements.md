@@ -106,3 +106,15 @@ with wav2vec2 forced phoneme alignment, VAD preprocessing, and pyannote speaker 
 
 **Thai gap:** whisperX's built-in align-model table covers 30+ languages but not Thai; the VISTEC
 `airesearch/wav2vec2-large-xlsr-53-th` model fills it via the tool's `--model` flag.
+## rough-stuff/rough — studied for the sketch layer (v0.4.0)
+
+[rough.js](https://github.com/rough-stuff/rough) (MIT) — the hand-drawn graphics library.
+
+**Adopted as technique, not dependency** (no code copied — the MIT license is noted for provenance
+only): the double-stroke tell, perpendicular endpoint jitter with proven magnitude ratios
+(~1-2px at roughness 1), bowing ~2% of length, and seed-parameterized randomness as a first-class
+option — which maps perfectly onto our existing `srnd` hash and determinism law.
+
+**Rejected:** the library itself as a vendored dependency (template stays zero-runtime-deps);
+scan-line hachure/cross-hatch/dot fills (dense texture shimmers badly under video compression);
+the SVG backend (the engine is canvas-only); whole-scene sketch styling (readability).

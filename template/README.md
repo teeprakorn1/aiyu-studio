@@ -24,6 +24,7 @@ Condensed operational knowledge for coding agents — `skills/aiyu-authoring` (s
 
 - `features/atmosphere.js` — skies, haze, hills, trees, clouds, birds, water, smoke, grain, vignette, caption scrim, label plates. Call them bare from style.js (`skyStops(...)`, `waterBody(...)`, `grainLayer()`)
 - `features/people.js` — `personTH(id, o)` realistic humans; project-specific appearances are registered with `definePeople()` in `story/style.js`
+- `features/sketch.js` — hand-drawn annotations: `sketchLine/sketchRect/sketchCircle/sketchArrow/sketchUnderline(x…, {seed, rough, boil, t})` — seed from the shape's ROLE never the frame; details `docs/authoring/01-scenes.md`
 
 Both are IIFE-wrapped and export through `window`/`globalThis`. Copied legacy helper declarations can shadow them inside `story/style.js`, so remove duplicate helpers unless an override is intentional. Details: `docs/authoring/03-cinematic.md` and `docs/authoring/01-scenes.md` §6 + §12.
 
@@ -44,6 +45,7 @@ function scExample(o) {
   });
   if (o.i >= 2) TXT('appears from line 2', 540, 400, 60, '#e8dede');
   // rv(o, n) ramps 0→1 during line n and stays 1 after — prefer it over o.lp for anything that must not re-animate
+  // rvw(o, n, 'keyword') same but timed to the SPOKEN word — needs word timing (tts-gen/auto-segment/phoneme)
 }
 defineScenes([[3, scExample], [Infinity, scEnd]]);  // first scene covers lines 0–2
 ```

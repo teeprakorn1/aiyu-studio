@@ -39,13 +39,15 @@ Vertical documentaries are repetitive to produce: sync subtitles by hand, resize
 - **Spring-motion cards** — cards and pop-ins animate with exact damped-spring physics; every curve is a deterministic pure function, safe for parallel rendering
 - **Safe-zone discipline** — built-in margins keep text clear of Reels/TikTok UI overlays; QC live in the preview, then with stills before committing to a full render
 - **Parallel chunked rendering** — multiple headless browser processes render disjoint timeline segments simultaneously
-- **Broadcast loudness** — two-pass loudnorm to −15.5 LUFS with true-peak limiting, verified by ffprobe after muxing
+- **Broadcast loudness** — two-pass loudnorm to −15.5 LUFS with true-peak limiting, verified by ffprobe after muxing; optional `--bed-duck` sidechain compression ducks the music bed under speech and lets it rise in pauses
 - **Cinematic feature modules** — optional `features/atmosphere.js` (multi-stop skies, atmospheric depth, living water, weather, film grain) and `features/people.js` (realistic walk-cycle humans), extracted from the `thai-origins` production in [examples/legacy/](examples/legacy/thai-origins/)
 - **Chrome or Chromium** — automatic browser fallback chain; no Chrome license required
 - **Tested** — unit + end-to-end pyramid with zero added dependencies; determinism enforced by hash, not by hope
 - **One-command scaffolding** — `new-project.py` gives you a working, renderable demo project in seconds
 - **Agent skills in every project** — condensed operational rules (`aiyu-authoring` / `aiyu-pipeline` / `aiyu-cinematic`) are scaffolded into `skills/`, so a coding agent writes correct scene code from the first prompt instead of learning the laws by trial and error
 - **Optional auto-segmentation** — `tools/auto-segment` drafts `segments.json` and sliced voice files from one long recording per speaker via whisper word-alignment; the manual voice-file workflow stays fully first-class
+- **One-command TTS generation** — `tools/tts-gen` synthesizes the whole dialogue into per-line voice files with an exact segments mapping (no alignment anywhere); edge-tts is free and keyless with verified Thai voices, ElevenLabs/Gemini plug in behind the same provider interface
+- **Karaoke subtitles** — word-level timing rides along with TTS synthesis (or `story/wordtimes.json` by hand); flip `SUB_KARAOKE` and spoken words highlight left-to-right as the film plays
 
 ## 🏗️ How it works
 
@@ -160,7 +162,7 @@ If the sheet shows characters and subtitles, the pipeline works — or open `pre
 
 - [ ] More card types and transitions in the runtime
 - [ ] Landscape (16:9) output profile
-- [ ] One-command TTS generation integration
+- [x] ~~One-command TTS generation integration~~ — shipped as `tools/tts-gen`
 - [ ] CI-based video rendering example
 
 Ideas and feedback welcome — open an issue.

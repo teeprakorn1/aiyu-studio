@@ -64,7 +64,7 @@ function parseConcatList(listPath) {
 }
 
 const { flags } = parseArgs(process.argv.slice(2));
-assertKnownFlags(flags, ['concat','narration','bed','out','bed-gain-db','voice-limit','crf','preset','loudness-i','loudness-tp','loudness-lra','verify-tp','pause','speech','skip-audio-verify','help'], 'mux.mjs');
+assertKnownFlags(flags, ['concat','narration','bed','out','bed-gain-db','voice-limit','crf','preset','loudness-i','loudness-tp','loudness-lra','verify-tp','pause','speech','skip-audio-verify','bed-duck','duck-threshold','duck-ratio','duck-attack','duck-release','help'], 'mux.mjs');
 if (flags.help) {
   usage();
   process.exit(0);
@@ -80,6 +80,13 @@ const narration = path.resolve(here, String(flags.narration ?? 'narration.wav'))
 const bed = path.resolve(here, String(flags.bed ?? 'bed.wav'));
 const output = path.resolve(here, String(flags.out ?? 'final.mp4'));
 const bedGainDb = Number(flags['bed-gain-db'] ?? 3);
+const duck = flags['bed-duck'] !== undefined ? {
+  threshold: Number(flags['duck-threshold'] ?? 0.02),
+  ratio: Number(flags['duck-ratio'] ?? 8),
+  attack: Number(flags['duck-attack'] ?? 25),
+  release: Number(flags['duck-release'] ?? 500),
+} : null;
+if (duck) console.log(`mux: bed ducking ON (sidechain, ratio ${duck.ratio}:1, release ${duck.release}ms) — bed rises in pauses, dips under speech`);
 const voiceLimit = Number(flags['voice-limit'] ?? 0.35);
 const { crf, preset } = validateX264(flags.crf ?? 19, flags.preset ?? 'medium');
 const targetI = Number(flags['loudness-i'] ?? -15.5);
@@ -137,7 +144,7 @@ console.log(`mux: bed gain ${bedGainDb} dB; voice lookahead limiter ceiling ${vo
 mkdirSync(path.dirname(output), { recursive: true });
 
 // PASS 1: measure the exact pre-normalization narration+bed mix.
-const pass1Graph = `${audioMixGraph({ duration: targetDuration, voiceLimit, bedGainDb, firstPass: true })};[premix]loudnorm=I=${targetI}:TP=${targetTP}:LRA=${targetLRA}:print_format=json[m]`;
+const pass1Graph = `${audioMixGraph({ duration: targetDuration, voiceLimit, bedGainDb, firstPass: true, duck })};[premix]loudnorm=I=${targetI}:TP=${targetTP}:LRA=${targetLRA}:print_format=json[m]`;
 const pass1Args = [
   '-hide_banner', '-nostats',
   '-i', narration,
@@ -164,7 +171,7 @@ const loudnormSecond = {
 };
 
 const videoGraph = '[0:v]scale=in_range=pc:out_range=tv:in_color_matrix=bt601:out_color_matrix=bt709:flags=accurate_rnd+full_chroma_int,format=yuv420p,setparams=range=tv:color_primaries=bt709:color_trc=bt709:colorspace=bt709[v]';
-const audioGraph = finalAudioGraph({ duration: targetDuration, voiceLimit, bedGainDb, loudnorm: loudnormSecond });
+const audioGraph = finalAudioGraph({ duration: targetDuration, voiceLimit, bedGainDb, loudnorm: loudnormSecond, duck });
 const finalGraph = `${videoGraph};${audioGraph}`;
 
 // PASS 2 + video encode/mux.

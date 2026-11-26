@@ -34,6 +34,18 @@ test('fmtDurationValue trims floating noise', () => {
   assert.equal(fmtDurationValue(19.23), '19.23');
 });
 
+test('ducking: sidechaincompress wired with narration key, static mode untouched', () => {
+  const duck = { threshold: 0.02, ratio: 8, attack: 25, release: 500 };
+  const g = audioMixGraph({ duration: 10, voiceLimit: 0.95, bedGainDb: 3, firstPass: false, duck });
+  assert.match(g, /sidechaincompress=threshold=0\.02:ratio=8:attack=25:release=500/);
+  assert.match(g, /asplit=2\[n\]\[nk\]/);
+  assert.match(g, /\[bg\]\[nk\]sidechaincompress/);
+  const fg = finalAudioGraph({ duration: 10, voiceLimit: 0.95, bedGainDb: 3, loudnorm: { i: -15.5, tp: -1.5, lra: 11, measured_I: -20, measured_TP: -1, measured_LRA: 5, measured_thresh: -30, offset: 0 }, duck });
+  assert.match(fg, /sidechaincompress/);
+  const plain = audioMixGraph({ duration: 10, voiceLimit: 0.95, bedGainDb: 3, firstPass: false });
+  assert.ok(!plain.includes('sidechaincompress'), 'static default must not duck');
+});
+
 test('audioMixGraph first pass emits [premix], final emits [mix]', () => {
   const cfg = { duration: 10, voiceLimit: 0.35, bedGainDb: 3 };
   assert.match(audioMixGraph({ ...cfg, firstPass: true }), /\[premix\]$/);

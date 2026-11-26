@@ -71,6 +71,7 @@ def build(args):
     talk_lines = []
     pcm_all = b'' if not stub else None
 
+    seg_windows = []
     for k, (name, a, b) in enumerate(segments):
         grp = lines[a:b + 1]
         if stub:
@@ -79,6 +80,7 @@ def build(args):
             raw = atempo_pcm(trim_edges(pcm_of(have[k]), trim_thresh), tempo)
             gdur = len(raw) / 48000
         wsum = sum(len(l['txt']) for l in grp) + line_gap * 40 * (len(grp) - 1)
+        seg_windows.append((a, b, t))
         cur = t
         for n_line, l in enumerate(grp):
             dur = gdur * (len(l['txt']) + (line_gap * 40 if n_line else 0)) / wsum
@@ -93,6 +95,32 @@ def build(args):
         if not stub:
             pcm_all += raw + b'\x00' * (int(gap * 48000) // 2 * 2)
         t = cur + gap
+
+    # optional karaoke layer: story/wordtimes.json maps line index -> [[word, start, end]]
+    # relative to the audio file containing that line. Words are scaled by the same atempo
+    # factor as the audio and assigned to the line whose time window contains their midpoint.
+    # Silence trimming shifts them by tens of milliseconds — visually irrelevant for karaoke.
+    if not stub:
+        wt_path = os.path.join(HERE, 'story', 'wordtimes.json')
+        if os.path.exists(wt_path):
+            with open(wt_path, encoding='utf-8') as f:
+                wt = json.load(f)
+            abs_words = []
+            for a, b, seg_start in seg_windows:
+                for key, words in wt.items():
+                    if a <= int(key) <= b and isinstance(words, list):
+                        for w in words:
+                            ws, we = float(w[1]) / tempo, float(w[2]) / tempo
+                            abs_words.append((str(w[0]), seg_start + ws, seg_start + we))
+            n_merged = 0
+            for tl in talk_lines:
+                lo, hi = tl['t0'], tl['t0'] + tl['dur']
+                mine = [(w, s, e) for w, s, e in abs_words if lo <= (s + e) / 2 < hi]
+                if mine:
+                    tl['words'] = [{'w': w, 't0': round(s, 3), 'dur': round(e - s, 3)} for w, s, e in mine]
+                    n_merged += 1
+            if n_merged:
+                print(f'wordtimes.json -> karaoke timing merged into {n_merged}/{len(talk_lines)} lines')
 
     dur = talk_lines[-1]['t0'] + talk_lines[-1]['dur'] + 0.8
     talk = {'dur': round(dur, 2), 'lines': talk_lines}

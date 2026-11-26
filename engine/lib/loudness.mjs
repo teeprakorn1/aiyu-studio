@@ -66,10 +66,26 @@ export async function measureAstats(file, region) {
  * @param {{ duration: number, voiceLimit: number, bedGainDb: number, firstPass: boolean }} cfg
  * @returns {string} ffmpeg -filter_complex graph
  */
-export function audioMixGraph({ duration, voiceLimit, bedGainDb, firstPass }) {
+/** Bed chain fragment shared by both passes: static gain, optionally followed by
+ *  sidechain ducking driven by the narration copy [nk]. One definition — never duplicate. */
+function bedChain(inputIdx, duration, bedGainDb, duck) {
   const dur = fmtDurationValue(duration);
-  const narration = `[0:a]aresample=48000,alimiter=limit=${voiceLimit}:level=false:latency=true,apad=whole_dur=${dur},atrim=duration=${dur},asetpts=PTS-STARTPTS[n]`;
-  const bed = `[1:a]aresample=48000,volume=${bedGainDb}dB,atrim=duration=${dur},asetpts=PTS-STARTPTS[b]`;
+  const base = `[${inputIdx}:a]aresample=48000,volume=${bedGainDb}dB,atrim=duration=${dur},asetpts=PTS-STARTPTS`;
+  if (!duck) return `${base}[b]`;
+  const d = `threshold=${duck.threshold}:ratio=${duck.ratio}:attack=${duck.attack}:release=${duck.release}:makeup=1`;
+  return `${base}[bg];[bg][nk]sidechaincompress=${d}[b]`;
+}
+
+/** Narration chain fragment: when ducking, split narration into the mix copy and the sidechain key. */
+function narrationChain(inputIdx, duration, voiceLimit, duck) {
+  const dur = fmtDurationValue(duration);
+  const base = `[${inputIdx}:a]aresample=48000,alimiter=limit=${voiceLimit}:level=false:latency=true,apad=whole_dur=${dur},atrim=duration=${dur},asetpts=PTS-STARTPTS`;
+  return duck ? `${base}[na];[na]asplit=2[n][nk]` : `${base}[n]`;
+}
+
+export function audioMixGraph({ duration, voiceLimit, bedGainDb, firstPass, duck = null }) {
+  const narration = narrationChain(0, duration, voiceLimit, duck);
+  const bed = bedChain(1, duration, bedGainDb, duck);
   const mix = `[n][b]amix=inputs=2:duration=first:dropout_transition=0:normalize=0${firstPass ? '[premix]' : '[mix]'}`;
   return `${narration};${bed};${mix}`;
 }
@@ -80,10 +96,10 @@ export function audioMixGraph({ duration, voiceLimit, bedGainDb, firstPass }) {
  * @param {{ duration: number, voiceLimit: number, bedGainDb: number, loudnorm: object }} cfg
  * @returns {string} ffmpeg -filter_complex graph emitting [a]
  */
-export function finalAudioGraph({ duration, voiceLimit, bedGainDb, loudnorm }) {
+export function finalAudioGraph({ duration, voiceLimit, bedGainDb, loudnorm, duck = null }) {
   const dur = fmtDurationValue(duration);
-  const narration = `[1:a]aresample=48000,alimiter=limit=${voiceLimit}:level=false:latency=true,apad=whole_dur=${dur},atrim=duration=${dur},asetpts=PTS-STARTPTS[n]`;
-  const bed = `[2:a]aresample=48000,volume=${bedGainDb}dB,atrim=duration=${dur},asetpts=PTS-STARTPTS[b]`;
+  const narration = narrationChain(1, duration, voiceLimit, duck);
+  const bed = bedChain(2, duration, bedGainDb, duck);
   const ln = [
     `I=${loudnorm.i}`,
     `TP=${loudnorm.tp}`,

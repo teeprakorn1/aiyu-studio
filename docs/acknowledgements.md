@@ -58,6 +58,18 @@ The divergences are again deliberate:
 | Open-core license — free below a company-size threshold, paid above | MIT, everything | the template only spreads if nobody ever has to think about this |
 | General-purpose platform ambition | narrow machine for voiced vertical documentaries | the constraint is the feature — see the Motion Canvas section |
 
+### [harry0703/MoneyPrinterTurbo](https://github.com/harry0703/MoneyPrinterTurbo) (MIT)
+
+A different beast entirely: a fully-automatic short-video factory — topic in, LLM script, stock footage, TTS, auto-publish — philosophically opposite to aiyu-studio's authored procedural canvas. It was studied in v0.4.0 mostly as divergence, but three specific things travelled:
+
+1. **The edge-tts `SubMaker` discovery.** Buried in its voice service was the fact that free, keyless TTS returns word-boundary timestamps inside the synthesis stream — exact timing with no alignment step. This restructured the v0.4.0 TTS tool design around capability tiers: word timing is a provider capability, never an assumption (even MoneyPrinterTurbo itself only gets real timing from edge-tts; everything else falls back to whisper).
+2. **Word-by-word karaoke subtitles as a validated form.** Its sentence/word display modes confirmed that word-level subtitle animation is a real short-form vocabulary worth having — implemented here as a pure function of time over canvas, not a moviepy frame hack.
+3. **Spring-animated subtitle entrances.** Small, but the pop is part of why short-form feels alive.
+
+And one honest inversion: the auto-ducking music bed in v0.4.0 is **not** from MoneyPrinterTurbo — it exists precisely because studying it revealed the absence. Its bed mixing is a static volume multiply with no ducking and no loudness standardization at all; the ducking here (ffmpeg `sidechaincompress` driven by the narration itself) was the user's idea, prompted by that gap.
+
+The divergences dominate and are deliberate: footage-matching pipelines, LLM-inside-the-pipeline script generation, auto-upload to platforms, Streamlit/FastAPI/Redis service surfaces, sixty-provider integration sprawl — none of it fits a zero-dependency, author-driven, single-purpose tool.
+
 ### [MN-Lizard-Team/aiyu-multi-agent](https://github.com/MN-Lizard-Team/aiyu-multi-agent) (Apache-2.0)
 
 A different kind of source — and a disclosure is owed first: this framework is by the same author as aiyu-studio itself, which is precisely why its patterns were close at hand. It is not a video project at all, but a multi-agent AI framework whose skill system treats LLM agents as fallible operators that need enforcement, not just information. When the v0.4.0 Agent Skills pack was written, its structure came from the open Agent Skills format (see the Remotion section above), but its **teaching style** was adapted from patterns proven in this framework: mandatory self-check tables before declaring completion, pre-action gates ("publishing without the gate = burning render time"), wrong/right pattern pairs over abstract rules, and violation framing that names the failure consequence instead of the virtue. The adaptation is selective — the Socratic-questioning protocols and orchestration machinery were deliberately left behind, because a video pipeline's workflow is already fixed and skills here teach correct execution rather than requirements discovery.

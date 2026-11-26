@@ -80,6 +80,31 @@ function layoutSubs(txt) {
   SUB_CACHE.set(txt, out);
   return out;
 }
+/** Map each character of txt to its timing-word index via sequential matching.
+ *  Pure function — Thai caveat: TTS/whisper tokens are subword-ish and may not cover
+ *  every character; unmatched chars map to -1 and simply follow the base styling. */
+function karaokeMap(txt, words) {
+  const map = new Array(txt.length).fill(-1);
+  let pos = 0;
+  words.forEach((word, wi) => {
+    const w = word.w || '';
+    if (!w) return;
+    const at = txt.indexOf(w, pos);
+    if (at === -1) return;
+    for (let i = at; i < at + w.length && i < txt.length; i++) map[i] = wi;
+    pos = at + w.length;
+  });
+  return map;
+}
+/** Index of the word being spoken at time-in-line tline (seconds since line start). */
+function karaokeActiveIdx(words, lineT0, tline) {
+  let idx = -1;
+  for (let i = 0; i < words.length; i++) {
+    if (words[i].t0 - lineT0 <= tline + 0.04) idx = i;  // small lead feels more natural
+    else break;
+  }
+  return idx;
+}
 function subs(o) {
   const ln = o.line;
   if (!ln || !ln.txt) return;
@@ -88,8 +113,19 @@ function subs(o) {
   const size = lay.size, lineH = Math.round(size * 1.18), pillH = Math.round(size * 1.12);
   const bottomBaseline = 1490;
   const firstBaseline = bottomBaseline - (lay.rows.length - 1) * lineH;
+  // entrance: spring scale pop composed over the alpha ramp — exact damped-harmonic,
+  // pure function of line progress, determinism-safe
+  const sc = 0.82 + 0.18 * springy(a, 170, 12);
   g.save(); g.globalAlpha = a;
+  g.translate(W / 2, firstBaseline + (lay.rows.length - 1) * lineH / 2);
+  g.scale(sc, sc);
+  g.translate(-W / 2, -(firstBaseline + (lay.rows.length - 1) * lineH / 2));
   g.font = `700 ${size}px ${FONT}`; g.textAlign = 'center'; g.lineJoin = 'round';
+  const karaokeOn = !!(globalThis.SUB_KARAOKE && ln.words && ln.words.length);
+  const kmap = karaokeOn ? karaokeMap(ln.txt, ln.words) : null;
+  const activeIdx = karaokeOn ? karaokeActiveIdx(ln.words, ln.t0, o.lp * ln.dur) : -1;
+  const HI = '#ffd166';
+  let rowSearchPos = 0;
   lay.rows.forEach((row, i) => {
     const baseline = firstBaseline + i * lineH;
     const w = lay.widths[i] + SUB_PAD_X * 2;
@@ -97,6 +133,33 @@ function subs(o) {
     RRECT(W / 2 - w / 2, top, w, pillH, pillH / 2, 'rgba(8,8,12,.66)');
     g.lineWidth = SUB_STROKE; g.strokeStyle = '#000'; g.strokeText(row, W / 2, baseline);
     g.fillStyle = '#f4f1ea'; g.fillText(row, W / 2, baseline);
+    if (!karaokeOn) return;
+    // highlight pass: redraw spoken prefix chars left-to-right; active word pops slightly
+    const found = ln.txt.indexOf(row, rowSearchPos);
+    const rowStart = found !== -1 ? found : rowSearchPos;
+    rowSearchPos = rowStart + row.length;
+    let x = W / 2 - lay.widths[i] / 2;
+    g.textAlign = 'left';
+    for (let ci = 0; ci < row.length; ci++) {
+      const wi = kmap[rowStart + ci] ?? -1;
+      const ch = row[ci];
+      const cw = g.measureText(ch).width;
+      if (wi !== -1 && wi <= activeIdx) {
+        const isActive = wi === activeIdx;
+        if (isActive) {
+          const pop = 1.12;
+          g.save();
+          g.translate(x + cw / 2, baseline - size * 0.35);
+          g.scale(pop, pop);
+          g.translate(-(x + cw / 2), -(baseline - size * 0.35));
+        }
+        g.lineWidth = SUB_STROKE; g.strokeStyle = '#000'; g.strokeText(ch, x, baseline);
+        g.fillStyle = HI; g.fillText(ch, x, baseline);
+        if (isActive) g.restore();
+      }
+      x += cw;
+    }
+    g.textAlign = 'center';
   });
   g.restore();
 }
@@ -104,5 +167,5 @@ function subs(o) {
  *  Use for any element that appears at a line and must NOT re-animate on later lines —
  *  feeding o.lp directly re-triggers the animation every time the narration advances. */
 
-Object.assign(globalThis, { layoutSubs,subs });
+Object.assign(globalThis, { layoutSubs, subs, karaokeMap, karaokeActiveIdx });
 })();

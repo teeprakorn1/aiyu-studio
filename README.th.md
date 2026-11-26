@@ -38,13 +38,15 @@
 - **การ์ดเด้งแบบสปริง** — การ์ดและ pop-in เคลื่อนด้วยฟิสิกส์สปริงแท้ ทุก curve เป็น pure function deterministic ปลอดภัยกับการเรนเดอร์ขนาน
 - **ระบบ safe zone** — ขอบกันตายในตัวกันข้อความโดน UI ของ Reels/TikTok บัง ตรวจสดใน preview แล้วยืนยันด้วยภาพนิ่งก่อนเรนเดอร์จริงทุกครั้ง
 - **เรนเดอร์ขนานหลายโปรเซส** — headless browser หลายตัวเรนเดอร์ช่วงเวลาที่ไม่ซ้ำกันพร้อมกัน
-- **เสียงมาตรฐาน broadcast** — loudnorm สองผ่านไปที่ −15.5 LUFS พร้อม true-peak limiting ตรวจยืนยันด้วย ffprobe หลัง mux
+- **เสียงมาตรฐาน broadcast** — loudnorm สองผ่านไปที่ −15.5 LUFS พร้อม true-peak limiting ตรวจยืนยันด้วย ffprobe หลัง mux มี `--bed-duck` แบบเลือกได้ ดันดนตรีพื้นหลังลงอัตโนมัติใต้เสียงพูดแล้วดีดกลับช่วงเว้นวรรค
 - **โมดูล cinematic** — `features/atmosphere.js` (ท้องฟ้าหลายชั้น มุมมองลึกด้วยสี น้ำมีชีวิต อากาศ/ฟิล์มเกรน) และ `features/people.js` (ตัวละครมนุษย์สัดส่วนจริงเดินได้) แยกมาจากโปรดักชัน `thai-origins` ใน [examples/legacy/](examples/legacy/thai-origins/)
 - **Chrome หรือ Chromium ก็ได้** — engine เลือกเบราว์เซอร์ให้อัตโนมัติ ไม่จำเป็นต้องมี Chrome
 - **มีเทส** — pyramid ทั้ง unit + end-to-end โดยไม่เพิ่ม dependency เลย determinism ถูกบังคับด้วย hash ไม่ใช่ความหวัง
 - **scaffold คำสั่งเดียว** — `new-project.py` ให้โปรเจกต์ demo ที่เรนเดอร์ได้จริงในไม่กี่วินาที
 - **agent skills ในทุกโปรเจกต์** — กฎฉบับย่อ (`aiyu-authoring` / `aiyu-pipeline` / `aiyu-cinematic`) ถูก scaffold ไปใน `skills/` เสมอ coding agent เขียนโค้ดฉากถูกตั้งแต่พรอมป์แรก แทนที่จะค่อย ๆ เรียนรู้กฎจากความผิดพลาด
 - **auto-segmentation แบบ optional** — `tools/auto-segment` ร่าง `segments.json` และตัดไฟล์เสียงย่อยจากเสียงยาวไฟล์เดียวต่อผู้พูดด้วย whisper word-alignment วิถี manual เดิมยังเป็น first-class เต็มตัว
+- **generate เสียง TTS คำสั่งเดียว** — `tools/tts-gen` สังเคราะห์บทพูดทั้งเรื่องเป็นไฟล์เสียงทีละบรรทัดพร้อม segments ที่แม่นตั้งแต่เกิด (ไม่ต้อง align อะไรเลย) edge-tts ฟรีไม่ต้องมี key ยืนยันเสียงไทยแล้ว ส่วน ElevenLabs/Gemini ต่อผ่าน provider interface เดียวกัน
+- **ซับคาราโอเกะ** — word timing ติดมากับการสังเคราะห์เสียง (หรือเขียน `story/wordtimes.json` เอง) เปิด `SUB_KARAOKE` แล้วคำที่พูดจะไฮไลต์ไล่จากซ้ายไปขวาตามจังหวะเสียงจริง
 
 ## 🏗️ การทำงาน
 
@@ -159,7 +161,7 @@ npm run stills -- 1,5,10                 # แล้วเปิด stills/sheet
 
 - [ ] การ์ดและ transition เพิ่มใน runtime
 - [ ] โปรไฟล์เอาต์พุตแนวนอน (16:9)
-- [ ] เชื่อม TTS generation คำสั่งเดียว
+- [x] ~~เชื่อม TTS generation คำสั่งเดียว~~ — ออกแล้วใน `tools/tts-gen`
 - [ ] ตัวอย่างการเรนเดอร์วิดีโอบน CI
 
 มีไอเดียหรือ feedback ยินดีครับ — เปิด issue ได้เลย

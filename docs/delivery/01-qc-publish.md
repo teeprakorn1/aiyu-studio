@@ -16,6 +16,7 @@
 
 - **The bed check is opt-in.** Without `--pause` and `--speech`, mux prints a skip note. Pick a region that is really silent in your narration (e.g. between two scenes). A window inside speech gives a meaningless reading.
 - **True-peak ceiling:** AAC encoding adds 0.1–0.3 dB of overshoot, so a −1.5 dBTP target can fail verification by a hair. Use `--loudness-tp=-2.0` (sets the target and the verify ceiling together) or set `--verify-tp` separately.
+- **Auto-ducking (`--bed-duck`)** changes bed semantics by design: the bed dips under speech and rises in pauses, so the static-mode 20–24 dB pause-vs-speech window no longer applies — read the printed values as information, and judge the balance by ear in a real pause. Ducking is driven by the narration energy itself (ffmpeg `sidechaincompress`), so it works equally for recorded and synthesized voices.
 - **A chunk boundary coinciding with a scene cut** always measures high frame difference because the picture genuinely changes — it's not a broken seam; verify continuity of audio/props within the scene instead
 
 ## File versioning

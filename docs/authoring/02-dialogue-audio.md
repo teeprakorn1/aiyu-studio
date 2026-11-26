@@ -43,6 +43,10 @@ Example (Thai content, since this pipeline targets Thai-language videos):
 
 ## 3. Generating voices (TTS)
 
+**Automated path — `tools/tts-gen/`** (optional tool in the repo, not scaffolded): write `story/tts.json` mapping each speaker to a provider+voice, run it, and it synthesizes **one file per line** — which makes the segments mapping exact by construction, with no alignment anywhere — drafts `segments.auto.json`, and emits `wordtimes.auto.json` when the provider supports word timing. edge-tts is free, keyless, and verified (including Thai voices); ElevenLabs/Gemini are experimental. Caveat verified live: word boundaries are **voice-specific** — th-TH-NiwatNeural emits them, th-TH-PremwadeeNeural refuses — the tool detects this at runtime and says so per line. See `tools/tts-gen/README.md`.
+
+**Manual path (first-class as always):**
+
 - Any format ffmpeg can read — the system converts to mono 24 kHz itself
 - Generate one segment at a time per segments.json — **voice must stay consistent across all files** (same voice/prompt)
 - Don't speed up inside the TTS — generate at natural pace and speed up centrally with `tempo` so everything rescales together
@@ -83,7 +87,13 @@ If you prefer recording **one long take per speaker** over generating per-segmen
 - Open talk.js and inspect the first few lines: `t0` must increase monotonically with no overlaps; `env` must not be all zeros in real mode (all zeros = silent/broken audio file)
 - **Open `preview.html`** — real mode embeds the true narration waveform (`wave`/`waveDur` in talk.js), so the scrubber timeline now shows actual speech peaks instead of the synthesized stub blocks. Scrub line by line and check that mouth movement matches the voice before rendering anything
 
+## 6b. Optional: word timing + karaoke subtitles
+
+When `story/wordtimes.json` exists (rename the tts-gen draft, or write your own — `{ "0": [["word", start, end], ...] }` with times relative to that line's audio file), `npm run mix` merges it into talk.js as absolute per-word timing. Setting `SUB_KARAOKE = true` in `story/style.js` then renders karaoke subtitles: spoken words highlight left-to-right, active word pops. Default is off. Honest caveat: Thai "words" from TTS/whisper are subword-ish segmentation — visually fine, not linguistic-grade — and silence trimming makes timing approximate by tens of milliseconds, which is invisible in practice.
+
 ## 7. Music bed — the second mux input
+
+- `npm run mux -- --bed-duck` auto-ducks the bed under speech and lets it rise in pauses (ffmpeg sidechaincompress) — opt-in; static mixing stays the default. See [qc-publish.md](../delivery/01-qc-publish.md) for how the QC semantics change.
 
 `mux.mjs` mixes the narration with a looped music bed (`bed.wav` in the project folder by default, +3 dB before mixing). The bed is a **required** input — the template does not ship one, so create or copy it before muxing.
 

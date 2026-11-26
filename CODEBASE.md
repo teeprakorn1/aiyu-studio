@@ -32,6 +32,7 @@ aiyu-studio/  (repo: github.com/teeprakorn1/aiyu-studio)
 │   └── lib/              all shared logic (cli-args, playwright-env, ffmpeg, encoding, loudness, mp4-verify, chunking, talk, mix_audio)
 ├── tests/                the pyramid — unit (node:test + python unittest) + e2e; never scaffolded
 ├── tools/auto-segment/   optional whisper-based segments.json drafter — own dependencies, never scaffolded
+├── tools/tts-gen/        optional multi-provider TTS synthesizer (edge/elevenlabs/gemini) — per-line vo files, exact segments, wordtimes; own dependencies, never scaffolded
 ├── docs/                 documentation system — topical folders, numbered files, per-folder indexes
 ├── examples/
 │   ├── active/           future productions on the current architecture (empty until first)

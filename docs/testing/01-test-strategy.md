@@ -9,11 +9,11 @@ with something stronger than good intentions.
 ## The shape
 
 ```
-        ┌──────────────┐
-        │   e2e  (3)   │  minutes — real scaffold, real ffmpeg renders, real browser
-        ├──────────────┤
-        │  unit (~95+) │  seconds — pure logic, no browser, no renders
-        └──────────────┘
+        ┌───────────────┐
+        │   e2e  (3)    │  minutes — real scaffold, real ffmpeg renders, real browser
+        ├───────────────┤
+        │  unit (~110+) │  seconds — pure logic, no browser, no renders
+        └───────────────┘
 ```
 
 Small on purpose. Every test in this suite exists because it guards a specific,

@@ -6,15 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-Feature release — agent-readability, preview quality-of-life, data-driven variants documentation, and an optional audio-splitting helper. No visual output changes; no breaking changes.
+## [0.4.0] - 2026-11-26
+
+Feature release — agent-readability, preview quality-of-life, TTS generation with exact timing, karaoke subtitles, auto-ducking, data-driven variants documentation, and optional audio helpers. No breaking changes.
 
 ### Added
 
-- Agent Skills pack in `template/skills/` scaffolded into every project: `aiyu-authoring` (scene writing rules), `aiyu-pipeline` (production workflow/QC/troubleshooting), `aiyu-cinematic` (atmosphere/people/maps) — condensed operational knowledge for coding agents in the open Agent Skills format — with ❌/✅ fatal-pattern tables, pre-publish gates, and mandatory self-checks
-- `preview.html` A-B loop marks (`[`/`]` set, `\` clear — highlighted band, wraps playback in both audio and clock mode) and a scene-jump menu built from the registered scene table
-- `tools/auto-segment/` — optional, separately dependency-isolated helper that drafts `segments.json` and slices `vo/*.wav` from one long recording per speaker using faster-whisper alignment; the manual workflow remains first-class and untouched
-- `docs/authoring/05-parameterized.md` — the data-driven variants pattern: what can and cannot vary under an audio-derived timing backbone, the `story/data.js` module pattern, batch workflow with per-variant `--out`
-- `docs/acknowledgements.md` provenance for the release's influences — what was studied and adapted from remotion-dev/remotion (skills distribution, parameterized framing, transport QoL bar) and MN-Lizard-Team/aiyu-multi-agent (enforcement teaching style), plus what was deliberately rejected and why
+- Agent Skills pack in `template/skills/` scaffolded into every project (`aiyu-authoring` / `aiyu-pipeline` / `aiyu-cinematic`) — operational rules for coding agents, with ❌/✅ pattern tables, gates, and self-checks
+- `preview.html` A-B loop marks (`[`/`]`/`\`) and a scene-jump menu built from the registered scene table
+- `tools/tts-gen/` — optional multi-provider TTS: synthesizes the dialogue into per-line `vo/*.wav` with exact-by-construction `segments.json` and word-level timing. edge-tts verified live (free, keyless, Thai voices — word timing is voice-specific and detected at runtime); ElevenLabs/Gemini experimental
+- Karaoke subtitle mode — `story/wordtimes.json` merges into talk.js; `SUB_KARAOKE` in style.js highlights spoken words left-to-right (default off)
+- `mux.mjs --bed-duck` — sidechain auto-ducking: the music bed dips under speech and rises in pauses (opt-in; tunables `--duck-*`)
+- Spring subtitle entrance — exact damped-spring pop on subtitle blocks (golden stills re-initialized)
+- `tools/auto-segment/` — optional whisper-based drafter of `segments.json` + sliced `vo/*.wav` from one long recording per speaker; manual workflow untouched
+- `docs/authoring/05-parameterized.md` — data-driven variants pattern under an audio-derived timing backbone
+- `docs/acknowledgements.md` — provenance for remotion-dev/remotion, MN-Lizard-Team/aiyu-multi-agent, and harry0703/MoneyPrinterTurbo: what travelled, what was rejected, why
 
 ## [0.3.1] - 2026-11-26
 

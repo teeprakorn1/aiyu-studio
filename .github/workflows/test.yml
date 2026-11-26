@@ -24,11 +24,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      # ffmpeg + ffprobe are preinstalled in the ubuntu-latest runner image —
-      # verify loudly instead of trusting, so a future image change fails here
-      # with a clear message rather than deep inside a test.
-      - name: verify ffmpeg presence
-        run: ffmpeg -version && ffprobe -version
+      # ffmpeg is NOT preinstalled on current ubuntu-latest runners (verified by a
+      # red CI run) — install from apt rather than a third-party action, one less
+      # external dependency to break. ffmpeg/ffprobe versions are verified loudly
+      # at the end so an image change fails here, not deep inside a test.
+      - name: install ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg && ffmpeg -version | head -1 && ffprobe -version | head -1
       # npm test is the single source of truth — add new unit test files in
       # package.json only, never here.
       - name: unit tests (node + python)
@@ -45,11 +46,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      # ffmpeg + ffprobe are preinstalled in the ubuntu-latest runner image —
-      # verify loudly instead of trusting, so a future image change fails here
-      # with a clear message rather than deep inside a test.
-      - name: verify ffmpeg presence
-        run: ffmpeg -version && ffprobe -version
+      # ffmpeg is NOT preinstalled on current ubuntu-latest runners (verified by a
+      # red CI run) — install from apt rather than a third-party action, one less
+      # external dependency to break. ffmpeg/ffprobe versions are verified loudly
+      # at the end so an image change fails here, not deep inside a test.
+      - name: install ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg && ffmpeg -version | head -1 && ffprobe -version | head -1
       - name: install playwright cli
         run: npm install --no-save playwright-core
       - name: resolve playwright version (for browser cache key)

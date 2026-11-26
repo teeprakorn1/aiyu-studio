@@ -1,29 +1,21 @@
 #!/usr/bin/env node
-// Final v4 mux/encode: concat silent chunks, fix full-range color to limited BT.709,
-// mix narration + looped music bed, two-pass loudness normalize, AAC, faststart MP4.
+/**
+ * @file mux.mjs — final mux/encode: concat silent chunks, fix full-range color to limited BT.709,
+ * mix narration + looped music bed, two-pass loudness normalize, AAC, faststart MP4.
+ */
 
-import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, openSync, closeSync, readSync, fstatSync, statSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, statSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { parseArgs } from './lib/cli-args.mjs';
+import { runProcess, printCommand, ffprobeJson, parseRational } from './lib/ffmpeg.mjs';
+import { scanMp4Boxes } from './lib/mp4-verify.mjs';
+import { extractLoudnormJson, regionSpec, measureAstats, audioMixGraph, finalAudioGraph, fmtDurationValue } from './lib/loudness.mjs';
 
-const here = path.dirname(fileURLToPath(import.meta.url));
-
-function parseArgs(argv) {
-  const out = {};
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    if (!a.startsWith('--')) continue;
-    const eq = a.indexOf('=');
-    if (eq >= 0) out[a.slice(2, eq)] = a.slice(eq + 1);
-    else if (argv[i + 1] && !argv[i + 1].startsWith('--')) out[a.slice(2)] = argv[++i];
-    else out[a.slice(2)] = true;
-  }
-  return out;
-}
+/** project root — engine scripts always run from the project root (npm scripts guarantee it) */
+const here = process.cwd();
 
 function usage() {
-  console.log(`Usage: node mux-v4.mjs --concat=out/v4concat.txt [options]
+  console.log(`Usage: node engine/mux.mjs --concat=out/v1concat.txt [options]
 
 Required:
   --concat=<file>          FFmpeg concat-demuxer list of silent video chunks
@@ -47,65 +39,8 @@ Options:
   --help
 
 Example:
-  node mux-v4.mjs --concat=out/v4concat.txt
+  node engine/mux.mjs --concat=out/v1concat.txt
 `);
-}
-
-function shellQuote(s) {
-  const text = String(s);
-  return /^[A-Za-z0-9_./:=+-]+$/.test(text) ? text : `'${text.replace(/'/g, `'\\''`)}'`;
-}
-
-function printCommand(cmd, args) {
-  return [cmd, ...args].map(shellQuote).join(' ');
-}
-
-function runProcess(cmd, args, opts = {}) {
-  return new Promise((resolve, reject) => {
-    const child = spawn(cmd, args, { windowsHide: true });
-    let stdout = '';
-    let stderr = '';
-    let lastProgress = 0;
-    child.stdout.on('data', d => { stdout += d.toString(); });
-    child.stderr.on('data', d => {
-      const text = d.toString();
-      stderr += text;
-      if (opts.progress) {
-        const m = text.match(/time=(\d+):(\d+):(\d+(?:\.\d+)?)/);
-        if (m) {
-          const t = Number(m[1]) * 3600 + Number(m[2]) * 60 + Number(m[3]);
-          if (t - lastProgress >= 20) {
-            lastProgress = t;
-            console.log(`  encode progress: ${t.toFixed(1)}s`);
-          }
-        }
-      }
-    });
-    child.on('error', reject);
-    child.on('close', code => {
-      if (code === 0) resolve({ stdout, stderr, code });
-      else {
-        const err = new Error(`${cmd} exited with code ${code}\n${stderr.slice(-5000)}`);
-        err.stdout = stdout;
-        err.stderr = stderr;
-        err.code = code;
-        reject(err);
-      }
-    });
-  });
-}
-
-async function ffprobeJson(file, extraEntries) {
-  const entries = extraEntries || 'stream=index,codec_name,codec_type,width,height,pix_fmt,color_range,color_space,color_primaries,color_transfer,r_frame_rate,avg_frame_rate,nb_frames,duration,sample_rate,channels,channel_layout,profile,bit_rate:format=duration,size,bit_rate';
-  const args = ['-v', 'error', '-show_entries', entries, '-of', 'json', file];
-  const r = await runProcess('ffprobe', args);
-  return JSON.parse(r.stdout);
-}
-
-function parseRational(x) {
-  if (!x) return NaN;
-  const [n, d = '1'] = String(x).split('/');
-  return Number(n) / Number(d);
 }
 
 function parseConcatList(listPath) {
@@ -126,98 +61,7 @@ function parseConcatList(listPath) {
   return files;
 }
 
-function fmtDurationValue(x) {
-  return Number(Number(x).toFixed(6)).toString();
-}
-
-function extractLoudnormJson(text) {
-  const m = text.match(/\{\s*"input_i"[\s\S]*?\}/);
-  if (!m) throw new Error(`Could not find loudnorm JSON in ffmpeg output. Tail:\n${text.slice(-2500)}`);
-  return JSON.parse(m[0]);
-}
-
-function regionSpec(s, fallback) {
-  const text = String(s ?? fallback);
-  const m = text.match(/^([0-9.]+)\s*-\s*([0-9.]+)$/);
-  if (!m) throw new Error(`Invalid time region '${text}'; expected START-END`);
-  return { start: Number(m[1]), end: Number(m[2]) };
-}
-
-async function measureAstats(file, region) {
-  const af = `atrim=start=${region.start}:end=${region.end},asetpts=PTS-STARTPTS,astats`;
-  const r = await runProcess('ffmpeg', ['-hide_banner', '-nostats', '-i', file, '-af', af, '-f', 'null', '-']);
-  const text = r.stderr + r.stdout;
-  const at = text.lastIndexOf('Overall');
-  const overall = at >= 0 ? text.slice(at) : text;
-  const rms = Number(overall.match(/RMS level dB:\s*(-?[0-9.]+)/)?.[1]);
-  const peak = Number(overall.match(/Peak level dB:\s*(-?[0-9.]+)/)?.[1]);
-  return { rms, peak };
-}
-
-function scanMp4Boxes(file) {
-  const fd = openSync(file, 'r');
-  try {
-    const size = fstatSync(fd).size;
-    const order = [];
-    let pos = 0;
-    while (pos + 8 <= size && order.length < 16) {
-      const hdr = Buffer.alloc(16);
-      readSync(fd, hdr, 0, 8, pos);
-      let boxSize = hdr.readUInt32BE(0);
-      const type = hdr.toString('ascii', 4, 8);
-      let header = 8;
-      if (boxSize === 1) {
-        readSync(fd, hdr, 0, 16, pos);
-        boxSize = Number(hdr.readBigUInt64BE(8));
-        header = 16;
-      } else if (boxSize === 0) {
-        boxSize = size - pos;
-      }
-      if (!Number.isFinite(boxSize) || boxSize < header) break;
-      order.push({ type, offset: pos, size: boxSize });
-      if (order.some(x => x.type === 'moov') && order.some(x => x.type === 'mdat')) break;
-      pos += boxSize;
-    }
-    const moov = order.findIndex(x => x.type === 'moov');
-    const mdat = order.findIndex(x => x.type === 'mdat');
-    return {
-      order: order.map(x => x.type),
-      moovBeforeMdat: moov >= 0 && mdat >= 0 && moov < mdat,
-      moovIndex: moov,
-      mdatIndex: mdat,
-    };
-  } finally {
-    closeSync(fd);
-  }
-}
-
-function audioMixGraph({ duration, voiceLimit, bedGainDb, firstPass }) {
-  const dur = fmtDurationValue(duration);
-  const narration = `[0:a]aresample=48000,alimiter=limit=${voiceLimit}:level=false:latency=true,apad=whole_dur=${dur},atrim=duration=${dur},asetpts=PTS-STARTPTS[n]`;
-  const bed = `[1:a]aresample=48000,volume=${bedGainDb}dB,atrim=duration=${dur},asetpts=PTS-STARTPTS[b]`;
-  const mix = `[n][b]amix=inputs=2:duration=first:dropout_transition=0:normalize=0${firstPass ? '[premix]' : '[mix]'}`;
-  return `${narration};${bed};${mix}`;
-}
-
-function finalAudioGraph({ duration, voiceLimit, bedGainDb, loudnorm }) {
-  const dur = fmtDurationValue(duration);
-  const narration = `[1:a]aresample=48000,alimiter=limit=${voiceLimit}:level=false:latency=true,apad=whole_dur=${dur},atrim=duration=${dur},asetpts=PTS-STARTPTS[n]`;
-  const bed = `[2:a]aresample=48000,volume=${bedGainDb}dB,atrim=duration=${dur},asetpts=PTS-STARTPTS[b]`;
-  const ln = [
-    `I=${loudnorm.i}`,
-    `TP=${loudnorm.tp}`,
-    `LRA=${loudnorm.lra}`,
-    `measured_I=${loudnorm.measured_I}`,
-    `measured_TP=${loudnorm.measured_TP}`,
-    `measured_LRA=${loudnorm.measured_LRA}`,
-    `measured_thresh=${loudnorm.measured_thresh}`,
-    `offset=${loudnorm.offset}`,
-    'linear=true',
-  ].join(':');
-  return `${narration};${bed};[n][b]amix=inputs=2:duration=first:dropout_transition=0:normalize=0,loudnorm=${ln},aresample=48000,atrim=duration=${dur},asetpts=PTS-STARTPTS[a]`;
-}
-
-const flags = parseArgs(process.argv.slice(2));
+const { flags } = parseArgs(process.argv.slice(2));
 if (flags.help) {
   usage();
   process.exit(0);
@@ -250,8 +94,8 @@ if (!(voiceLimit >= 0.0625 && voiceLimit <= 1)) throw new Error('--voice-limit m
 if (!Number.isFinite(bedGainDb)) throw new Error('--bed-gain-db must be numeric');
 
 const chunks = parseConcatList(concatList);
-console.log(`mux-v4: concat list ${concatList}`);
-console.log(`mux-v4: ${chunks.length} video chunk(s)`);
+console.log(`mux: concat list ${concatList}`);
+console.log(`mux: ${chunks.length} video chunk(s)`);
 
 let videoDuration = 0;
 const chunkInfos = [];
@@ -284,8 +128,8 @@ if (narrationDuration > videoDuration + 0.050) {
 
 const targetDuration = videoDuration;
 const durText = fmtDurationValue(targetDuration);
-console.log(`mux-v4: target duration ${targetDuration.toFixed(6)}s; narration ${narrationDuration.toFixed(3)}s (padding ${(targetDuration - narrationDuration).toFixed(3)}s, no truncation)`);
-console.log(`mux-v4: bed gain ${bedGainDb} dB; voice lookahead limiter ceiling ${voiceLimit}`);
+console.log(`mux: target duration ${targetDuration.toFixed(6)}s; narration ${narrationDuration.toFixed(3)}s (padding ${(targetDuration - narrationDuration).toFixed(3)}s, no truncation)`);
+console.log(`mux: bed gain ${bedGainDb} dB; voice lookahead limiter ceiling ${voiceLimit}`);
 
 mkdirSync(path.dirname(output), { recursive: true });
 
@@ -299,11 +143,11 @@ const pass1Args = [
   '-map', '[m]',
   '-f', 'null', '-',
 ];
-console.log('\nmux-v4 loudnorm pass 1 command:');
+console.log('\nmux loudnorm pass 1 command:');
 console.log(printCommand('ffmpeg', pass1Args));
 const pass1 = await runProcess('ffmpeg', pass1Args);
 const measured = extractLoudnormJson(pass1.stderr + pass1.stdout);
-console.log('mux-v4 loudnorm pass 1 measurements:', JSON.stringify(measured, null, 2));
+console.log('mux loudnorm pass 1 measurements:', JSON.stringify(measured, null, 2));
 
 const loudnormSecond = {
   i: targetI,
@@ -337,12 +181,12 @@ const finalArgs = [
   '-t', durText,
   output,
 ];
-console.log('\nmux-v4 final encode command:');
+console.log('\nmux final encode command:');
 console.log(printCommand('ffmpeg', finalArgs));
 await runProcess('ffmpeg', finalArgs, { progress: true });
 
 if (!existsSync(output) || !statSync(output).size) throw new Error(`encode completed but output missing/empty: ${output}`);
-console.log(`\nmux-v4: wrote ${output} (${statSync(output).size} bytes)`);
+console.log(`\nmux: wrote ${output} (${statSync(output).size} bytes)`);
 
 // ffprobe stream/container verification.
 const probe = await ffprobeJson(output);
@@ -443,6 +287,6 @@ if (!flags['skip-audio-verify']) {
 for (const w of warnings) console.warn(`WARNING: ${w}`);
 if (failures.length) {
   for (const f of failures) console.error(`FAIL: ${f}`);
-  throw new Error('mux-v4 verification failed');
+  throw new Error('mux verification failed');
 }
-console.log('\nmux-v4 verification: PASS');
+console.log('\nmux verification: PASS');

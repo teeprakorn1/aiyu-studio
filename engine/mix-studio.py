@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
-# mix_studio.py — builds talk.js + narration.wav from voice files in vo/ per segments.json
-#   python mix_studio.py           → all files present: real timings · missing files: stub talk.js (estimated) for scene work
-#   python mix_studio.py --stub    → force stub mode
-#   python mix_studio.py --dialogue=xxx.txt --segments=yyy.json   → override inputs
+# mix-studio.py — builds talk.js + narration.wav from voice files in vo/ per segments.json
+#   python mix-studio.py           → all files present: real timings · missing files: stub talk.js (estimated) for scene work
+#   python mix-studio.py --stub    → force stub mode
+#   python mix-studio.py --dialogue=xxx.txt --segments=yyy.json   → override inputs
 #
-# dialogue.txt format:  index|spk|text   (index runs 0..N-1, spk: M=narrator, other letters=characters)
-# segments.json format: {"settings": {...}, "segments": [["file.wav", firstLine, lastLine], ...]}
+# story/dialogue.txt format:  index|spk|text   (index runs 0..N-1, spk: M=narrator, other letters=characters)
+# story/segments.json format: {"settings": {...}, "segments": [["file.wav", firstLine, lastLine], ...]}
 #   segments must cover lines 0..N-1 in order — no overlaps, no gaps
 import array, json, os, subprocess, sys
 
 try: sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception: pass
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+# project root — engine scripts always run from the project root (npm scripts guarantee it)
+HERE = os.getcwd()
 VO = os.path.join(HERE, 'vo')
 
 def arg(name, default):
@@ -21,8 +22,8 @@ def arg(name, default):
             return a.split('=', 1)[1]
     return default
 
-DIALOGUE = os.path.join(HERE, arg('dialogue', 'dialogue.txt'))
-SEGMENTS_FILE = os.path.join(HERE, arg('segments', 'segments.json'))
+DIALOGUE = os.path.join(HERE, arg('dialogue', 'story/dialogue.txt'))
+SEGMENTS_FILE = os.path.join(HERE, arg('segments', 'story/segments.json'))
 
 spec = json.load(open(SEGMENTS_FILE, encoding='utf-8'))
 st = spec.get('settings', {})
@@ -106,9 +107,28 @@ for k, (name, a, b) in enumerate(SEGMENTS):
         pcm_all += raw + b'\x00' * (int(GAP * 48000) // 2 * 2)
     t = cur + GAP
 
+def wave_peaks(raw, buckets=2048):
+    # fixed-resolution peak envelope for preview.html's timeline — strided sampling
+    # caps the cost regardless of length; visual peaks don't need every sample
+    smp = array.array('h'); smp.frombytes(raw)
+    n = len(smp)
+    if not n: return []
+    w = max(1, n // buckets)
+    stride = max(1, w // 400)
+    out = []
+    for i in range(buckets):
+        seg = smp[i * w:(i + 1) * w:stride]
+        if not seg: break
+        out.append(round(min(1.0, max(abs(x) for x in seg) / 32768), 2))
+    return out
+
 dur = talk_lines[-1]['t0'] + talk_lines[-1]['dur'] + 0.8
+talk = {'dur': round(dur, 2), 'lines': talk_lines}
+if not stub:
+    talk['wave'] = wave_peaks(pcm_all)
+    talk['waveDur'] = round(len(pcm_all) / 48000, 2)
 with open(os.path.join(HERE, 'talk.js'), 'w', encoding='utf-8') as f:
-    f.write('const TALK=' + json.dumps({'dur': round(dur, 2), 'lines': talk_lines}, ensure_ascii=False) + ';\n')
+    f.write('const TALK=' + json.dumps(talk, ensure_ascii=False) + ';\n')
 print(f'talk.js -> {len(talk_lines)} lines, dur={dur:.1f}s ({"STUB" if stub else "REAL"})')
 
 if not stub:

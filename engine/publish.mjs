@@ -1,37 +1,32 @@
 #!/usr/bin/env node
-// Parallel chunk render driver: splits the timeline into contiguous whole-second
-// chunks and renders them concurrently through render.mjs.
+/**
+ * @file publish.mjs — parallel chunk render driver.
+ * Splits the timeline into contiguous whole-second chunks and renders them
+ * concurrently through render.mjs, then writes the ffmpeg concat list.
+ */
 
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import os from 'node:os';
+import { parseArgs } from './lib/cli-args.mjs';
+import { makeBoundaries, escapeConcatPath } from './lib/chunking.mjs';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
+/** project root — engine scripts always run from the project root (npm scripts guarantee it) */
+const ROOT = process.cwd();
 const FPS = 30;
 
-function parseArgs(argv) {
-  const out = {};
-  for (let i = 0; i < argv.length; i++) {
-    const a = argv[i];
-    if (!a.startsWith('--')) continue;
-    const eq = a.indexOf('=');
-    if (eq >= 0) out[a.slice(2, eq)] = a.slice(eq + 1);
-    else if (argv[i + 1] && !argv[i + 1].startsWith('--')) out[a.slice(2)] = argv[++i];
-    else out[a.slice(2)] = true;
-  }
-  return out;
-}
-
 function usage() {
-  console.log(`Usage: node publish-v4.mjs [options]
+  console.log(`Usage: node publish.mjs [options]
 
 Options:
   --duration=<sec>        REQUIRED timeline end in seconds (rounded to whole seconds)
   --chunks=6              Number of parallel chunks/renderer processes
   --page=index.html       Page passed through to render.mjs
-  --out=v4                Output prefix; chunk files are out/<out>_<from>-<to>.mp4
+  --browser=path          Chrome/Chromium binary passed through to render.mjs (env CHROME_PATH also propagates to all chunks)
+  --out=v1                Output prefix; chunk files are out/<out>_<from>-<to>.mp4
   --list=<path>           Concat list output path (default out/<out>concat.txt)
   --pw-pkg=<path>         package.json whose sibling node_modules has playwright-core
   --baseline-fps=<fps>    Optional single-process baseline for true scaling/speedup report
@@ -39,23 +34,12 @@ Options:
   --help                  Show this help
 
 Example:
-  node publish-v4.mjs --duration=95 --chunks=6 --page=index.html --out=v1
+  node engine/publish.mjs --duration=95 --chunks=6 --page=index.html --out=v1
 `);
 }
 
 function fmtSec(s) {
   return `${s.toFixed(2)}s`;
-}
-
-function escapeConcatPath(p) {
-  return p.replace(/'/g, "'\\''");
-}
-
-function makeBoundaries(end, chunks) {
-  const bounds = [0];
-  for (let k = 1; k < chunks; k++) bounds.push(Math.round((end * k) / chunks));
-  bounds.push(end);
-  return bounds.map((v, i, a) => (i === 0 ? v : Math.max(v, a[i - 1] + 1)));
 }
 
 function attachPrefixedLines(stream, label, sink) {
@@ -76,7 +60,7 @@ function attachPrefixedLines(stream, label, sink) {
   });
 }
 
-const flags = parseArgs(process.argv.slice(2));
+const { flags } = parseArgs(process.argv.slice(2));
 if (flags.help) {
   usage();
   process.exit(0);
@@ -87,9 +71,9 @@ const durationArg = Number(flags.duration);
 const end = Math.round(durationArg);
 const chunks = Math.max(1, Math.floor(Number(flags.chunks ?? 6)));
 const page = String(flags.page ?? 'index.html');
-const outPrefix = String(flags.out ?? 'v4');
-const listPath = path.resolve(here, String(flags.list ?? path.join('out', outPrefix + 'concat.txt')));
-const pwPkg = String(flags['pw-pkg'] ?? process.env.PW_PKG ?? path.join(here, 'package.json'));
+const outPrefix = String(flags.out ?? 'v1');
+const listPath = path.resolve(ROOT, String(flags.list ?? path.join('out', outPrefix + 'concat.txt')));
+const pwPkg = String(flags['pw-pkg'] ?? process.env.PW_PKG ?? path.join(ROOT, 'package.json'));
 const renderScript = path.join(here, 'render.mjs');
 
 if (!Number.isFinite(durationArg) || durationArg <= 0) throw new Error(`Invalid --duration: ${flags.duration}`);
@@ -105,22 +89,22 @@ for (let k = 0; k < chunks; k++) {
   const to = bounds[k + 1];
   const range = `${from},${to}`;
   const fileRange = `${from}-${to}`;
-  const output = path.join(here, 'out', `${outPrefix}_${fileRange}.mp4`);
+  const output = path.join(ROOT, 'out', `${outPrefix}_${fileRange}.mp4`);
   jobs.push({
     index: k,
     from,
     to,
     range,
     output,
-    relOutput: path.relative(here, output).replaceAll('\\', '/'),
+    relOutput: path.relative(ROOT, output).replaceAll('\\', '/'),
     frames: Math.round((to - from) * FPS),
-    args: [renderScript, 'video', range, `--page=${page}`, `--out=${outPrefix}`],
+    args: [renderScript, 'video', range, `--page=${page}`, `--out=${outPrefix}`, ...(flags.browser ? [`--browser=${flags.browser}`] : [])],
   });
 }
 
-console.log(`publish-v4: ${chunks} parallel chunks, 0-${end}s, page=${page}, out=${outPrefix}`);
-console.log(`publish-v4: machine reports ${os.cpus().length} logical CPUs; PW_PKG=${pwPkg}`);
-console.log(`publish-v4: chunks: ${jobs.map(j => `[${j.from}-${j.to}]`).join(' ')}`);
+console.log(`publish: ${chunks} parallel chunks, 0-${end}s, page=${page}, out=${outPrefix}`);
+console.log(`publish: machine reports ${os.cpus().length} logical CPUs; PW_PKG=${pwPkg}`);
+console.log(`publish: chunks: ${jobs.map(j => `[${j.from}-${j.to}]`).join(' ')}`);
 
 if (flags['dry-run']) {
   for (const j of jobs) console.log(`dry-run chunk ${j.index}: node ${j.args.map(a => JSON.stringify(a)).join(' ')}`);
@@ -131,7 +115,7 @@ const startedAll = Date.now();
 const results = await Promise.all(jobs.map(job => new Promise(resolve => {
   const started = Date.now();
   const env = { ...process.env, PW_PKG: pwPkg };
-  const child = spawn(process.execPath, job.args, { cwd: here, env, windowsHide: true });
+  const child = spawn(process.execPath, job.args, { cwd: ROOT, env, windowsHide: true });
   const stdoutSink = { buffer: '' };
   const stderrSink = { buffer: '' };
   attachPrefixedLines(child.stdout, `[c${job.index}]`, stdoutSink);
@@ -144,7 +128,7 @@ const parallelWall = (Date.now() - startedAll) / 1000;
 let failed = false;
 let serialWall = 0;
 let totalFrames = 0;
-console.log('\npublish-v4 chunk timing:');
+console.log('\npublish chunk timing:');
 for (const r of results) {
   const { job } = r;
   serialWall += r.wall;
@@ -163,7 +147,7 @@ for (const r of results) {
 }
 
 if (failed) {
-  console.error('publish-v4: one or more chunks failed; concat list was not written');
+  console.error('publish: one or more chunks failed; concat list was not written');
   process.exit(1);
 }
 
@@ -177,7 +161,7 @@ writeFileSync(listPath, lines.join('\n') + '\n', 'utf8');
 
 const aggregateFps = totalFrames / parallelWall;
 const meanPerProcessFps = results.reduce((a, r) => a + r.job.frames / r.wall, 0) / results.length;
-console.log('\npublish-v4 summary:');
+console.log('\npublish summary:');
 console.log(`  parallel wall time: ${fmtSec(parallelWall)}`);
 console.log(`  sum of chunk times under parallel load: ${fmtSec(serialWall)}`);
 console.log(`  process overlap efficiency: ${(serialWall / (chunks * parallelWall) * 100).toFixed(1)}% (not serial speedup)`);
@@ -188,4 +172,4 @@ if (Number.isFinite(baselineFps) && baselineFps > 0) {
   const speedup = aggregateFps / baselineFps;
   console.log(`  speedup vs supplied ${baselineFps.toFixed(2)} fps serial baseline: ${speedup.toFixed(2)}x (${(speedup / chunks * 100).toFixed(1)}% of ideal ${chunks}x)`);
 }
-console.log(`  concat list written: ${path.relative(here, listPath).replaceAll('\\', '/')}`);
+console.log(`  concat list written: ${path.relative(ROOT, listPath).replaceAll('\\', '/')}`);

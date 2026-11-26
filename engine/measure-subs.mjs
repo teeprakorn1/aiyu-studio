@@ -1,23 +1,24 @@
-import { createRequire } from 'node:module';
-import { existsSync } from 'node:fs';
+/**
+ * @file measure-subs.mjs — subtitle width acceptance check.
+ * Renders every dialogue line through the real layoutSubs() in the browser and fails
+ * when any line's frame exceeds the 840px safe width.
+ *
+ * Usage (run from the project root):
+ *   node engine/measure-subs.mjs [page=index.html]
+ */
 import path from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { pathToFileURL } from 'node:url';
+import { resolvePlaywright, launchBrowser } from './lib/playwright-env.mjs';
 
-const here = path.dirname(fileURLToPath(import.meta.url));
-const candidates = [process.env.PW_PKG, path.join(here, 'package.json')].filter(Boolean);
-const pwPkg = candidates.find(p => existsSync(p.replace(/package\.json$/, 'node_modules/playwright-core')));
-if (!pwPkg) {
-  console.error('playwright-core not found; set PW_PKG to a package.json with playwright-core installed');
-  process.exit(1);
-}
-const require = createRequire(pwPkg);
-const { chromium } = require('playwright-core');
+/** project root — engine scripts always run from the project root (npm scripts guarantee it) */
+const ROOT = process.cwd();
+const chromium = resolvePlaywright(ROOT);
 
-const browser = await chromium.launch({ channel: 'chrome' });
+const browser = await launchBrowser(chromium, process.env.CHROME_PATH);
 const page = await browser.newPage({ viewport: { width: 1080, height: 1920 } });
 let pageError = '';
 page.on('pageerror', e => { pageError = e.message; console.error('PAGE ERROR', e.message); });
-await page.goto(pathToFileURL(path.join(here, process.argv[2] ?? 'index.html')).href);
+await page.goto(pathToFileURL(path.join(ROOT, process.argv[2] ?? 'index.html')).href);
 await page.evaluate(() => window.ready);
 
 const rows = await page.evaluate(() => TALK.lines.map(line => {

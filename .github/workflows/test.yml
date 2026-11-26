@@ -24,7 +24,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: xavidop/ffmpeg-action@v1.1
+      # ffmpeg + ffprobe are preinstalled in the ubuntu-latest runner image —
+      # verify loudly instead of trusting, so a future image change fails here
+      # with a clear message rather than deep inside a test.
+      - name: verify ffmpeg presence
+        run: ffmpeg -version && ffprobe -version
       # npm test is the single source of truth — add new unit test files in
       # package.json only, never here.
       - name: unit tests (node + python)
@@ -41,7 +45,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - uses: xavidop/ffmpeg-action@v1.1
+      # ffmpeg + ffprobe are preinstalled in the ubuntu-latest runner image —
+      # verify loudly instead of trusting, so a future image change fails here
+      # with a clear message rather than deep inside a test.
+      - name: verify ffmpeg presence
+        run: ffmpeg -version && ffprobe -version
       - name: install playwright cli
         run: npm install --no-save playwright-core
       - name: resolve playwright version (for browser cache key)

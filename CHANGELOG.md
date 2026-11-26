@@ -6,7 +6,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-## [0.2.0] - 2025-11-26
+## [0.3.0] - 2026-11-26
+
+Architecture release — engine and template restructured into testable layers, plus live preview, spring motion, Chromium support, and a full test pyramid. **Breaking for scaffolded projects** — see Upgrading.
+
+### Added
+
+- `preview.html` — live scrubber in the browser (`file://`, no server): waveform timeline, per-line/scene markers, click-drag seeking, speed control, keyboard transport. Real mode uses true narration peaks (`wave`/`waveDur` now embedded in `talk.js` by `mix-studio.py`); stub mode synthesizes the waveform from line envelopes
+- Motion curves `easeInOut` / `easeBack` / `easeElastic` / `springy` — deterministic pure functions, safe for parallel chunk rendering
+- Full test pyramid — `node:test` units (`engine/lib`, motion curves, python audio math), e2e (pipeline smoke, determinism sha256, golden stills, preview transport), GitHub Actions workflow — separate fast unit / slow e2e jobs, npm scripts as single source of truth, version-keyed chromium cache, per-ref concurrency. Zero new dependencies
+- npm scripts in scaffolded projects — `mix` / `stub` / `stills` / `render` / `publish` / `mux` / `check-subs`
+- `AGENTS.md` — development rules: dependency direction, the five laws, mandatory JSDoc, naming rules
+
+### Changed
+
+- **Breaking — engine layout:** scripts live in `engine/` inside projects and resolve from the project root; renamed `publish-v4.mjs` → `publish.mjs`, `mux-v4.mjs` → `mux.mjs`, `mix_studio.py` → `mix-studio.py`; shared logic extracted into `engine/lib/` (`cli-args` / `playwright-env` / `ffmpeg` / `loudness` / `mp4-verify` / `chunking`)
+- **Breaking — template runtime:** monolithic `rig.js` split into 3 layers `core/` ← `features/` ← `story/`; author inputs moved to `story/` (`mix-studio.py` reads `story/dialogue.txt` + `story/segments.json` by default); hidden `people.js` → `atmosphere` dependency removed (shared color/random primitives now in `core/base.js`)
+- **Docs restructured** into topical folders with numbered files and per-folder indexes — `getting-started/` `authoring/` `delivery/` `examples/` `testing/`; all guides now teach the npm-script interface and the preview-first safe-zone workflow, and the pyramid is documented end to end (strategy → unit → e2e → CI)
+- **Examples reorganized** into `examples/active/` (future productions on the current architecture) and `examples/legacy/` — v0.1.0/v0.2.0 snapshots kept byte-identical as historical documents with era banners — documented in versioned folders under `docs/examples/` including full production notes for both films; do not copy their file organization
+- Chrome-only → Chrome **or Chromium** — automatic fallback chain (installed Chrome → playwright headless shell → full chromium); override with env `CHROME_PATH` or `--browser=path`, forwarded to every parallel chunk
+- Cards and `pop()` now scale with `springy` — physical ~20% overshoot settle out of the box; all other visuals unchanged
+
+### Fixed
+
+- `new-project.py` crashed when `engine/` contained a directory (`__pycache__`)
+- `regionSpec` rejected whitespace-padded time regions
+- Stub-mode preview showed an empty waveform — lines now render as presence blocks
+- `publish.mjs` default `--out` prefix was the fossil `v4` — now `v1`
+
+### Upgrading from 0.2.0
+
+- Copy `engine/` (whole tree), `template/core/`, `template/features/`, `template/preview.html` into existing projects; move `dialogue.txt`/`segments.json`/`style.js`/`srchips.js` into `story/`; replace `index.html`; delete the old flat engine scripts, `rig.js`, `atmos.js`, `people.js`
+- `style.js` content needs no changes — every function keeps its global name
+- Re-run `mix-studio.py` in real mode to embed the waveform; re-check stills (card entrances now bounce)
+
+## [0.2.0] - 2026-11-26
 
 Cinematic upgrade — techniques proven in the `thai-origins` production, extracted into two optional template modules.
 
@@ -40,7 +74,7 @@ Cinematic upgrade — techniques proven in the `thai-origins` production, extrac
 - Copy `engine/*` and `template/rig.js` into existing projects to get the walk, mouth and render fixes
 - Existing `style.js` files need no changes; `rv()` and the cinematic modules are optional
 
-## [0.1.0] - 2025-11-25
+## [0.1.0] - 2026-11-25
 
 First public release — extracted from the real production of `jensen-legend` (v3–v7), verified end-to-end.
 
@@ -57,6 +91,7 @@ First public release — extracted from the real production of `jensen-legend` (
 - `examples/jensen-legend/` reference implementation (code only)
 
 
-[Unreleased]: https://github.com/teeprakorn1/aiyu-studio/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/teeprakorn1/aiyu-studio/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/teeprakorn1/aiyu-studio/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/teeprakorn1/aiyu-studio/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/teeprakorn1/aiyu-studio/releases/tag/v0.1.0

@@ -1,13 +1,13 @@
 # Guide: cinematic scenes — realistic humans, layered backgrounds, frame treatments
 
 How the `thai-origins` production achieved its cinematic look, and how to use the two
-modules extracted from it: `atmos.js` (atmosphere & nature) and `people.js` (realistic
-humans). Both load automatically in template projects — see `examples/thai-origins/` for
+modules extracted from it: `features/atmosphere.js` (atmosphere & nature) and `features/people.js` (realistic
+humans). Both load automatically in template projects — see `examples/legacy/thai-origins/` for
 the original production code.
 
 ## 1. Choosing your character renderer
 
-| | `person()` (rig.js) | `personTH()` (people.js) |
+| | `person()` (the runtime) | `personTH()` (people.js) |
 |---|---|---|
 | Proportions | 3 heads tall — mascot | ~5.5 heads tall — realistic |
 | Face | big googly eyes | tapered head, almond eyes, visible neck, ears, hair styles |
@@ -17,7 +17,7 @@ the original production code.
 
 They can mix in one film — mascot for a host, realistic for story characters.
 
-Both modules load automatically in template projects (see [guide-scenes.md §10–11](guide-scenes.md) for the global-name rules when copying code).
+Both modules load automatically in template projects (see [guide-scenes.md §10–11](../authoring/01-scenes.md) for the global-name rules when copying code).
 
 ## 2. personTH anatomy
 
@@ -190,7 +190,7 @@ const srnd = i => { const x = Math.sin(i*127.1+311.7)*43758.5453; return x - Mat
 2. Chunk-parallel rendering — publish renders disjoint timeline segments in separate
    processes; frames must be a pure function of `t`. Any hidden state breaks the seams
 
-Every helper in atmos.js/people.js takes `seed` parameters — vary them per element
+Every helper in the two feature modules takes `seed` parameters — vary them per element
 (`treeMass(..., 5)`, `treeMass(..., 6)`) so repeated elements differ, but deterministically.
 
 ## 7. Palettes as named systems
@@ -210,7 +210,7 @@ video by editing a few hex values.
 
 ## 8. Period props library (in the example, copy freely)
 
-`examples/thai-origins/style.js` contains reusable props — copy any of them into your
+`examples/legacy/thai-origins/style.js` contains reusable props — copy any of them into your
 project's style.js: `stupaDV` (Dvaravati stupa), `prangKH` (Khmer prang), `palmTree`,
 `stiltHouse` (4 variants, optional warm lit window — remember the water reflection!),
 `longboat`, `junkShip` (sail battened junk), `dharmProp` (dharmachakra), `chediEle2`
@@ -224,7 +224,7 @@ visible stilts into the water or they float.
 ## 9. Thumbnails — paint them, don't capture them
 
 Production learning: frame captures with text overlaid looked uninteresting as
-thumbnails. What worked (`examples/thai-origins/thumb.html`):
+thumbnails. What worked (`examples/legacy/thai-origins/thumb.html`):
 
 - **A bespoke painted scene** in the film's own visual language — load `people.js` and
   draw a large character as the focal point, mid-stride (walk phase .25)

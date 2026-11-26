@@ -5,7 +5,7 @@
 **Video-as-code for vertical documentaries.** Write scenes in JavaScript, narrate with TTS, and render publish-ready 1080×1920 videos for Reels & TikTok — no video editor, no timeline scrubbing, no manual subtitle sync.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.2.0-blue.svg?style=for-the-badge)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.3.0-blue.svg?style=for-the-badge)](CHANGELOG.md)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg?style=for-the-badge)](#requirements)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge)](#contributing)
 
@@ -24,7 +24,7 @@
 
 <sub>Every frame above is pure canvas code rendered by this template's own demo project — characters, subtitles, chart cards and all.</sub>
 
-**▶ [Watch: ทำไมเจนเซนหวงถึงหายไป 11 วัน? — a real production made with this pipeline](https://youtu.be/dNbr5_IbYVY)** — a full Thai-language vertical documentary (the `jensen-legend` project in [examples/](examples/jensen-legend/)), demonstrating automatic Thai line-breaking subtitles, speaker-aware lip sync and the final loudness-normalized output in the wild.
+**▶ [Watch: ทำไมเจนเซนหวงถึงหายไป 11 วัน? — a real production made with this pipeline](https://youtu.be/dNbr5_IbYVY)** — a full Thai-language vertical documentary (the `jensen-legend` project in [examples/legacy/](examples/legacy/jensen-legend/)), demonstrating automatic Thai line-breaking subtitles, speaker-aware lip sync and the final loudness-normalized output in the wild.
 
 ## 💡 Why this exists
 
@@ -33,19 +33,21 @@ Vertical documentaries are repetitive to produce: sync subtitles by hand, resize
 ## ✨ Features
 
 - **Single timing backbone** — `talk.js` is generated from your audio and drives scenes, subtitles and lip sync. Nothing is hand-synced, ever
+- **Live preview scrubber** — open `preview.html` in a browser (no server needed) and scrub the whole film in real time through the exact production render path: waveform timeline, per-line/scene markers, keyboard transport. Catch layout problems before burning a single render
 - **Speaker-aware lip sync** — each character's mouth follows only their own lines, with a 30-point energy envelope per line
 - **Automatic Thai line-breaking** — subtitles wrap correctly for Thai (and English, and mixed text) via `Intl.Segmenter`; punctuation never orphans onto its own line
-- **Safe-zone discipline** — built-in margins keep text clear of Reels/TikTok UI overlays; QC with stills before committing to a full render
-- **Parallel chunked rendering** — multiple headless Chrome processes render disjoint timeline segments simultaneously
+- **Spring-motion cards** — cards and pop-ins animate with exact damped-spring physics; every curve is a deterministic pure function, safe for parallel rendering
+- **Safe-zone discipline** — built-in margins keep text clear of Reels/TikTok UI overlays; QC live in the preview, then with stills before committing to a full render
+- **Parallel chunked rendering** — multiple headless browser processes render disjoint timeline segments simultaneously
 - **Broadcast loudness** — two-pass loudnorm to −15.5 LUFS with true-peak limiting, verified by ffprobe after muxing
-- **Cinematic modules (v0.2.0)** — optional `atmos.js` (multi-stop skies, atmospheric depth, living water, weather, film grain) and `people.js` (realistic walk-cycle humans), extracted from the `thai-origins` production in [examples/](examples/thai-origins/)
+- **Cinematic feature modules** — optional `features/atmosphere.js` (multi-stop skies, atmospheric depth, living water, weather, film grain) and `features/people.js` (realistic walk-cycle humans), extracted from the `thai-origins` production in [examples/legacy/](examples/legacy/thai-origins/)
+- **Chrome or Chromium** — automatic browser fallback chain; no Chrome license required
+- **Tested** — unit + end-to-end pyramid with zero added dependencies; determinism enforced by hash, not by hope
 - **One-command scaffolding** — `new-project.py` gives you a working, renderable demo project in seconds
-- **English & Thai ready** — ships with an English demo; full Thai pipeline documented with real production data
 
 ## 🏗️ How it works
 
 ![Pipeline diagram](docs/images/pipeline-diagram.jpg)
-
 
 <details>
 <summary>🔍 <strong>View ASCII pipeline diagram</strong></summary>
@@ -54,27 +56,27 @@ Vertical documentaries are repetitive to produce: sync subtitles by hand, resize
   python new-project.py my-story ............ scaffold once per story
           |
           v
-  [1] INPUTS ............................................. you write this
+  [1] INPUTS (all in story/) .......................... you write this
           dialogue.txt ....... script, one cue per line, with speaker ids
           segments.json ...... voice file -> line range groups + global tempo
-          style.js + rig.js .. scenes as canvas code (never edit rig.js)
+          style.js ........... scenes as canvas code over core/ + features/
           vo/*.wav + bed.wav . voice takes + music bed (mux input)
           |
           v
-  [2] TIMING BACKBONE ...................... python mix_studio.py
+  [2] TIMING BACKBONE ...................... npm run stub / npm run mix
           talk.js ............ single source of truth: timing + mouth envelopes
           narration.wav ...... all voice files joined with gaps
           |
           v
-  [3] SAFE-ZONE QC ......... node render.mjs stills 1,5,10 --page=index.html
+  [3] LAYOUT QC ............ preview.html (live scrub) + npm run stills
           stills/sheet.jpg ... verify layout BEFORE burning render time
           |
           v
-  [4] PARALLEL RENDER ...................... node publish-v4.mjs --duration=N
-          out/v1_*.mp4 ....... N headless Chromes, disjoint timeline chunks
+  [4] PARALLEL RENDER ...................... npm run publish -- --duration=N
+          out/v1_*.mp4 ....... N headless browsers, disjoint timeline chunks
           |
           v
-  [5] MUX + VERIFY ......................... node mux-v4.mjs
+  [5] MUX + VERIFY ......................... npm run mux
           concat chunks + 2-pass loudnorm -> -15.5 LUFS, ffprobe verified
           |
           v
@@ -91,18 +93,18 @@ Vertical documentaries are repetitive to produce: sync subtitles by hand, resize
 python new-project.py path/to/my-story   # scaffold a new project
 cd path/to/my-story
 npm install                              # playwright-core
-python mix_studio.py --stub              # estimated timing — no audio needed yet
-node render.mjs stills 1,5,10 --page=index.html   # then open stills/sheet.jpg
+npm run stub                             # estimated timing — no audio needed yet
+npm run stills -- 1,5,10                 # then open stills/sheet.jpg
 ```
 
 > **Python command:** use `py` on Windows, `python3` on macOS/Linux if `python` is not found.
 
-If the sheet shows characters and subtitles, the pipeline works. Continue with the **[quickstart guide](docs/quickstart.md)** to produce your first full video.
+If the sheet shows characters and subtitles, the pipeline works — or open `preview.html` and scrub the demo live. Continue with the **[quickstart guide](docs/getting-started/01-quickstart.md)** to produce your first full video.
 
 ## 📋 Requirements
 
-- **Node.js** · **Python 3** · **ffmpeg** + **ffprobe** on PATH · **Chrome**
-- Chrome must be installed: the scripts launch it with `channel: 'chrome'`, not a bundled Chromium
+- **Node.js** · **Python 3** · **ffmpeg** + **ffprobe** on PATH
+- **Chrome or Chromium** — the engine tries installed Chrome first, then playwright's headless shell, then the full chromium build (`npx playwright-core install chromium`); override anytime with env `CHROME_PATH` or `--browser=path`
 - `playwright-core` — installed via `npm install` in each project folder
 
 ## 📚 Documentation
@@ -110,21 +112,24 @@ If the sheet shows characters and subtitles, the pipeline works. Continue with t
 | Document | Contents |
 |---|---|
 | [docs/README.md](docs/README.md) | Documentation hub + reading order |
-| [docs/quickstart.md](docs/quickstart.md) | Zero to first video, step by step |
-| [docs/guide-audio.md](docs/guide-audio.md) | Dialogue format, segments.json, TTS voices, tempo table |
-| [docs/guide-scenes.md](docs/guide-scenes.md) | Scene writing, rig.js API, safe zones, the cam() zoom trap |
-| [docs/guide-cinematic.md](docs/guide-cinematic.md) | Realistic humans, layered backgrounds, water systems, frame treatments |
-| [docs/guide-map.md](docs/guide-map.md) | Animated data-driven maps: projection, flow paths, hachure mountains, city markers |
-| [docs/qc-publish.md](docs/qc-publish.md) | 7-point QC, Reels/TikTok specs, AI-content disclosure |
-| [docs/pipeline.md](docs/pipeline.md) | Production notes from the original real-world project |
-| [examples/jensen-legend/](examples/jensen-legend/) | Complete reference implementation (code only) |
-| [examples/thai-origins/](examples/thai-origins/) | Cinematic reference: animated map, realistic humans, atmosphere (code only) |
+| [docs/getting-started/01-quickstart.md](docs/getting-started/01-quickstart.md) | Zero to first video, step by step |
+| [docs/authoring/01-scenes.md](docs/authoring/01-scenes.md) | Scene writing, the runtime API, safe zones, the cam() zoom trap |
+| [docs/authoring/02-dialogue-audio.md](docs/authoring/02-dialogue-audio.md) | Dialogue format, segments.json, TTS voices, tempo table |
+| [docs/authoring/03-cinematic.md](docs/authoring/03-cinematic.md) | Realistic humans, layered backgrounds, water systems, frame treatments |
+| [docs/authoring/04-maps.md](docs/authoring/04-maps.md) | Animated data-driven maps: projection, flow paths, hachure mountains, city markers |
+| [docs/delivery/01-qc-publish.md](docs/delivery/01-qc-publish.md) | 7-point QC, Reels/TikTok specs, AI-content disclosure |
+| [docs/testing/README.md](docs/testing/README.md) | The test pyramid — strategy, unit, e2e, CI |
+| [docs/examples/README.md](docs/examples/README.md) | Production archaeology + notes for both real films |
+| [examples/legacy/jensen-legend/](examples/legacy/jensen-legend/) | Complete reference implementation (code only) |
+| [examples/legacy/thai-origins/](examples/legacy/thai-origins/) | Cinematic reference: animated map, realistic humans, atmosphere (code only) |
+| [CODEBASE.md](CODEBASE.md) | Five-minute map of this repository |
+| [AGENTS.md](AGENTS.md) | The five development laws — read before contributing |
 | [CHANGELOG.md](CHANGELOG.md) | Version history |
 
 ## 🧭 Core principles
 
-1. **Everything derives from `talk.js`** — never hand-edit it; always re-run `mix_studio.py`
-2. **Check safe zones with stills before every real render** — cam() zoom shifts on-screen positions
+1. **Everything derives from `talk.js`** — never hand-edit it; always re-run `mix-studio.py`
+2. **Scrub in `preview.html` first, verify with stills before every real render** — cam() zoom shifts on-screen positions
 3. **Never overwrite older video versions** — always increment v1/v2/v3
 4. **Never commit media** — vo/*.wav, out/, *.mp4 are covered by .gitignore
 
@@ -132,34 +137,38 @@ If the sheet shows characters and subtitles, the pipeline works. Continue with t
 
 ```
 ├── new-project.py            # one-command project scaffolding
-├── engine/                   # 5 reusable pipeline scripts — never edit per project
-├── template/                 # project skeleton: rig.js (machinery) + style.js (your scenes) + optional atmos.js / people.js
+├── engine/                   # pipeline scripts (thin shells) + lib/ (all shared logic)
+├── template/                 # the project skeleton users receive
+│   ├── core/                 #   runtime kernel — primitives, motion, camera (never edit)
+│   ├── features/             #   character/subtitles/environment/cards/atmosphere/people (never edit)
+│   ├── story/                #   author inputs: style.js, dialogue.txt, segments.json, srchips.js
+│   ├── preview.html          #   live scrubber — no server needed
 │   └── assets/fonts/         #   Kanit 4 weights (SIL OFL)
-├── docs/                     # complete guides
-├── examples/                 # reference implementations: jensen-legend, thai-origins
-│   ├── jensen-legend/        #   presenter format, person() mascots
-│   └── thai-origins/         #   cinematic format, personTH() humans + animated map
+├── tests/                    # unit + e2e pyramid (not scaffolded into projects)
+├── docs/                     # documentation system — topical folders, numbered files
+├── examples/
+│   ├── active/               # future productions on the current architecture
+│   └── legacy/               # real productions frozen at their era (jensen-legend, thai-origins)
 ```
 
 ## 🗺️ Roadmap
 
-- [ ] More card types and transitions in rig.js
+- [ ] More card types and transitions in the runtime
 - [ ] Landscape (16:9) output profile
 - [ ] One-command TTS generation integration
-- [ ] GitHub Actions example for CI rendering
+- [ ] CI-based video rendering example
 
 Ideas and feedback welcome — open an issue.
 
 ## 🤝 Contributing
 
-Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for setup, guidelines and our [Code of Conduct](CODE_OF_CONDUCT.md). Especially valuable: new rig card/scene patterns, TTS provider integrations, and documentation improvements. Please open an issue first for anything beyond a small fix so we can agree on direction. Note that `engine/` and `template/rig.js` are intentionally conservative — changes there affect every project built on this template.
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md) for setup, guidelines and our [Code of Conduct](CODE_OF_CONDUCT.md). Especially valuable: new card/scene patterns for the runtime, TTS provider integrations, and documentation improvements. Please open an issue first for anything beyond a small fix so we can agree on direction. Note that `engine/` and `template/core/` + `template/features/` are intentionally conservative — changes there affect every project built on this template, and the verification gate in [AGENTS.md](AGENTS.md) applies.
 
 ## 🙏 Acknowledgements
 
-This pipeline stands on ideas studied from these open-source projects:
+This pipeline stands on ideas studied from open-source work — most directly **[Yiyu5331/chibi-history-explainer](https://github.com/Yiyu5331/chibi-history-explainer)** (the "video-as-code" philosophy and project-per-story workflow) and **[motion-canvas](https://github.com/motion-canvas/motion-canvas)** (the master-clock player and spring physics — adopted as closed-form pure functions, deliberately diverging from its stateful simulation for the sake of deterministic parallel rendering). No code was copied from any of them; what travelled was ideas, plus hard-won negative knowledge — approaches examined and rejected.
 
-- **[Yiyu5331/chibi-history-explainer](https://github.com/Yiyu5331/chibi-history-explainer)** (MIT) — the core inspiration: drawing every frame procedurally with canvas code instead of video editing, character rigs assembled from code, and the project-per-story workflow. Our system diverges deliberately: voiced narration with a generated timing backbone (rather than silent theatre), vertical 9:16, and speaker-aware lip sync — but the "video-as-code" philosophy comes from here.
-- **[Yiyu5331/dafeiyu-bili-workflow](https://github.com/Yiyu5331/dafeiyu-bili-workflow)** (MIT) — reference for TTS integration and render-pipeline patterns by the same author (LLM-written scripts + TTS + vertical rendering + automated publishing).
+The full provenance — what was adopted, what was rejected and why — lives in **[docs/acknowledgements.md](docs/acknowledgements.md)**.
 
 The pipeline was then hardened through real production (`jensen-legend` v3–v7): tempo scaling, safe-zone discipline for Reels/TikTok, parallel chunk rendering, and loudness-standardized muxing are lessons paid for with actual iterations.
 

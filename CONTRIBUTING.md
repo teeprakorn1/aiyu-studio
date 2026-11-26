@@ -17,8 +17,8 @@ cd /tmp/my-test
 npm install
 
 # 3. Verify the pipeline end-to-end
-python mix_studio.py --stub
-node render.mjs stills 1,5,10 --page=index.html
+python engine/mix-studio.py --stub
+node engine/render.mjs stills 1,5,10 --page=index.html
 # open stills/sheet.jpg — characters + subtitles visible = setup works
 ```
 
@@ -30,7 +30,7 @@ node render.mjs stills 1,5,10 --page=index.html
 
 Especially welcome:
 
-- **New rig card/scene patterns** — reusable visual components in `template/rig.js`
+- **New rig card/scene patterns** — reusable visual components in `template/core/` + `template/features/`
 - **TTS provider integrations** — making voice generation easier
 - **Documentation improvements** — clearer guides, more examples, translations
 - **Bug fixes** — with a reproduction case
@@ -42,17 +42,17 @@ Please **open an issue first** for anything beyond a small fix so we can agree o
 | Path | Rule |
 |---|---|
 | `engine/` | **Conservative** — these scripts ship into every generated project. Changes affect all users. |
-| `template/rig.js` | **Conservative** — the reusable machinery. Never project-specific content here. |
+| `template/core/` + `template/features/` | **Conservative** — the reusable machinery. Never project-specific content here. |
 | `template/style.js` | Demo scenes — improvements welcome, keep it small and renderable. |
 | `template/atmos.js`, `template/people.js` | Optional cinematic modules. Keep them IIFE-wrapped with `window` exports, so copied code that redeclares a helper name shadows it instead of crashing. |
 | `docs/` | Documentation — keep English as the primary language. |
-| `examples/` | Reference implementations (`jensen-legend`, `thai-origins`). Code only; media is generated per project. Keep `rig.js` identical to `template/rig.js`. |
+| `examples/` | Reference implementations (`jensen-legend`, `thai-origins`). Code only; media is generated per project. Keep `core/features runtime` identical to `template/core/` + `template/features/`. |
 
 ## Coding guidelines
 
 - **JavaScript:** plain ES2020+, no build step. Everything must run directly in Chrome via playwright-core.
-- **JSDoc** on all public rig/engine functions — see `template/rig.js` for the established style.
-- **Python:** stdlib only where possible; `mix_studio.py` must stay dependency-free.
+- **JSDoc** on all public rig/engine functions — see `template/core/` + `template/features/` for the established style.
+- **Python:** stdlib only where possible; `mix-studio.py` must stay dependency-free.
 - **Comments and docs in English.** Sample dialogue content may be any language.
 - Follow the existing style — compact, no over-engineering, no unnecessary comments.
 
@@ -63,7 +63,7 @@ There is no test framework — verification is end-to-end rendering:
 ```bash
 # 1. Syntax
 node --check engine/render.mjs
-node --check template/rig.js
+node --check template/the runtime
 node --check template/atmos.js
 node --check template/people.js
 
@@ -71,8 +71,8 @@ node --check template/people.js
 python new-project.py /tmp/verify && cd /tmp/verify
 cp path/to/repo/engine/* .   # copy YOUR modified engine
 npm install
-python mix_studio.py --stub
-node render.mjs stills 1,5,10 --page=index.html
+python engine/mix-studio.py --stub
+node engine/render.mjs stills 1,5,10 --page=index.html
 
 # 3. Open stills/sheet.jpg and visually confirm nothing broke
 ```
@@ -116,3 +116,11 @@ By contributing, you agree that your contributions are licensed under the [MIT L
 ## Code of Conduct
 
 All participants are expected to follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+
+## Architecture and conventions
+
+See **AGENTS.md** — it defines the dependency-direction law, the five development laws (determinism, talk.js truth, DRY engine, no per-project engine edits, verification gate), the mandatory JSDoc policy, and file naming rules. It binds all contributors, human or AI.
+
+## Testing
+
+`npm test` runs the unit layer (node:test + python unittest). `npm run test:e2e` runs the pipeline/determinism/preview end-to-end tests (minutes, needs ffmpeg + a browser). The verification gate in AGENTS.md requires green tests before merge.

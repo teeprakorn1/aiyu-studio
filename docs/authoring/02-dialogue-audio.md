@@ -1,6 +1,6 @@
 # Guide: dialogue, voices, and timing
 
-## 1. dialogue.txt — the script
+## 1. story/dialogue.txt — the script
 
 ```
 index|spk|text
@@ -18,7 +18,7 @@ Example (Thai content, since this pipeline targets Thai-language videos):
 15|J|ผมตัดสินใจลาออก มีผลทันที
 ```
 
-## 2. segments.json — mapping voice files to lines
+## 2. story/segments.json — mapping voice files to lines
 
 ```json
 {
@@ -46,7 +46,7 @@ Example (Thai content, since this pipeline targets Thai-language videos):
 - Any format ffmpeg can read — the system converts to mono 24 kHz itself
 - Generate one segment at a time per segments.json — **voice must stay consistent across all files** (same voice/prompt)
 - Don't speed up inside the TTS — generate at natural pace and speed up centrally with `tempo` so everything rescales together
-- **Character voices imitating real people must be disclosed as synthetic** in both the footnote and the caption — see [qc-publish.md](qc-publish.md)
+- **Character voices imitating real people must be disclosed as synthetic** in both the footnote and the caption — see [qc-publish.md](../delivery/01-qc-publish.md)
 
 ## 4. tempo — one knob for the whole film's pace
 
@@ -67,8 +67,8 @@ Guideline: start at 1.15, listen on a phone, adjust ±0.05 per iteration. Each i
 ## 5. Two-mode workflow
 
 ```bash
-python mix_studio.py --stub   # no audio yet: estimated talk.js (~12.5 chars/sec) — lets you build scenes first
-python mix_studio.py          # audio complete: real timing + narration.wav + 30-point envelope per line for mouths
+npm run stub   # no audio yet: estimated talk.js (~12.5 chars/sec) — lets you build scenes first
+npm run mix    # audio complete: real timing + narration.wav + 30-point envelope per line for mouths
 ```
 
 Recommended: write dialogue → stub → finish scenes → generate voices → real mix → adjust scenes to real timing. Saves TTS regeneration rounds.
@@ -77,11 +77,12 @@ Recommended: write dialogue → stub → finish scenes → generate voices → r
 
 - The log prints `dur` — compare against your length target
 - Open talk.js and inspect the first few lines: `t0` must increase monotonically with no overlaps; `env` must not be all zeros in real mode (all zeros = silent/broken audio file)
+- **Open `preview.html`** — real mode embeds the true narration waveform (`wave`/`waveDur` in talk.js), so the scrubber timeline now shows actual speech peaks instead of the synthesized stub blocks. Scrub line by line and check that mouth movement matches the voice before rendering anything
 
 ## 7. Music bed — the second mux input
 
-`mux-v4.mjs` mixes the narration with a looped music bed (`bed.wav` in the project folder by default, +3 dB before mixing). The bed is a **required** input — the template does not ship one, so create or copy it before muxing.
+`mux.mjs` mixes the narration with a looped music bed (`bed.wav` in the project folder by default, +3 dB before mixing). The bed is a **required** input — the template does not ship one, so create or copy it before muxing.
 
-- Keep it quiet: the target is 20–24 dB below speech (measured in the mux verification — see [qc-publish.md](qc-publish.md))
+- Keep it quiet: the target is 20–24 dB below speech (measured in the mux verification — see [qc-publish.md](../delivery/01-qc-publish.md))
 - The narration is never truncated: mux refuses to run if the narration is longer than the rendered video, so render the full timeline (`--duration` ≥ talk.js `dur`)
 - Voice limiting: narration peaks are limited before mixing (`--voice-limit`, default 0.35) because raw TTS peaks sit above 0 dBTP

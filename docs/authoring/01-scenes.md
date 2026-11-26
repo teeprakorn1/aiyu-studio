@@ -1,6 +1,6 @@
 # Guide: writing scenes in style.js
 
-`style.js` is the only file rewritten per project — `rig.js` already contains all machinery. **Never edit rig.js** (if you need extra props/backgrounds, copy them from `examples/jensen-legend/style-v4.js` into your style.js)
+`story/style.js` is the only file rewritten per project — the `core/` + `features/` runtime already contains all machinery. **Never edit core/ or features/** (if you need extra props/backgrounds, copy them from `examples/legacy/jensen-legend/style-v4.js` into your `story/style.js`)
 
 ## 1. File anatomy — 4 parts
 
@@ -75,20 +75,20 @@ Character definitions live in CH — key fields: `hs` hairstyle (`jensen|swoop|b
 
 `mouthFor('H', o)` returns 0 while anyone else speaks — pass `mouth: o.em` directly and **every character chews along with the narrator**, which looks wrong instantly. Always use mouthFor, and the letter must match spk in dialogue.txt.
 
-## 10. Cinematic upgrade — atmos.js & people.js (v0.2.0)
+## 6. Cinematic upgrade — `features/atmosphere.js` & `features/people.js`
 
 Two optional modules ship in the template and are already loaded by `index.html`.
-They were extracted from the real production in `examples/thai-origins/` — read that
+They were extracted from the real production in `examples/legacy/thai-origins/` — read that
 example's README for the full story.
 
-**`atmos.js`** — atmosphere & nature: `skyStops()` multi-stop skies, `hillsLayer()` /
+**`features/atmosphere.js`** — atmosphere & nature: `skyStops()` multi-stop skies, `hillsLayer()` /
 `treeMass()` / `cloudsDusk()` / `birdsFlock()` for living horizons, `waterBody()` +
 `ripples()` + `lightReflection()` for water, `smokeColumn()` / `motes()` / `starField()`
 for air, and the frame treatments `grainLayer()` + `screenVig()` + `captionScrim()`
 (always draw those three last, in that order, vignette outside cam). See the module
 header for copy-paste recipes.
 
-**`people.js`** — `personTH()` as an alternative to rig's `person()`:
+**`features/people.js`** — `personTH()` as an alternative to the runtime's `person()`:
 
 ```js
 personTH('merchant', { x: 540, y: 1560, scale: 1, t: o.t,
@@ -100,7 +100,7 @@ Choose per project: `person()` mascot proportions suit presenter/news formats
 (jensen-legend); `personTH()` realistic proportions suit historical/cinematic stories
 (thai-origins). They can even mix in one film.
 
-> Deep dives: [guide-cinematic.md](guide-cinematic.md) for humans/backgrounds/water/frame treatments, [guide-map.md](guide-map.md) for the animated map system.
+> Deep dives: [03-cinematic.md](03-cinematic.md) for humans/backgrounds/water/frame treatments, [04-maps.md](04-maps.md) for the animated map system.
 
 **Hard-won production rules** (also in the module comments):
 
@@ -111,13 +111,15 @@ Choose per project: `person()` mascot proportions suit presenter/news formats
 - Clouds must be wide flat overlapping strips; round shaded discs read as UFOs
 - Large text/props should be sized in explicit pixels — relative sizing surprises at scale
 
-## 6. What rig.js already gives you
+## 7. What the runtime already gives you
 
 **Drawing primitives:** `TXT RRECT CIRC LIMB LINE SHAPE PATH` · **scenery/effects:** `wall floorY win glow city stars lamp rain circuitField rim vig tint zoom cam` · **cards/props:** `nameCard newsCard emailCard quoteCard pop chip chartCard` · **systems:** `subs sourceChips footnote mouthFor shot render`
 
-Special-purpose props built in production (paperSheet, wallClock, routeCurve, cargoShip, serverRack, gpuChip, photoCard, docBadge, doorLight + 12 backgrounds like bgHQ/bgOffice) — copy them from `examples/jensen-legend/style-v4.js` as needed.
+Special-purpose props built in production (paperSheet, wallClock, routeCurve, cargoShip, serverRack, gpuChip, photoCard, docBadge, doorLight + 12 backgrounds like bgHQ/bgOffice) — copy them from `examples/legacy/jensen-legend/style-v4.js` as needed.
 
-## 7. Safe zones — the rules that make videos readable on phones {#safe-zone}
+## 8. Safe zones — the rules that make videos readable on phones
+
+<a id="safe-zone"></a>
 
 ```
 ┌──────────────────────┐
@@ -145,15 +147,16 @@ actual = cy + (val − cy) × zoom
 Real example: a heading at y=300 inside cam(cy=1060, z=1.13) → on screen `1060 + (300−1060)×1.13 ≈ y 200` — **silently floating into the top forbidden zone mid-scene**
 
 How to stay safe:
-1. Render stills of every scene **before** any real render — `node render.mjs stills t1,t2,...`
-2. Overlay a red line at y=250 and yellow at y=1570 on the contact sheet and scan by eye (or inspect each still)
-3. After any fix, re-check ALL stills, not just the fixed spot — moving one element affects others in the same scene
+1. **Scrub the scene live in `preview.html` first** — free and instant, no render at all: drag through the timeline and watch headings/cards while the camera zooms. Most collisions are visible here in seconds
+2. Render stills of every scene **before** any real render — `npm run stills -- t1,t2,...`
+3. Overlay a red line at y=250 and yellow at y=1570 on the contact sheet and scan by eye (or inspect each still)
+4. After any fix, re-check ALL stills, not just the fixed spot — moving one element affects others in the same scene
 
-## 8. Subtitles — fully automatic, nothing to do
+## 9. Subtitles — fully automatic, nothing to do
 
-The rig handles everything: Thai word-breaking via Intl.Segmenter, line balancing, font shrink 52→40px when exceeding 3 rows, max width 840px. To check which lines overflow: `node measure-subs.mjs [page.html]` — needs `talk.js`; prints the widest lines, exits with code 2 if any line overflows the 840px frame.
+The runtime handles everything: Thai word-breaking via Intl.Segmenter, line balancing, font shrink 52→40px when exceeding 3 rows, max width 840px. To check which lines overflow: `npm run check-subs` — needs `talk.js`; prints the widest lines, exits with code 2 if any line overflows the 840px frame.
 
-## 9. Battle-tested scene patterns from production
+## 10. Battle-tested scene patterns from production
 
 | Goal | Pattern |
 |---|---|
@@ -162,9 +165,34 @@ The rig handles everything: Thai word-breaking via Intl.Segmenter, line balancin
 | Documents/news beats | character shrinks, cards appear one by one via `o.i` |
 | Closing | slow zoom-in + two lines of big text + darkening tint |
 
-Full implementations: `template/style.js` (compact examples) and `examples/jensen-legend/style-v4.js` (19 real scenes)
+Full implementations: `template/story/style.js` (compact examples) and `examples/legacy/jensen-legend/style-v4.js` (19 real scenes)
 
-## 11. Name collisions when copying code
+## 11. Motion curves — making reveals feel premium
 
-- `rig.js` provides top-level names (`W`, `H`, `g`, `L`, `ease`, …). Do not redeclare them in style.js.
-- `atmos.js`, `people.js`, and `rig.js`'s `rv` declare nothing at top level (they are `window` properties). Copied code that re-declares them, such as `const srnd`, `mixHex`, `hillsLayer`, `personTH`, or `const rv`, **shadows them silently** and still runs.
+The runtime ships deterministic pure functions of progress `p` (0..1) — same input, same output, safe for parallel chunk rendering:
+
+| curve | feel | use for |
+|---|---|---|
+| `ease(p)` | cubic ease-out, never overshoots | alpha/fades (default) |
+| `easeInOut(p)` | symmetric gentle ramp | camera moves, continuous motion |
+| `easeBack(p)` | slight overshoot (~1.1) then settle | snappy pop-ins |
+| `easeElastic(p)` | rubber-band wobble | playful beats (sparingly) |
+| `springy(p, stiffness, damping)` | exact damped-spring physics (~20% overshoot at defaults 170/12) | cards, headings, anything that should feel physical |
+
+Rules of thumb:
+
+- **scale/position** may overshoot → spring/back curves are safe there
+- **alpha** must never exceed 1 → keep `ease()` for opacity
+- cards (`nameCard`/`newsCard`/`emailCard`) and `pop()` already use `springy` internally for scale — you get the premium bounce for free; reach for the primitives when animating your own elements:
+
+```js
+const sp = springy(rv(o, 4, 2));   // physical pop-in tied to line 4
+g.save(); g.translate(x, y); g.scale(sp, sp); g.globalAlpha = ease(rv(o, 4, 2));
+// draw your element…
+g.restore();
+```
+
+## 12. Name collisions when copying code
+
+- the runtime (`core/` + `features/`) provides top-level names (`W`, `H`, `g`, `L`, `ease`, `springy`, …). Do not redeclare them in style.js.
+- `features/atmosphere.js`, `features/people.js`, and the runtime's `rv` declare nothing at top level (they are `window` properties). Copied code that re-declares them, such as `const srnd`, `mixHex`, `hillsLayer`, `personTH`, or `const rv`, **shadows them silently** and still runs.

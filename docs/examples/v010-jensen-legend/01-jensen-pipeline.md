@@ -4,12 +4,12 @@
 >
 > | In this document (original production) | Current template |
 > |---|---|
-> | `SEGMENTS` hardcoded in mix_studio.py | moved to `segments.json` — see [guide-audio.md](guide-audio.md) |
-> | new projects copied the jensen-legend folder | use `python new-project.py` — see [quickstart.md](quickstart.md) |
-> | single `style-v4.js` file (rig + scenes mixed) | split into `rig.js` (never edit) / `style.js` — see [guide-scenes.md](guide-scenes.md) |
+> | `SEGMENTS` hardcoded in mix-studio.py | moved to `segments.json` — see [guide-audio.md](../../authoring/02-dialogue-audio.md) |
+> | new projects copied the jensen-legend folder | use `python new-project.py` — see [quickstart.md](../../getting-started/01-quickstart.md) |
+> | single `style-v4.js` file (rig + scenes mixed) | split into the `core/` + `features/` runtime (never edit) / `style.js` — see [guide-scenes.md](../../authoring/01-scenes.md) |
 > | filenames `index-v4.html` / `dialogue-v5.txt` | `index.html` / `dialogue.txt` |
 > | mux output in `../video/` | `final.mp4` in the project folder (`--out` to change) |
-> | bed-vs-speech check at fixed 40.4–41.4 s | opt-in: `--pause=a-b --speech=c-d` — see [qc-publish.md](qc-publish.md) |
+> | bed-vs-speech check at fixed 40.4–41.4 s | opt-in: `--pause=a-b --speech=c-d` — see [qc-publish.md](../../delivery/01-qc-publish.md) |
 > | — | sheet.jpg now displays vertical frames correctly (render.mjs bug fixed) |
 >
 > Everything about safe zones, the cam() zoom trap, QC, and the audio workflow applies unchanged.
@@ -28,15 +28,15 @@ dialogue-v5.txt (107 lines: index|spk|text)
         ▼  voices generated file by file in AI Studio (manual)
 vo/*.wav — 1–8 lines per file (24kHz mono s16le)
         │
-        ▼  mix_studio.py  (TEMPO/trim/gap as the single control point)
+        ▼  mix-studio.py  (TEMPO/trim/gap as the single control point)
 talk.js (t0/dur/spk/env 30 points per line) + narration.wav
         │
         ▼  index-v4.html + style-v4.js — everything reads time from TALK only
         │  window.DURATION = TALK.dur (no hardcoded seconds)
-        ▼  render.mjs (stills) / publish-v4.mjs (6 parallel chunks)
+        ▼  render.mjs (stills) / publish.mjs (6 parallel chunks)
 out/v*_0-N.mp4 × 6
         │
-        ▼  mux-v4.mjs — concat + limiter + bed + 2-pass loudnorm + faststart
+        ▼  mux.mjs — concat + limiter + bed + 2-pass loudnorm + faststart
 video/jensen-legend-vN.mp4
 ```
 
@@ -47,20 +47,20 @@ video/jensen-legend-vN.mp4
 | File | Role |
 |---|---|
 | `dialogue-v5.txt` | 107-line script, format `index\|spk\|text` — spk: M=narrator, J=Jensen, T=Trump |
-| `mix_studio.py` | audio assembly: trim edge silence → atempo → measure 30-point env per line → write talk.js + narration.wav — parameters: `TEMPO`, `GAP=0.15`, `TRIM_THRESH` |
+| `mix-studio.py` | audio assembly: trim edge silence → atempo → measure 30-point env per line → write talk.js + narration.wav — parameters: `TEMPO`, `GAP=0.15`, `TRIM_THRESH` |
 | `talk.js` | timing output — **never hand-edit**, always re-run mix |
 | `style-v4.js` | all 19 scenes as procedural canvas, subtitles, source chips, footnote, character rig |
 | `index-v4.html` | render page: loads talk.js + style, exposes `window.render(t)`/`window.DURATION` |
 | `render.mjs` | `stills t1,t2` = stills / `video from,to` = range rendering (via playwright) |
-| `publish-v4.mjs` | splits into 6 parallel chunks (16 cores ≈ 6.5 fps/process; an 8–10 min film took 6–9 real minutes) |
-| `mux-v4.mjs` | concat → scale pc→tv bt709 → alimiter → amix bed(+3dB) → loudnorm I=−15.5 TP=−1.5 2-pass → faststart + ffprobe verify |
+| `publish.mjs` | splits into 6 parallel chunks (16 cores ≈ 6.5 fps/process; an 8–10 min film took 6–9 real minutes) |
+| `mux.mjs` | concat → scale pc→tv bt709 → alimiter → amix bed(+3dB) → loudnorm I=−15.5 TP=−1.5 2-pass → faststart + ffprobe verify |
 | `srchips.js` | source-chip definitions by line range (layer k=0 at y=300, k=1 at y=354) |
 | `tts-aistudio-v5.txt` | manual voice-generation notes — **not a system input** |
 | `thumb.html` | vertical/horizontal thumbnails |
 
 ### 3. Audio workflow (the heart of the system)
 
-- Voice files are **segments** covering multiple lines each (e.g. `n000-004.wav` = lines 0–4) — `SEGMENTS` in mix_studio.py must cover 0..106 contiguously, enforced by assert
+- Voice files are **segments** covering multiple lines each (e.g. `n000-004.wav` = lines 0–4) — `SEGMENTS` in mix-studio.py must cover 0..106 contiguously, enforced by assert
 - Time within a segment distributes by character-count weighting — subtitles match speech approximately, not per-word
 - Real character voices (J/T) live in separate files `c015_J.wav` etc. so spk tags line up
 - Old voice files can be reused when their lines haven't changed — compare byte-for-byte against the older set first
@@ -103,7 +103,7 @@ Originally the narrator's envelope fed every character's mouth → characters ch
 1. Write the script as `dialogue-*.txt` in the same format, adding spk for real speaking characters
 2. Generate voices in AI Studio segment by segment (voices used: Orus=narrator, Iapetus/Charon=characters) into `vo/`
 3. Edit `segments.json` to cover 0..n-1 → run mix → check overlaps/env
-4. Write/adjust `style.js` (scenes reusable from this project; `rig.js` stays untouched) — bind SC to line numbers
+4. Write/adjust `style.js` (scenes reusable from this project; the `core/` + `features/` runtime stays untouched) — bind SC to line numbers
 5. Render stills of every scene + safe-zone lines → fix collisions before any real render (huge time saver)
 6. publish 6 chunks → mux → QC per section 6 → watch once on a real phone before publishing
 

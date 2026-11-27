@@ -118,3 +118,11 @@ option — which maps perfectly onto our existing `srnd` hash and determinism la
 **Rejected:** the library itself as a vendored dependency (template stays zero-runtime-deps);
 scan-line hachure/cross-hatch/dot fills (dense texture shimmers badly under video compression);
 the SVG backend (the engine is canvas-only); whole-scene sketch styling (readability).
+
+## mattdesl/canvas-sketch-util — studied for noise2 (unreleased)
+
+[canvas-sketch-util](https://github.com/mattdesl/canvas-sketch-util) v1.10.0 (MIT, © 2017 Matt DesLauriers) — generative-art utilities. Its `random.noise2D` wraps the [simplex-noise](https://github.com/jwagner/simplex-noise.js) package (MIT, Jonas Wagner).
+
+**Adopted as technique, not code:** a deterministic 2D simplex field as a pure function of coordinates, so organic motion can stay within the determinism law. `noise2` is written from the published simplex method (Ken Perlin, 2001; Stefan Gustavson's 2005 explanation). It uses a fixed permutation built from integer hashing and only IEEE arithmetic, so it has no trigonometry and no sqrt; its skew factors are precomputed constants, and its gradient table is the standard 12-entry simplex table projected to 2D (eight distinct directions). No code was copied from either package.
+
+**Rejected:** the library as a dependency (CommonJS, 19 runtime packages including a WebGL stack; the template stays zero-runtime-deps and classic scripts); its stateful helpers (the `createRandom` value stream and `damp`), whose results depend on call order or on earlier frames; the WebGL `shader` and pen-plotter `penplot` modules, which sit outside the Canvas 2D video pipeline; `createHatchLines`, a uniform-angle hatch, against our rule on dense hatch fills.

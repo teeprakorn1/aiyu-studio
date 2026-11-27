@@ -120,6 +120,8 @@ Choose per project: `person()` mascot proportions suit presenter/news formats
 
 **Drawing primitives:** `TXT RRECT CIRC LIMB LINE SHAPE PATH` · **scenery/effects:** `wall floorY win glow city stars lamp rain circuitField rim vig tint zoom cam` · **cards/props:** `nameCard newsCard emailCard quoteCard pop chip chartCard` · **systems:** `subs sourceChips footnote mouthFor shot render`
 
+**Helpers:** `srnd(seed)` seeded value in [0,1) · `noise2(x, y)` smooth field, about -1..1 · `mixHex(a, b, p)` and `hexA(hex, a)` take `#rrggbb` only and throw on anything else · `clamp01(v)` · `lerp(a, b, p)`
+
 Special-purpose props built in production (paperSheet, wallClock, routeCurve, cargoShip, serverRack, gpuChip, photoCard, docBadge, doorLight + 12 backgrounds like bgHQ/bgOffice) — copy them from `examples/legacy/jensen-legend/style-v4.js` as needed.
 
 ## 8. Safe zones — the rules that make videos readable on phones

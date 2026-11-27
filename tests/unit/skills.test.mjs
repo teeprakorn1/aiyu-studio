@@ -85,7 +85,7 @@ test('skills and authoring docs never teach retired or wrong forms', () => {
 });
 
 const API = [
-  ['template/core/base.js', ['TXT', 'fitTXT', 'srnd', 'RRECT', 'CIRC', 'LINE', 'LIMB', 'PATH', 'SHAPE']],
+  ['template/core/base.js', ['TXT', 'fitTXT', 'srnd', 'noise2', 'mixHex', 'hexA', 'RRECT', 'CIRC', 'LINE', 'LIMB', 'PATH', 'SHAPE']],
   ['template/features/cards.js', ['pop', 'chip', 'quoteCard', 'chartCard']],
   ['template/features/environment.js', ['rain', 'wall', 'floorY', 'city', 'stars', 'glow', 'win', 'lamp', 'rim', 'circuitField', 'tint', 'vig']],
 ];

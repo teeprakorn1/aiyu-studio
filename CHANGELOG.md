@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- **Runtime:** `noise2(x, y)` — deterministic 2D simplex noise, about -1..1. It uses integer hashing and IEEE arithmetic only (no trigonometry or sqrt), so its values do not depend on engine-specific math approximations. The demo does not call it yet.
+
+### Changed
+
+- **Breaking:** `mixHex` and `hexA` accept only `#rrggbb` colors and throw `TypeError` for anything else (`#fff`, `#ff000080`, color names, `rgb()`). A non-number or non-finite `p` or alpha throws, and finite values outside 0..1 are clamped. Valid input returns the same strings as before.
+
+### Fixed
+
+- `mixHex` and `hexA` returned wrong colors without an error: `mixHex('#fff', '#000', 0)` gave `rgb(0,15,255)` instead of white, a color name gave black, `hexA('red', .5)` dropped the alpha, an 8-digit hex produced negative channels, out-of-range `p` produced negative channels, and out-of-range alpha was passed through unclamped.
+
 ## [0.5.0] - 2026-11-27
 
 Correctness and hardening release. **Breaking:** stricter speaker IDs, numeric flags and mux QC; existing renders are protected from accidental overwrite. `t2.000.jpg` was regenerated after the font-loading fix.

@@ -126,32 +126,79 @@ const fitTXT = (txt, x, y, maxW, size, color, align = 'center', weight = 700) =>
  */
 const srnd = seed => { const x = Math.sin(seed * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
 
+const finiteArg = (v, name) => {
+  if (typeof v !== 'number' || !Number.isFinite(v)) throw new TypeError(`${name} must be a finite number, got ${String(v)}`);
+  return v;
+};
+const hash32 = n => { n = Math.imul(n ^ (n >>> 16), 0x7feb352d); n = Math.imul(n ^ (n >>> 15), 0x846ca68b); return (n ^ (n >>> 16)) >>> 0; };
+const NOISE_PERM = (() => {
+  const p = Array.from({ length: 256 }, (_, k) => k);
+  for (let k = 255; k > 0; k--) { const j = hash32(k ^ 0x5a17c3e9) % (k + 1); [p[k], p[j]] = [p[j], p[k]]; }
+  return Array.from({ length: 512 }, (_, k) => p[k & 255]);
+})();
+const NOISE_GRAD = [[1, 1], [-1, 1], [1, -1], [-1, -1], [1, 0], [-1, 0], [1, 0], [-1, 0], [0, 1], [0, -1], [0, 1], [0, -1]];
+const NOISE_F2 = 0.3660254037844386, NOISE_G2 = 0.21132486540518713;
+const noiseCorner = (cx, cy, gi) => {
+  const t = .5 - cx * cx - cy * cy;
+  if (t <= 0) return 0;
+  const t2 = t * t;
+  const grad = NOISE_GRAD[gi];
+  return t2 * t2 * (grad[0] * cx + grad[1] * cy);
+};
+/**
+ * Deterministic 2D simplex noise: a fixed field that is smooth, with values about -1..1.
+ * The scale is the caller's: noise2(x * freq, y * freq) changes on a length of about 1 / freq.
+ * @param {number} x - sample x, unitless
+ * @param {number} y - sample y, unitless
+ * @returns {number} noise value, about -1..1
+ * @throws {TypeError} when x or y is not a finite number
+ */
+const noise2 = (x, y) => {
+  finiteArg(x, 'noise2 x'); finiteArg(y, 'noise2 y');
+  const s = (x + y) * NOISE_F2;
+  const i = Math.floor(x + s), j = Math.floor(y + s);
+  const u = (i + j) * NOISE_G2;
+  const x0 = x - (i - u), y0 = y - (j - u);
+  const i1 = x0 > y0 ? 1 : 0, j1 = 1 - i1;
+  const x1 = x0 - i1 + NOISE_G2, y1 = y0 - j1 + NOISE_G2;
+  const x2 = x0 - 1 + 2 * NOISE_G2, y2 = y0 - 1 + 2 * NOISE_G2;
+  const ii = ((i % 256) + 256) % 256, jj = ((j % 256) + 256) % 256;
+  const n = noiseCorner(x0, y0, NOISE_PERM[ii + NOISE_PERM[jj]] % 12)
+    + noiseCorner(x1, y1, NOISE_PERM[ii + i1 + NOISE_PERM[jj + j1]] % 12)
+    + noiseCorner(x2, y2, NOISE_PERM[ii + 1 + NOISE_PERM[jj + 1]] % 12);
+  return 70 * n;
+};
+
+const hexRGB = (name, hex) => {
+  if (typeof hex !== 'string' || !/^#[0-9a-f]{6}$/i.test(hex)) throw new TypeError(`${name} must be a #rrggbb color, got ${String(hex)}`);
+  const v = parseInt(hex.slice(1), 16);
+  return [v >> 16, (v >> 8) & 255, v & 255];
+};
 /**
  * Mix two #rrggbb colors and return an rgb() string.
  * @param {string} a - start color as #rrggbb
  * @param {string} b - end color as #rrggbb
- * @param {number} p - mix amount 0..1 (0 = a, 1 = b)
+ * @param {number} p - mix amount, clamped to 0..1 (0 = a, 1 = b)
  * @returns {string} rgb(r,g,b) CSS color
+ * @throws {TypeError} when a or b is not #rrggbb, or p is not a finite number
  */
 function mixHex(a, b, p) {
-  const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
-  const r = Math.round(lerp(pa >> 16, pb >> 16, p));
-  const gg = Math.round(lerp((pa >> 8) & 255, (pb >> 8) & 255, p));
-  const bl = Math.round(lerp(pa & 255, pb & 255, p));
-  return `rgb(${r},${gg},${bl})`;
+  const [ar, ag, ab] = hexRGB('mixHex a', a), [br, bg, bb] = hexRGB('mixHex b', b);
+  const q = clamp01(finiteArg(p, 'mixHex p'));
+  return `rgb(${Math.round(lerp(ar, br, q))},${Math.round(lerp(ag, bg, q))},${Math.round(lerp(ab, bb, q))})`;
 }
 
 /**
- * Convert a #rrggbb color to rgba() with the given alpha. Input that is not #rrggbb is returned unchanged.
+ * Convert a #rrggbb color to rgba() with the given alpha.
  * @param {string} hex - color as #rrggbb
- * @param {number} a - alpha 0..1
+ * @param {number} a - alpha, clamped to 0..1
  * @returns {string} CSS color
+ * @throws {TypeError} when hex is not #rrggbb, or a is not a finite number
  */
 function hexA(hex, a) {
-  if (!hex.startsWith('#')) return hex;
-  const v = parseInt(hex.slice(1), 16);
-  return `rgba(${v >> 16},${(v >> 8) & 255},${v & 255},${a})`;
+  const [cr, cg, cb] = hexRGB('hexA color', hex);
+  return `rgba(${cr},${cg},${cb},${clamp01(finiteArg(a, 'hexA alpha'))})`;
 }
 
-Object.assign(globalThis, { W,H,OL,OW,g,L,FONT,clamp01,lerp,SEG_WORD,SEG_GRAPH,PATH,SHAPE,CIRC,LIMB,LINE,RRECT,TXT,fitTXT,srnd,mixHex,hexA });
+Object.assign(globalThis, { W,H,OL,OW,g,L,FONT,clamp01,lerp,SEG_WORD,SEG_GRAPH,PATH,SHAPE,CIRC,LIMB,LINE,RRECT,TXT,fitTXT,srnd,noise2,mixHex,hexA });
 })();

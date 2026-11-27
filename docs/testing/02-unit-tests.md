@@ -20,6 +20,8 @@ Fast, deterministic, no browser, no video renders. Run with `npm test` (node + p
 | `exec.test.mjs` | `lib/exec.mjs` | executables resolve from PATH only; the current directory and relative PATH entries are never searched |
 | `chunking.test.mjs` | `lib/chunking.mjs`, `lib/render-spec.mjs` | chunk boundaries and job planning; still and video time specs; output names |
 | `base-fit.test.mjs` | `core/base.js` `fitTXT` | shrinks in 2 px steps to fit, never below 24 px (recording canvas stub) |
+| `base-color.test.mjs` | `core/base.js` `mixHex`, `hexA` | valid `#rrggbb` output unchanged, endpoints, `p` and alpha clamped to 0..1, any other color, or a non-number or non-finite `p`/alpha, throws `TypeError` |
+| `base-noise.test.mjs` | `core/base.js` `noise2` | exact zero at the origin, range about -1..1, smoothness, pinned reference values, agreement with an independent sqrt-based reference, no `Math.sin`/`cos`/`sqrt` calls, `TypeError` on non-finite input |
 | `determinism-static.test.mjs` | template core, features, story | no `Math.random`, `Date.now`, `performance.now`, `new Date`, or crypto randomness in render code |
 
 ## Python tests (`unittest` — stdlib only)

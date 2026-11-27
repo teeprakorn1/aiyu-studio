@@ -102,7 +102,7 @@ Cards (`nameCard`/`newsCard`/`emailCard`/`quoteCard`/`chartCard`) and `pop()` al
 
 ## Runtime API quick reference (all global)
 
-- **Primitives**: `RRECT(x,y,w,h,r,fill)` · `TXT(txt,x,y,size,color,align,weight)` · `fitTXT(txt,x,y,maxW,size,color,align,weight)` (shrinks the font until it fits `maxW` — use it for variable strings) · `LINE/CIRC/LIMB/PATH/SHAPE` · `g` (the ctx) · `W=1080 H=1920` · `srnd(seed)` · `mixHex/hexA` · `clamp01/lerp`
+- **Primitives**: `RRECT(x,y,w,h,r,fill)` · `TXT(txt,x,y,size,color,align,weight)` · `fitTXT(txt,x,y,maxW,size,color,align,weight)` (shrinks the font until it fits `maxW` — use it for variable strings) · `LINE/CIRC/LIMB/PATH/SHAPE` · `g` (the ctx) · `W=1080 H=1920` · `srnd(seed)` · `noise2(x,y)` (smooth field, about -1..1) · `mixHex(a,b,p)` / `hexA(hex,a)` (`#rrggbb` only, throws otherwise) · `clamp01/lerp`
 - **Environment**: `wall(top,bottom)` `floorY(y,color)` `city(x,y,w,h,n,color)` `stars(n)` `rain(alpha,n,t)` `glow(x,y,r,rgb,a)` `rim(x,y,s,side,col)` `vig()` `tint(rgb,a)` `lamp(x,y,s)` `win(x,y,w,h,sky,div)` `circuitField(alpha,col)`
 - **Character (chibi)**: `person(id, opts)` — opts: x y scale t flip look blink mood mouth back young ghost bw glasses lashes earring; `hs` hairstyles: `jensen|swoop|bob|blonde|longF|pony|none`; clothing flags in CH: `jacket/suit/tie/blazer/dress/floral`
 - **Cards**: `pop(txt,x,y,color,p,size)` `chip(txt,x,y,color,size)` `quoteCard(lines,p,y)` `chartCard(x,y,w,h,pts,col,label)`

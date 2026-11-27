@@ -4,20 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.6.0] - 2026-11-27
+
+Feature release — geographic and hierarchical scene vocabulary: a rotating dot-matrix globe with real lat/lon arcs, tidy tree diagrams for lineage stories, and deterministic simplex noise for organic motion. **Breaking:** `mixHex`/`hexA` now validate their color inputs strictly. Existing correct productions render pixel-identical output — the goldens are unchanged.
 
 ### Added
 
-- **Runtime:** `features/globe.js` — optional dot-matrix globe (`dotGlobe`, `globeArc`, `globeMark`) with real lat/lon coordinates, a baked 1-bit landmask, fibonacci-lattice dots, bezier great-circle arcs, and silhouette-culled markers. Technique adapted from cobe (MIT); see docs/acknowledgements.md. Guide: `docs/authoring/06-globe.md`.
+- **Runtime:** `features/globe.js` — optional dot-matrix globe (`dotGlobe`, `globeArc`, `globeMark`) with real lat/lon coordinates, a baked 1-bit landmask, fibonacci-lattice dots, bezier great-circle arcs, and silhouette-culled markers. ~2 ms/frame at default density. Technique adapted from cobe (MIT); see docs/acknowledgements.md. Guide: `docs/authoring/06-globe.md`.
+- **Runtime:** `features/tree.js` — optional tidy tree diagrams (`treeDiagram`, `treeLayout`) for lineage/succession/branching stories: Reingold-Tilford layout (overlap-free, plates auto-sized from the layout spacing), depth-first spring reveal driven by `rv()`. Technique adapted from d3-hierarchy (ISC); see docs/acknowledgements.md. Guide: `docs/authoring/07-trees.md`.
 - **Runtime:** `noise2(x, y)` — deterministic 2D simplex noise, about -1..1. It uses integer hashing and IEEE arithmetic only (no trigonometry or sqrt), so its values do not depend on engine-specific math approximations. The demo does not call it yet.
+- **Docs:** new authoring guides `docs/authoring/06-globe.md` and `docs/authoring/07-trees.md`. `docs/acknowledgements.md` now records the library study rounds behind this release — cobe and d3-hierarchy adopted as technique, chroma.js color mixing and city-roads geographic visuals evaluated and rejected with measured reasons.
+- **Tests:** new `globe`, `tree`, `base-noise`, and `base-color` unit suites. The determinism e2e fixture now exercises the optional modules (globe, tree, people, sketch annotations, karaoke), proving parallel-chunk bit-identity for all of them.
 
 ### Changed
 
 - **Breaking:** `mixHex` and `hexA` accept only `#rrggbb` colors and throw `TypeError` for anything else (`#fff`, `#ff000080`, color names, `rgb()`). A non-number or non-finite `p` or alpha throws, and finite values outside 0..1 are clamped. Valid input returns the same strings as before.
+- **Skills:** `aiyu-cinematic` teaches the globe and tree modules; `aiyu-authoring` documents the strict color contract and `noise2`.
 
 ### Fixed
 
 - `mixHex` and `hexA` returned wrong colors without an error: `mixHex('#fff', '#000', 0)` gave `rgb(0,15,255)` instead of white, a color name gave black, `hexA('red', .5)` dropped the alpha, an 8-digit hex produced negative channels, out-of-range `p` produced negative channels, and out-of-range alpha was passed through unclamped.
+
+### Upgrading from 0.5.0
+
+- Scan existing `story/style.js` files for `mixHex`/`hexA` calls that pass anything but six-digit hex — they now throw instead of silently producing wrong colors. Expand shorthand (`#fff` → `#ffffff`) and the scene renders exactly as 0.5.0 did.
+- The globe and tree modules ship inside `template/`; projects scaffolded before 0.6.0 can adopt them by copying `features/globe.js` and `features/tree.js` into the project and adding the two `<script src="features/...">` tags (after `features/people.js`) in both `index.html` and `preview.html`.
 
 ## [0.5.0] - 2026-11-27
 

@@ -80,11 +80,13 @@ Character definitions are plain objects registered with `defineCharacters()` —
 
 `mouthFor('H', o)` returns 0 while anyone else speaks — pass `mouth: o.em` directly and **every character chews along with the narrator**, which looks wrong instantly. Always use mouthFor, and the letter must match spk in dialogue.txt.
 
-## 6. Cinematic upgrade — `features/atmosphere.js` & `features/people.js`
+## 6. Optional feature modules
 
-Two optional modules ship in the template and are already loaded by `index.html`.
-They were extracted from the real production in `examples/legacy/thai-origins/` — read that
-example's README for the full story.
+Five optional modules ship in the template and are already loaded by `index.html`.
+`atmosphere.js` and `people.js` were extracted from the real production in
+`examples/legacy/thai-origins/` — read that example's README for the full story.
+`sketch.js` (hand-drawn annotations — see §14) arrived in 0.5.0; `globe.js` and `tree.js`
+are self-contained visual systems added in 0.6.0.
 
 **`features/atmosphere.js`** — atmosphere & nature: `skyStops()` multi-stop skies, `hillsLayer()` /
 `treeMass()` / `cloudsDusk()` / `birdsFlock()` for living horizons, `waterBody()` +
@@ -105,7 +107,12 @@ Choose per project: `person()` mascot proportions suit presenter/news formats
 (jensen-legend); `personTH()` realistic proportions suit historical/cinematic stories
 (thai-origins). They can even mix in one film.
 
-> Deep dives: [03-cinematic.md](03-cinematic.md) for humans/backgrounds/water/frame treatments, [04-maps.md](04-maps.md) for the animated map system.
+**`features/globe.js`** — `dotGlobe()` dot-matrix globe with real lat/lon coordinates,
+`globeArc()` great-circle arcs, `globeMark()` silhouette-culled markers — for stories that
+span countries. **`features/tree.js`** — `treeDiagram()` tidy tree diagrams with
+overlap-free auto layout — for lineage/succession/branching stories.
+
+> Deep dives: [03-cinematic.md](03-cinematic.md) for humans/backgrounds/water/frame treatments, [04-maps.md](04-maps.md) for the animated map system, [06-globe.md](06-globe.md) for the globe, [07-trees.md](07-trees.md) for tree diagrams.
 
 **Hard-won production rules** (also in the module comments):
 
@@ -205,7 +212,7 @@ Runtime files are IIFE-wrapped and expose their public API through `window`/`glo
 
 That does not make shadowing safe: a local `const ease`, `const srnd`, or `const personTH` in `style.js` wins inside that file and can silently change which implementation your scene uses. When copying old production code, remove duplicate helper declarations unless the copy intentionally overrides the runtime helper. Prefer the shared implementations in `core/base.js` and the optional modules.
 
-## Keyword-beat reveals: rvw()
+## 13. Keyword-beat reveals: rvw()
 
 `rv(o, n)` starts every reveal at line start. When the line carries word timing (see
 dialogue-audio §6b), `rvw(o, n, needle)` starts the reveal at the moment the keyword is SPOKEN:
@@ -219,7 +226,7 @@ Fallback contract: missing word timing or an unmatched needle degrades to `rv(o,
 scenes never break, they just become line-granular. Needles match with substring tolerance both
 directions (Thai subword chunks); repeated words hit the first occurrence. `wordT(ln, needle)`
 returns the absolute seconds for custom logic.
-## Hand-drawn sketch annotations
+## 14. Hand-drawn sketch annotations
 
 `features/sketch.js` gives five drop-in primitives — conversions are one-line changes:
 

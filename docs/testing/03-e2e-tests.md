@@ -41,7 +41,7 @@ Opens `preview.html` in a real browser and tests the transport like a user:
 - page loads without errors
 - seek updates the time display and current line
 - the video canvas paints non-black content
-- optional atmosphere/people modules execute real drawing paths rather than merely loading
+- optional atmosphere/people/globe/tree modules execute real drawing paths rather than merely loading
 - the waveform layer is painted on the timeline
 - clicking at 75% of the timeline seeks to ~75% of duration
 - A-B loop marks appear in the transport and playback wraps back to A instead of running past B

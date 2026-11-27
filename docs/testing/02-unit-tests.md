@@ -24,6 +24,7 @@ Fast, deterministic, no browser, no video renders. Run with `npm test` (node + p
 | `base-noise.test.mjs` | `core/base.js` `noise2` | exact zero at the origin, range about -1..1, smoothness, pinned reference values, agreement with an independent sqrt-based reference, no `Math.sin`/`cos`/`sqrt` calls, `TypeError` on non-finite input |
 | `determinism-static.test.mjs` | template core, features, story | no `Math.random`, `Date.now`, `performance.now`, `new Date`, or crypto randomness in render code |
 | `globe.test.mjs` | `features/globe.js` via the load-script harness | fibonacci lattice unit-sphere/uniformity/determinism, baked landmask against known geography, lat/lon→3D pins, rotation length preservation, `face`→center-front conversion, projection culling, arc reveal progress, stub-context draw smoke |
+| `tree.test.mjs` | `features/tree.js` via the load-script harness | Reingold-Tilford invariants: hand-computed pin positions, no same-depth overlap, mirror symmetry, chain centering, row alignment, depth-first reveal order, progressive/partial draw smoke on the recording stub |
 
 ## Python tests (`unittest` — stdlib only)
 

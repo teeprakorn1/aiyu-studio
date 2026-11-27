@@ -15,7 +15,7 @@ aiyu-studio/  (repo: github.com/teeprakorn1/aiyu-studio)
 ├── new-project.py        scaffolder — copies template/ + engine/ into a new project folder
 ├── template/             what users receive — the render runtime + author workspace
 │   ├── core/             LAYER 1 kernel: canvas primitives, explicit registry, motion curves, camera, composition root
-│   ├── features/         LAYER 2 domain: character, subtitles, environment, cards, atmosphere, people
+│   ├── features/         LAYER 2 domain: character, subtitles, environment, cards + optional atmosphere, people, sketch, globe, tree
 │   ├── story/            LAYER 3 author inputs: style.js, srchips.js, dialogue.txt, segments.json
 │   ├── assets/fonts/     bundled Kanit fonts (SIL OFL 1.1)
 │   ├── package.json + package-lock.json   npm scripts (the user interface) + locked playwright-core

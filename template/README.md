@@ -18,15 +18,17 @@ This folder is the starting point of every production (copied by `py new-project
 
 ## Agent skills (`skills/`)
 
-Condensed operational knowledge for coding agents — `skills/aiyu-authoring` (scene writing), `skills/aiyu-pipeline` (production commands/QC), `skills/aiyu-cinematic` (atmosphere/people/maps). Point your agent at them before asking it to touch `story/` — see `skills/README.md`.
+Condensed operational knowledge for coding agents — `skills/aiyu-authoring` (scene writing), `skills/aiyu-pipeline` (production commands/QC), `skills/aiyu-cinematic` (atmosphere/people/maps/globe/trees). Point your agent at them before asking it to touch `story/` — see `skills/README.md`.
 
 ## Optional modules (loaded by index.html)
 
 - `features/atmosphere.js` — skies, haze, hills, trees, clouds, birds, water, smoke, grain, vignette, caption scrim, label plates. Call them bare from style.js (`skyStops(...)`, `waterBody(...)`, `grainLayer()`)
 - `features/people.js` — `personTH(id, o)` realistic humans; project-specific appearances are registered with `definePeople()` in `story/style.js`
 - `features/sketch.js` — hand-drawn annotations: `sketchLine/sketchRect/sketchCircle/sketchArrow/sketchUnderline(x…, {seed, rough, boil, t})` — seed from the shape's ROLE never the frame; details `docs/authoring/01-scenes.md`
+- `features/globe.js` — `dotGlobe()` dot-matrix globe with real lat/lon, `globeArc()` great-circle arcs, `globeMark()` silhouette-culled markers; guide `docs/authoring/06-globe.md` in the aiyu-studio repository
+- `features/tree.js` — `treeDiagram()` tidy tree diagrams with overlap-free auto layout; guide `docs/authoring/07-trees.md` in the aiyu-studio repository
 
-Both are IIFE-wrapped and export through `window`/`globalThis`. Copied legacy helper declarations can shadow them inside `story/style.js`, so remove duplicate helpers unless an override is intentional. Details: `docs/authoring/03-cinematic.md` and `docs/authoring/01-scenes.md` §6 + §12.
+All are IIFE-wrapped and export through `window`/`globalThis`. Copied legacy helper declarations can shadow them inside `story/style.js`, so remove duplicate helpers unless an override is intentional. Details: `docs/authoring/03-cinematic.md` and `docs/authoring/01-scenes.md` §6 + §12.
 
 ## Scene cheatsheet (in style.js)
 

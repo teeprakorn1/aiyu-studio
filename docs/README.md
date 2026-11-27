@@ -15,7 +15,9 @@ docs/
 │   ├── 02-dialogue-audio.md      dialogue · segments.json · TTS · tempo
 │   ├── 03-cinematic.md           realistic humans · layered backgrounds · water · frame treatments
 │   ├── 04-maps.md                animated data-driven maps · flow paths · hachure mountains
-│   └── 05-parameterized.md       data-driven variants · batch rendering
+│   ├── 05-parameterized.md       data-driven variants · batch rendering
+│   ├── 06-globe.md               dot-matrix globe · great-circle arcs · markers
+│   └── 07-trees.md               tidy tree diagrams · lineage/succession stories
 ├── delivery/
 │   ├── README.md                 delivery guide index
 │   └── 01-qc-publish.md          7-point QC · Reels/TikTok specs · legal/platform rules

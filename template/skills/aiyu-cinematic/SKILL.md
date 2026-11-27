@@ -94,6 +94,24 @@ globeMark(GLOBE, o.t, [40.7, -74], rv(o, 4), { color: '#ffd166' });        // au
 - Landmask is baked in (~5 KB) — no assets, works over `file://`. Polar caps read as ice, intentional.
 - Full guide: `docs/authoring/06-globe.md` in the aiyu-studio repository (docs are not copied into projects).
 
+## Tidy tree diagrams (features/tree.js)
+
+Dynasty/succession/branching stories — node-link trees laid out overlap-free (Reingold-Tilford):
+
+```js
+const DYNASTY = { name: 'ออกญา', sub: '1320–1355', children: [
+  { name: 'เจ้าโปรย', sub: '1355–1381', children: [{ name: 'เจ้าเมือง' }] },
+  { name: 'เจ้าจีน' },
+]};
+treeDiagram({ data: DYNASTY, x0: 90, x1: 990, y0: 430, y1: 1360 }, rv(o, 4), { line: '#c8a24a' });
+```
+
+- `name` required, `sub` optional second line, `children` optional — plain nested objects, order preserved left-to-right.
+- Second argument is reveal progress 0..1 — drive with `rv()`/`rvw()`. Parents always appear before children; the link draws first, then the plate springs in.
+- Plates auto-size so same-depth nodes never overlap — but vertical readability caps practical trees at ~5–15 nodes, 2–4 levels. Bigger genealogy? one branch per scene.
+- Custom node visuals (portraits, branch colours): use `treeLayout(data, region)` for positions and draw yourself.
+- Full guide: `docs/authoring/07-trees.md` in the aiyu-studio repository (docs are not copied into projects).
+
 ## Palettes as named systems
 
 Don't scatter raw hex through scenes. Define per-story palette objects (`const PAL = { skyTop: ..., skin: ... }`) at the top of style.js — one place to regrade the whole film.

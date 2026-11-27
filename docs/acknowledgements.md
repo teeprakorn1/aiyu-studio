@@ -99,7 +99,7 @@ The hand-drawn graphics library.
 
 **Rejected:** the library itself as a vendored dependency (template stays zero-runtime-deps); scan-line hachure/cross-hatch/dot fills (dense texture shimmers badly under video compression); the SVG backend (the engine is canvas-only); whole-scene sketch styling (readability).
 
-### [mattdesl/canvas-sketch-util](https://github.com/mattdesl/canvas-sketch-util) (MIT) — studied for noise2 (unreleased)
+### [mattdesl/canvas-sketch-util](https://github.com/mattdesl/canvas-sketch-util) (MIT) — studied for noise2 (v0.6.0)
 
 v1.10.0 (© 2017 Matt DesLauriers) — generative-art utilities. Its `random.noise2D` wraps the [simplex-noise](https://github.com/jwagner/simplex-noise.js) package (MIT, Jonas Wagner).
 
@@ -107,7 +107,7 @@ v1.10.0 (© 2017 Matt DesLauriers) — generative-art utilities. Its `random.noi
 
 **Rejected:** the library as a dependency (CommonJS, 19 runtime packages including a WebGL stack; the template stays zero-runtime-deps and classic scripts); its stateful helpers (the `createRandom` value stream and `damp`), whose results depend on call order or on earlier frames; the WebGL `shader` and pen-plotter `penplot` modules, which sit outside the Canvas 2D video pipeline; `createHatchLines`, a uniform-angle hatch, against our rule on dense hatch fills.
 
-### [gka/chroma.js](https://github.com/gka/chroma.js) (BSD-3-Clause) — studied for color mixing (unreleased)
+### [gka/chroma.js](https://github.com/gka/chroma.js) (BSD-3-Clause) — studied for color mixing (v0.6.0)
 
 v3.3.0 (© 2011-2025 Gregor Aisch) — the data-visualization color library: perceptual spaces (LAB/LCh/OKLab), interpolation in eleven color spaces, contrast ratios, color scales. It was studied as the obvious candidate for one question: should mixing in a perceptual space replace the sRGB lerp inside `mixHex`? The measured answer is **no** — recorded here so the question stays answered:
 
@@ -117,7 +117,7 @@ v3.3.0 (© 2011-2025 Gregor Aisch) — the data-visualization color library: per
 
 **Rejected:** all runtime adoption — no code copied, no technique adopted. Also evaluated and rejected: WCAG/APCA contrast QC (subtitles are fixed-color with stroke — nothing to check), deltaE-based golden comparison (the channel-mean tolerance is empirically calibrated and works), color scales/bezier interpolation (skies use native canvas gradients; the ~3 CIE76 gain does not justify densified stops), `temperature2rgb` and ColorBrewer palettes (no need in this pipeline). If cross-hue mixing ever becomes necessary, the shortest-path hue interpolation in chroma's `_hsx.js` is the reference shape.
 
-### [anvaka/city-roads](https://github.com/anvaka/city-roads) (MIT) — studied for geographic visuals (unreleased)
+### [anvaka/city-roads](https://github.com/anvaka/city-roads) (MIT) — studied for geographic visuals (v0.6.0)
 
 A Vue 3 web application — not a library — that renders every road in a city from OpenStreetMap data, projected with d3-geo and drawn as WebGL polylines. Studied as the representative of "real geography in video" and rejected entire, because it collides with every constraint of this pipeline at once: WebGL rendering (the engine is Canvas 2D, and GPU output is not cross-machine deterministic), runtime network data (the Overpass API and nominatim are fetched live — the determinism law forbids it), ODbL-licensed data (real map data drags attribution obligations into produced videos), a Vue/Vite/d3/pbf dependency stack, and no temporal dimension at all — it is an interactive static visualization, not a time-based renderer.
 
@@ -125,7 +125,7 @@ Even the aesthetic does not transfer: the beauty of city-roads is thousands of d
 
 One thing the study did confirm, as convergent evidence rather than a new idea: anvaka built an offline protobuf cache of ~3,000 cities precisely because live Overpass queries are slow and rate-limited — the same lesson this pipeline already lives by (prepare data offline, render offline). If a production ever needs real geography, the pipeline-shaped answer is offline-prepared polylines baked into story assets — exactly how narration audio is treated — rendered deterministically with canvas strokes. No such need exists today.
 
-### [shuding/cobe](https://github.com/shuding/cobe) (MIT) — adopted as technique (unreleased)
+### [shuding/cobe](https://github.com/shuding/cobe) (MIT) — adopted as technique (v0.6.0)
 
 v2.0.1 — a ~5 KB zero-dependency WebGL globe rendered as a dot matrix: fibonacci-lattice points on a sphere, a 1-bit equirectangular landmask texture, lat/lon → 3D → orthographic projection, quadratic-bezier great-circle arcs lifted off the surface, and a rim-darkened diffuse shading recipe. Studied as the reference for `features/globe.js` — the rotating-Earth visual for globalization and "from X to Y" stories.
 
@@ -137,6 +137,17 @@ v2.0.1 — a ~5 KB zero-dependency WebGL globe rendered as a dot matrix: fibonac
 - **The shading recipe** — brightness as a power of view-space depth, bucketed into ~24 alpha levels so thousands of dots batch into a few `fill()` calls.
 
 **Rejected:** the WebGL implementation itself (the engine is Canvas 2D, and GPU output is not cross-machine deterministic — the CPU port measured ~2 ms/frame, fast enough that no GPU was ever needed); pointer-drag rotation and inertia (the globe is driven by `t`, never by input); DOM-anchored HTML markers (markers are canvas dots pinned to lat/lon instead); the texture's runtime PNG loading (the mask is baked, not fetched).
+
+### [d3/d3-hierarchy](https://github.com/d3/d3-hierarchy) (ISC) — adopted as technique (v0.6.0)
+
+v3.1.3 — layout algorithms for hierarchical data: node-link tree diagrams, treemaps, circle-packing, partitions, dendrograms. Notably pure: every layout is a function of exact IEEE arithmetic alone (no trigonometry anywhere; the one pseudo-random sequence in circle packing is a constant-seeded integer LCG, deterministic by construction), which makes the whole module family a natural fit for the determinism law. Studied as the reference for `features/tree.js` — tidy tree diagrams for lineage, succession, and branching stories.
+
+**Adopted as technique, not code** (the ISC license is noted for provenance; the implementation is an original reimplementation of the published algorithm):
+
+- **The Reingold-Tilford tidy tree layout** as improved by Buchheim, Junger & Leipert (2002) — first/apportion/executeShifts/secondWalk structure with threads and ancestor resolution. The contour mathematics is adopted; the code is rewritten.
+- **The separation-unit model** — sibling separation 1, cousin separation 2, half-unit edge padding — because it gives a measurable guarantee (one unit of horizontal spacing) that the drawing layer uses to auto-size node plates so they can never overlap.
+
+**Rejected:** treemap/circle-pack/partition/cluster layouts (no demonstrated production need — composition stories are served well enough by simpler vocabulary, and radial sunbursts fit vertical 9:16 poorly); `stratify` and the `hierarchy()` node wrapper API (trivial conveniences, reimplemented in 20 lines); the d3 fluent-API style with chained `.size().separation()` accessors (the template uses plain functions with plain options objects); the ES-module packaging (classic scripts only).
 
 ## The production crucible
 

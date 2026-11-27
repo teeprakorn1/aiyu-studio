@@ -74,10 +74,15 @@ function scA(o) {
   sketchArrow(200, 700, 500, 900, { seed: 9001, rough: 1.2, boil: 3, t: o.t });
   captionScrim(.5);
 }
+const TREE_FIX = { name: 'root', children: [
+  { name: 'alpha', sub: '1350–1369', children: [{ name: 'leaf' }, { name: 'leaf2' }] },
+  { name: 'beta', children: [{ name: 'leaf3' }] },
+] };
 function scB(o) {
   cam(o, { z0: 1.04, z1: 1.09, cy: 1000, punch: .02, driftX: 4 }, () => {
     wall('#101623', '#05070d');
     rain(.07, 20, o.t);
+    treeDiagram({ data: TREE_FIX, x0: 120, x1: 960, y0: 300, y1: 1000 }, rv(o, 1), { line: '#c8a24a' });
     person('host', { x: 540, y: 1600, scale: 1, t: o.t, look: 1, mouth: mouthFor('H', o) });
   });
   captionScrim(.5);

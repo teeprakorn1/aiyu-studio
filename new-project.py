@@ -52,6 +52,7 @@ Next steps:
        - features/atmosphere.js — cinematic skies, water, hills, weather, grain/vignette
        - features/people.js — personTH() realistic humans with knees/elbows and a walk cycle
        - features/globe.js — dotGlobe()/globeArc()/globeMark() rotating Earth with real lat/lon
+       - features/tree.js — treeDiagram()/treeLayout() tidy lineage/succession tree diagrams
        (for a full production using both, see examples/legacy/thai-origins/ in the aiyu-studio repository)
      Working with a coding agent? Point it at skills/ — condensed rules for
      scene writing (aiyu-authoring), the pipeline (aiyu-pipeline), and cinematic

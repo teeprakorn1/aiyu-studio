@@ -39,7 +39,7 @@
 - **ระบบ safe zone** — ขอบกันตายในตัวกันข้อความโดน UI ของ Reels/TikTok บัง ตรวจสดใน preview แล้วยืนยันด้วยภาพนิ่งก่อนเรนเดอร์จริงทุกครั้ง
 - **เรนเดอร์ขนานหลายโปรเซส** — headless browser หลายตัวเรนเดอร์ช่วงเวลาที่ไม่ซ้ำกันพร้อมกัน
 - **เสียงมาตรฐาน broadcast** — loudnorm สองผ่านไปที่ −15.5 LUFS พร้อม true-peak limiting ตรวจยืนยันด้วย ffprobe หลัง mux มี `--bed-duck` แบบเลือกได้ ดันดนตรีพื้นหลังลงอัตโนมัติใต้เสียงพูดแล้วดีดกลับช่วงเว้นวรรค
-- **โมดูล cinematic** — `features/atmosphere.js` (ท้องฟ้าหลายชั้น มุมมองลึกด้วยสี น้ำมีชีวิต อากาศ/ฟิล์มเกรน) และ `features/people.js` (ตัวละครมนุษย์สัดส่วนจริงเดินได้) แยกมาจากโปรดักชัน `thai-origins` ใน [examples/legacy/](examples/legacy/thai-origins/)
+- **โมดูล cinematic** — `features/atmosphere.js` (ท้องฟ้าหลายชั้น มุมมองลึกด้วยสี น้ำมีชีวิต อากาศ/ฟิล์มเกรน) และ `features/people.js` (ตัวละครมนุษย์สัดส่วนจริงเดินได้) แยกมาจากโปรดักชัน `thai-origins` ใน [examples/legacy/](examples/legacy/thai-origins/) — เพิ่ม `features/globe.js` (โลกจุด lat/lon จริง เส้นโค้ง great-circle) และ `features/tree.js` (แผนผังต้นไม้) สำหรับเรื่องที่ครอบคลุมทั้งโลกหรือสายสืบ
 - **Chrome หรือ Chromium ก็ได้** — engine เลือกเบราว์เซอร์ให้อัตโนมัติ ไม่จำเป็นต้องมี Chrome
 - **มีเทส** — pyramid ทั้ง unit + end-to-end โดยไม่เพิ่ม dependency เลย determinism ถูกบังคับด้วย hash ไม่ใช่ความหวัง
 - **scaffold คำสั่งเดียว** — `new-project.py` ให้โปรเจกต์ demo ที่เรนเดอร์ได้จริงในไม่กี่วินาที
@@ -145,7 +145,7 @@ npm run stills -- 1,5,10                 # แล้วเปิด stills/sheet
 ├── engine/                   # สคริปต์ pipeline (thin shells) + lib/ (logic รวมทั้งหมด)
 ├── template/                 # โครงเรื่องที่ผู้ใช้ได้รับ
 │   ├── core/                 #   runtime kernel — primitives, registry, motion, camera (ห้ามแก้)
-│   ├── features/             #   character/subtitles/environment/cards/atmosphere/people (ห้ามแก้)
+│   ├── features/             #   character/subtitles/environment/cards + optional atmosphere/people/sketch/globe/tree (ห้ามแก้)
 │   ├── story/                #   ส่วนที่เขียนเอง: style.js, dialogue.txt, segments.json, srchips.js
 │   ├── preview.html          #   live scrubber — ไม่ต้องมี server
 │   ├── skills/               #   agent skills: aiyu-authoring / aiyu-pipeline / aiyu-cinematic

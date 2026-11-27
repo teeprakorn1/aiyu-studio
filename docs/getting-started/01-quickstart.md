@@ -22,7 +22,7 @@ You get:
 my-story/
 ├── engine/         the pipeline machinery — never edit (mix/render/publish/mux/measure + lib/)
 ├── core/           runtime kernel — never edit
-├── features/       characters, subtitles, cards, atmosphere, people — never edit
+├── features/       characters, subtitles, cards, environment + optional atmosphere/people/globe/tree/sketch — never edit
 ├── story/          ← everything you write lives here: style.js, srchips.js, dialogue.txt, segments.json
 ├── preview.html    live scrubber — open in a browser, no server needed
 ├── skills/         agent skills — point your coding agent here before it touches story/

@@ -5,7 +5,7 @@
 **Video-as-code for vertical documentaries.** Write scenes in JavaScript, narrate with TTS, and render publish-ready 1080×1920 videos for Reels & TikTok — no video editor, no timeline scrubbing, no manual subtitle sync.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.5.0-blue.svg?style=for-the-badge)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.6.0-blue.svg?style=for-the-badge)](CHANGELOG.md)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg?style=for-the-badge)](#requirements)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge)](#contributing)
 
@@ -40,7 +40,7 @@ Vertical documentaries are repetitive to produce: sync subtitles by hand, resize
 - **Safe-zone discipline** — built-in margins keep text clear of Reels/TikTok UI overlays; QC live in the preview, then with stills before committing to a full render
 - **Parallel chunked rendering** — multiple headless browser processes render disjoint timeline segments simultaneously
 - **Broadcast loudness** — two-pass loudnorm to −15.5 LUFS with true-peak limiting, verified by ffprobe after muxing; optional `--bed-duck` sidechain compression ducks the music bed under speech and lets it rise in pauses
-- **Cinematic feature modules** — optional `features/atmosphere.js` (multi-stop skies, atmospheric depth, living water, weather, film grain) and `features/people.js` (realistic walk-cycle humans), extracted from the `thai-origins` production in [examples/legacy/](examples/legacy/thai-origins/)
+- **Cinematic feature modules** — optional `features/atmosphere.js` (multi-stop skies, atmospheric depth, living water, weather, film grain) and `features/people.js` (realistic walk-cycle humans), extracted from the `thai-origins` production in [examples/legacy/](examples/legacy/thai-origins/) — plus `features/globe.js` (dot-matrix globe with real lat/lon, great-circle arcs) and `features/tree.js` (tidy tree diagrams) for stories spanning the world or a lineage
 - **Chrome or Chromium** — automatic browser fallback chain; no Chrome license required
 - **Tested** — unit + end-to-end pyramid with zero added dependencies; determinism enforced by hash, not by hope
 - **One-command scaffolding** — `new-project.py` gives you a working, renderable demo project in seconds
@@ -146,7 +146,7 @@ If the sheet shows characters and subtitles, the pipeline works — or open `pre
 ├── engine/                   # pipeline scripts (thin shells) + lib/ (all shared logic)
 ├── template/                 # the project skeleton users receive
 │   ├── core/                 #   runtime kernel — primitives, registry, motion, camera (never edit)
-│   ├── features/             #   character/subtitles/environment/cards/atmosphere/people (never edit)
+│   ├── features/             #   character/subtitles/environment/cards + optional atmosphere/people/sketch/globe/tree (never edit)
 │   ├── story/                #   author inputs: style.js, dialogue.txt, segments.json, srchips.js
 │   ├── preview.html          #   live scrubber — no server needed
 │   ├── skills/               #   agent skills: aiyu-authoring / aiyu-pipeline / aiyu-cinematic

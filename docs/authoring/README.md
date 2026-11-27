@@ -12,6 +12,7 @@ scene work actually proceed **in parallel** in real productions.
 | [04-maps.md](04-maps.md) | animated data-driven maps — Natural Earth data, projection, `mapBase`, hachure mountains, `focusCam`, migration flow paths, reveal choreography |
 | [05-parameterized.md](05-parameterized.md) | parameterized rendering — many visual variants from one project: the data-module pattern, batch workflow, what can and cannot vary |
 | [06-globe.md](06-globe.md) | the dot-matrix globe — `dotGlobe`/`globeArc`/`globeMark`, real lat/lon coordinates, spec+rotation model, compositing recipe |
+| [07-trees.md](07-trees.md) | tidy tree diagrams — `treeDiagram`/`treeLayout`, nested data format, reveal choreography, sizing rules for vertical video |
 
 ## Prerequisites
 

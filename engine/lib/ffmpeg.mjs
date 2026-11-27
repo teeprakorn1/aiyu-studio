@@ -2,6 +2,7 @@
  * @file ffmpeg.mjs — ffmpeg/ffprobe process helpers shared by mux and future engine scripts.
  */
 import { spawn } from 'node:child_process';
+import { resolveExecutable } from './exec.mjs';
 
 /**
  * Quote one shell token for display purposes (single-quote style).
@@ -35,7 +36,8 @@ export function printCommand(cmd, args) {
  */
 export function runProcess(cmd, args, opts = {}) {
   return new Promise((resolve, reject) => {
-    const child = spawn(cmd, args, { windowsHide: true });
+    let child;
+    try { child = spawn(resolveExecutable(cmd), args, { windowsHide: true }); } catch (err) { return reject(err); }
     let stdout = '';
     let stderr = '';
     const cap = 1024 * 1024;

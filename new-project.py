@@ -47,16 +47,16 @@ Next steps:
   4. open preview.html in Chrome        (live scrubbing: play/scrub animation+audio, waveform timeline)
      npm run stills -- 1,3,5            (see the demo scenes in stills/sheet.jpg)
   5. Write your story: edit story/dialogue.txt / story/segments.json / story/srchips.js / story/style.js
-     (never edit core/ or features/ — for reference see examples/legacy/jensen-legend/ in the main repo)
+     (never edit core/ or features/ — for reference see examples/legacy/jensen-legend/ in the aiyu-studio repository)
      Optional modules already loaded by index.html:
        - features/atmosphere.js — cinematic skies, water, hills, weather, grain/vignette
        - features/people.js — personTH() realistic humans with knees/elbows and a walk cycle
-       (for a full production using both, see examples/legacy/thai-origins/ in the main repo)
+       (for a full production using both, see examples/legacy/thai-origins/ in the aiyu-studio repository)
      Working with a coding agent? Point it at skills/ — condensed rules for
      scene writing (aiyu-authoring), the pipeline (aiyu-pipeline), and cinematic
      features (aiyu-cinematic). See skills/README.md.
   6. Drop real voice files into vo/ per segments.json names, then run npm run mix (real mode)
   7. Full render: npm run publish -- --chunks=6 --out=v1   (duration auto-reads talk.js)
   8. Mux:         npm run mux -- --concat=out/v1concat.txt --out=final-v1.mp4
-  9. QC per docs/delivery/01-qc-publish.md, then watch once on a real phone before publishing
+  9. QC per docs/delivery/01-qc-publish.md in the aiyu-studio repository (docs are not copied into projects), then watch once on a real phone before publishing
 """)

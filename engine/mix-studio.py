@@ -4,15 +4,17 @@
 #   python mix-studio.py --stub    → force stub mode
 #   python mix-studio.py --dialogue=xxx.txt --segments=yyy.json   → override inputs
 #
-# story/dialogue.txt format:  index|spk|text   (index runs 0..N-1, spk: M=narrator, other letters=characters)
+# story/dialogue.txt format:  index|spk|text   (index runs 0..N-1, spk: one letter or digit, M=narrator)
 # story/segments.json format: {"settings": {...}, "segments": [["file.wav", firstLine, lastLine], ...]}
 #   segments must cover lines 0..N-1 in order — no overlaps, no gaps
-import argparse, json, os, subprocess, sys
+import argparse, json, os, subprocess, sys, wave
 
+from lib.exec_path import find_executable
 from lib.mix_audio import (
     parse_dialogue_text, validate_segments, validate_settings,
-    trim_edges, envelope_from_pcm, wave_peaks, talk_js_payload,
+    trim_edges_with_lead, wave_peaks, talk_js_payload,
 )
+from lib.timeline import TAIL_SEC, apply_wordtimes, plan_timeline
 
 try: sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception: pass
@@ -23,15 +25,20 @@ VO = os.path.join(HERE, 'vo')
 
 
 def pcm_of(path):
-    return subprocess.run(['ffmpeg', '-v', 'error', '-i', path, '-f', 's16le', '-ac', '1', '-ar', '24000', '-'],
+    return subprocess.run([find_executable('ffmpeg'), '-v', 'error', '-i', path, '-f', 's16le', '-ac', '1', '-ar', '24000', '-'],
                           capture_output=True, check=True).stdout
 
 
 def atempo_pcm(raw, tempo):
     if abs(tempo - 1.0) < 1e-6: return raw
-    return subprocess.run(['ffmpeg', '-v', 'error', '-f', 's16le', '-ar', '24000', '-ac', '1', '-i', '-',
+    return subprocess.run([find_executable('ffmpeg'), '-v', 'error', '-f', 's16le', '-ar', '24000', '-ac', '1', '-i', '-',
                            '-af', f'atempo={tempo}', '-f', 's16le', '-ac', '1', '-ar', '24000', '-'],
                           input=raw, capture_output=True, check=True).stdout
+
+
+def tempo_clip(path, trim_thresh, tempo):
+    trimmed, lead = trim_edges_with_lead(pcm_of(path), trim_thresh)
+    return atempo_pcm(trimmed, tempo), lead
 
 
 def resolve_input(path):
@@ -48,18 +55,9 @@ def build(args):
     if not isinstance(spec, dict) or 'segments' not in spec:
         raise ValueError('segments.json: expected an object with a segments list')
 
-    n = len(lines)
     settings = validate_settings(spec.get('settings', {}))
-    segments = validate_segments(spec['segments'], n)
-    gap = settings['gap']           # seconds of silence between voice files
-    tempo = settings['tempo']       # whole-track ffmpeg atempo; talk.js rescales with it
-    trim_thresh = settings['trimThresh']
-    line_gap = settings['lineGap']  # intra-file pause weighting
-
-    have = []
-    for name, _, _ in segments:
-        p = os.path.join(VO, name)
-        have.append(p if os.path.exists(p) else None)
+    segments = validate_segments(spec['segments'], len(lines))
+    have = [os.path.join(VO, name) if os.path.exists(os.path.join(VO, name)) else None for name, _, _ in segments]
     stub = args.stub or not all(have)
     if not stub:
         print('real mode: all voice files present')
@@ -67,76 +65,30 @@ def build(args):
         missing = [name for (name, _, _), p in zip(segments, have) if not p]
         print(f'stub mode (missing {len(missing)} files: {missing[:8]}{"..." if len(missing) > 8 else ""})')
 
-    t = 0.0
-    talk_lines = []
-    pcm_all = b'' if not stub else None
+    clips = None if stub else [tempo_clip(p, settings['trimThresh'], settings['tempo']) for p in have]
+    plan = plan_timeline(lines, segments, settings, clips)
+    talk_lines = plan['talk_lines']
 
-    seg_windows = []
-    for k, (name, a, b) in enumerate(segments):
-        grp = lines[a:b + 1]
-        if stub:
-            gdur = sum(len(l['txt']) for l in grp) / 12.5  # ~12.5 chars/sec estimate for scene work
-        else:
-            raw = atempo_pcm(trim_edges(pcm_of(have[k]), trim_thresh), tempo)
-            gdur = len(raw) / 48000
-        wsum = sum(len(l['txt']) for l in grp) + line_gap * 40 * (len(grp) - 1)
-        seg_windows.append((a, b, t))
-        cur = t
-        for n_line, l in enumerate(grp):
-            dur = gdur * (len(l['txt']) + (line_gap * 40 if n_line else 0)) / wsum
-            env = [0] * 30
-            if not stub:
-                # envelope of this line slice (30 points) — drives character mouths
-                off = int((cur - t) * 48000) // 2 * 2
-                seg = raw[off:off + int(dur * 48000) // 2 * 2]
-                env = envelope_from_pcm(seg)
-            talk_lines.append({'i': l['i'], 'spk': l['spk'], 't0': round(cur, 3), 'dur': round(dur, 3), 'txt': l['txt'], 'env': env})
-            cur += dur
-        if not stub:
-            pcm_all += raw + b'\x00' * (int(gap * 48000) // 2 * 2)
-        t = cur + gap
+    wt_path = os.path.join(HERE, 'story', 'wordtimes.json')
+    if not stub and os.path.exists(wt_path):
+        with open(wt_path, encoding='utf-8') as f:
+            merged = apply_wordtimes(talk_lines, plan['windows'], json.load(f), settings['tempo'])
+        if merged:
+            print(f'wordtimes.json -> karaoke timing merged into {merged}/{len(talk_lines)} lines')
 
-    # optional karaoke layer: story/wordtimes.json maps line index -> [[word, start, end]]
-    # relative to the audio file containing that line. Words are scaled by the same atempo
-    # factor as the audio and assigned to the line whose time window contains their midpoint.
-    # Silence trimming shifts them by tens of milliseconds — visually irrelevant for karaoke.
+    talk = {'dur': round(plan['t_end'] + TAIL_SEC, 2), 'lines': talk_lines}
     if not stub:
-        wt_path = os.path.join(HERE, 'story', 'wordtimes.json')
-        if os.path.exists(wt_path):
-            with open(wt_path, encoding='utf-8') as f:
-                wt = json.load(f)
-            abs_words = []
-            for a, b, seg_start in seg_windows:
-                for key, words in wt.items():
-                    if a <= int(key) <= b and isinstance(words, list):
-                        for w in words:
-                            ws, we = float(w[1]) / tempo, float(w[2]) / tempo
-                            abs_words.append((str(w[0]), seg_start + ws, seg_start + we))
-            n_merged = 0
-            for tl in talk_lines:
-                lo, hi = tl['t0'], tl['t0'] + tl['dur']
-                mine = [(w, s, e) for w, s, e in abs_words if lo <= (s + e) / 2 < hi]
-                if mine:
-                    tl['words'] = [{'w': w, 't0': round(s, 3), 'dur': round(e - s, 3)} for w, s, e in mine]
-                    n_merged += 1
-            if n_merged:
-                print(f'wordtimes.json -> karaoke timing merged into {n_merged}/{len(talk_lines)} lines')
-
-    dur = talk_lines[-1]['t0'] + talk_lines[-1]['dur'] + 0.8
-    talk = {'dur': round(dur, 2), 'lines': talk_lines}
-    if not stub:
-        talk['wave'] = wave_peaks(pcm_all)
-        talk['waveDur'] = round(len(pcm_all) / 48000, 2)
+        talk['wave'] = wave_peaks(plan['narration'])
+        talk['waveDur'] = round(len(plan['narration']) / 48000, 2)
     with open(os.path.join(HERE, 'talk.js'), 'w', encoding='utf-8') as f:
         f.write(talk_js_payload(talk))
-    print(f'talk.js -> {len(talk_lines)} lines, dur={dur:.1f}s ({"STUB" if stub else "REAL"})')
+    print(f'talk.js -> {len(talk_lines)} lines, dur={talk["dur"]:.1f}s ({"STUB" if stub else "REAL"})')
 
     if not stub:
-        import wave
         with wave.open(os.path.join(HERE, 'narration.wav'), 'wb') as w:
             w.setnchannels(1); w.setsampwidth(2); w.setframerate(24000)
-            w.writeframes(pcm_all)
-        print(f'narration.wav -> {len(pcm_all) / 48000:.1f}s')
+            w.writeframes(plan['narration'])
+        print(f'narration.wav -> {len(plan["narration"]) / 48000:.1f}s')
 
 
 def main(argv=None):

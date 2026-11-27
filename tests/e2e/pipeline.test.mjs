@@ -6,7 +6,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { existsSync, rmSync, readFileSync } from 'node:fs';
+import { existsSync, rmSync, readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { run, npmInstall, npmRun, PY } from '../helpers/proc.mjs';
@@ -21,12 +21,20 @@ before(function () {
   npmInstall(PROJ);
 });
 
-after(() => { rmSync(PROJ, { recursive: true, force: true }); });
+after(() => { if (!process.env.AIYU_KEEP_WORKSPACES) rmSync(PROJ, { recursive: true, force: true }); });
 
-test('scaffold produces the 3-layer structure', () => {
-  for (const p of ['engine/lib/cli-args.mjs', 'core/base.js', 'core/registry.js', 'features/character.js', 'story/style.js', 'story/dialogue.txt', 'index.html', 'preview.html', 'package-lock.json']) {
-    assert.ok(existsSync(path.join(PROJ, p)), `missing ${p}`);
-  }
+const walk = (dir, base = dir) => readdirSync(dir, { withFileTypes: true }).flatMap(e => {
+  if (e.name === '__pycache__') return [];
+  const full = path.join(dir, e.name);
+  return e.isDirectory() ? walk(full, base) : [path.relative(base, full).split(path.sep).join('/')];
+});
+
+test('scaffold copies every shipped template file, the engine tree, and the root .gitignore', () => {
+  const shipped = [...walk(path.join(REPO, 'template')), ...walk(path.join(REPO, 'engine')).map(f => `engine/${f}`)];
+  assert.deepEqual(shipped.filter(f => !existsSync(path.join(PROJ, f))), []);
+  for (const d of ['vo', 'assets/fonts', 'skills']) assert.ok(existsSync(path.join(PROJ, d)), `missing ${d}/`);
+  assert.ok(existsSync(path.join(PROJ, '.gitignore')), 'missing .gitignore');
+  for (const d of ['tests', 'docs', 'examples']) assert.ok(!existsSync(path.join(PROJ, d)), `${d}/ must not be scaffolded`);
 });
 
 test('npm run stub produces valid talk.js', () => {
@@ -56,6 +64,13 @@ test('npm run publish renders disjoint chunks through the user interface', () =>
   assert.ok(existsSync(path.join(PROJ, 'out', 'e2e_0-2.mp4')));
   assert.ok(existsSync(path.join(PROJ, 'out', 'e2e_2-4.mp4')));
   assert.ok(existsSync(path.join(PROJ, 'out', 'e2econcat.txt')));
+});
+
+test('publish and render refuse to overwrite rendered versions', () => {
+  assert.throws(() => npmRun('publish', ['--duration=4', '--chunks=2', '--out=e2e', '--crf=28'], PROJ), /already exists/);
+  const r = spawnSync(process.execPath, ['engine/render.mjs', 'video', '0,2', '--out=e2e'], { cwd: PROJ, encoding: 'utf8' });
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /already exists/);
 });
 
 test('render rejects reversed video ranges and never claims success', () => {

@@ -90,7 +90,7 @@ test('publish rejects fractional and zero chunk counts', () => {
   for (const value of ['1.5', '0']) {
     const r = runNode([path.join(REPO, 'engine/publish.mjs'), `--chunks=${value}`, '--out=x', '--dry-run']);
     assert.notEqual(r.status, 0);
-    assert.match(r.stderr, /Invalid --chunks/);
+    assert.match(r.stderr, /--chunks must be an integer/);
   }
 });
 
@@ -120,4 +120,27 @@ test('runProcess caps stderr capture', async () => {
     runProcess(process.execPath, ['-e', "process.stderr.write('x'.repeat(1100000));process.exit(3)"]),
     err => err.code === 3 && err.stderr.length <= 1024 * 1024
   );
+});
+
+test('mux rejects a bare numeric flag instead of treating it as 1', () => {
+  const r = runNode([path.join(REPO, 'engine/mux.mjs'), '--concat=x', '--verify-tp']);
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /--verify-tp requires a value/);
+});
+
+test('render rejects a bare --out before launching a browser', () => {
+  const r = runNode([path.join(REPO, 'engine/render.mjs'), 'stills', '1', '--out']);
+  assert.notEqual(r.status, 0);
+  assert.match(r.stderr, /--out requires a value/);
+});
+
+test('publish and render refuse to overwrite an existing rendered version', () => {
+  mkdirSync(path.join(TMP, 'out'), { recursive: true });
+  writeFileSync(path.join(TMP, 'out', 'x_0-2.mp4'), 'rendered');
+  const pub = runNode([path.join(REPO, 'engine/publish.mjs'), '--duration=2', '--chunks=1', '--out=x']);
+  assert.notEqual(pub.status, 0);
+  assert.match(pub.stderr, /already exists/);
+  const ren = runNode([path.join(REPO, 'engine/render.mjs'), 'video', '0,2', '--out=x']);
+  assert.notEqual(ren.status, 0);
+  assert.match(ren.stderr, /already exists/);
 });

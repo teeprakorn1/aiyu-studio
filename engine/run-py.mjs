@@ -2,9 +2,10 @@
 /**
  * @file run-py.mjs — cross-platform Python launcher for scaffolded npm scripts.
  * Resolution order honors env PYTHON, then py/python/python3 on Windows or python3/python/py elsewhere.
- * Fallback happens only when the interpreter itself is missing; script failures are propagated unchanged.
+ * Candidates are resolved from PATH only. Fallback happens only when the interpreter itself is missing; script failures are propagated unchanged.
  */
 import { spawnSync } from 'node:child_process';
+import { resolveExecutable } from './lib/exec.mjs';
 
 const [script, ...args] = process.argv.slice(2);
 if (!script) {
@@ -17,9 +18,11 @@ const candidates = process.env.PYTHON
   : process.platform === 'win32' ? ['py', 'python', 'python3'] : ['python3', 'python', 'py'];
 
 for (const py of candidates) {
-  const probe = spawnSync(py, ['--version'], { stdio: 'ignore' });
+  let exe;
+  try { exe = resolveExecutable(py); } catch { continue; }
+  const probe = spawnSync(exe, ['--version'], { stdio: 'ignore' });
   if (probe.error || probe.status !== 0) continue;
-  const r = spawnSync(py, [script, ...args], { stdio: 'inherit' });
+  const r = spawnSync(exe, [script, ...args], { stdio: 'inherit' });
   if (r.error) throw r.error;
   process.exit(r.status ?? 1);
 }

@@ -37,3 +37,50 @@ export function assertKnownFlags(flags, allowed, script) {
   const bad = Object.keys(flags).filter(k => !ok.has(k));
   if (bad.length) throw new Error(`${script}: unknown flag(s): ${bad.map(k => '--' + k).join(', ')}`);
 }
+
+/**
+ * Read a flag that takes a value. A bare `--key` is an error, never a silent 1.
+ *
+ * @param {Object<string, string|true>} flags - parsed flags
+ * @param {string} name - flag name without leading dashes
+ * @returns {string|undefined} the value, or undefined when the flag is absent
+ * @throws {Error} when the flag was given without a value
+ */
+export function flagValue(flags, name) {
+  const v = flags[name];
+  if (v === true) throw new Error(`--${name} requires a value (use --${name}=<value>)`);
+  return v;
+}
+
+/**
+ * Read a string flag with a fallback.
+ *
+ * @param {Object<string, string|true>} flags - parsed flags
+ * @param {string} name - flag name without leading dashes
+ * @param {string|undefined} fallback - value used when the flag is absent
+ * @returns {string|undefined} flag value or fallback
+ */
+export function strFlag(flags, name, fallback) {
+  const v = flagValue(flags, name);
+  return v === undefined ? fallback : v;
+}
+
+/**
+ * Read a numeric flag with a fallback and an inclusive range.
+ *
+ * @param {Object<string, string|true>} flags - parsed flags
+ * @param {string} name - flag name without leading dashes
+ * @param {number} fallback - value used when the flag is absent
+ * @param {{min?: number, max?: number, integer?: boolean}} [range] - inclusive bounds; integer requires a whole number
+ * @returns {number} parsed value
+ * @throws {Error} on a bare flag, non-numeric text, or a value outside the range
+ */
+export function numFlag(flags, name, fallback, { min = -Infinity, max = Infinity, integer = false } = {}) {
+  const raw = flagValue(flags, name);
+  if (raw === undefined) return fallback;
+  const n = Number(raw);
+  if (String(raw).trim() === '' || !Number.isFinite(n) || (integer && !Number.isInteger(n)) || n < min || n > max) {
+    throw new Error(`--${name} must be ${integer ? 'an integer' : 'a number'} in range ${min}..${max}, got "${raw}"`);
+  }
+  return n;
+}

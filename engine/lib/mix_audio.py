@@ -1,5 +1,5 @@
 """Pure parsing, validation, and PCM helpers for engine/mix-studio.py."""
-import array, json, math, os
+import array, json, math, os, unicodedata
 
 
 def parse_dialogue_text(text):
@@ -19,6 +19,8 @@ def parse_dialogue_text(text):
             raise ValueError(f'dialogue line {lineno}: index must be an integer') from exc
         if not spk:
             raise ValueError(f'dialogue line {lineno}: speaker must not be empty')
+        if not _valid_speaker(spk):
+            raise ValueError(f'dialogue line {lineno}: speaker must be one letter or digit, got {spk!r}')
         if not txt.strip():
             raise ValueError(f'dialogue line {lineno}: text must not be empty')
         lines.append({'i': i, 'spk': spk, 'txt': txt})
@@ -30,6 +32,10 @@ def parse_dialogue_text(text):
     if got != want:
         raise ValueError(f'dialogue index broken: must run 0..{n - 1} in order')
     return lines
+
+
+def _valid_speaker(spk):
+    return len(spk) == 1 and unicodedata.category(spk)[0] in ('L', 'N')
 
 
 def validate_segments(raw, n):
@@ -82,8 +88,14 @@ def validate_voice_name(name):
         raise ValueError(f'voice file must be a file name inside vo/, not a path: {name}')
 
 
-def trim_edges(raw, thresh=500, pad_ms=60):
-    """Trim edge silence from s16le/24kHz/mono PCM; keep 60ms pads by default."""
+def trim_edges_with_lead(raw, thresh=500, pad_ms=60):
+    """Trim edge silence from s16le/24kHz/mono PCM, keeping pad_ms of context at each edge.
+
+    @param {bytes} raw - s16le/24kHz/mono PCM
+    @param {float} thresh - absolute sample amplitude below which audio counts as silence
+    @param {int} pad_ms - milliseconds kept before the first and after the last loud window
+    @returns {tuple[bytes, float]} trimmed PCM and the source-time seconds removed from the front
+    """
     smp = array.array('h'); smp.frombytes(raw)
     n = len(smp); win = 240
     def loud(i):
@@ -94,9 +106,14 @@ def trim_edges(raw, thresh=500, pad_ms=60):
     tp = n - win
     while tp > n * 0.4 and loud(tp) < thresh: tp -= win
     tp = min(n, tp + win + int(pad_ms * 24))
-    if tp - h < n // 3: return raw
+    if tp - h < n // 3: return raw, 0.0
     out = array.array('h'); out.extend(smp[h:tp])
-    return out.tobytes()
+    return out.tobytes(), h / 24000
+
+
+def trim_edges(raw, thresh=500, pad_ms=60):
+    """Trim edge silence from s16le/24kHz/mono PCM; keep 60ms pads by default."""
+    return trim_edges_with_lead(raw, thresh, pad_ms)[0]
 
 
 def envelope_from_pcm(raw, buckets=30):

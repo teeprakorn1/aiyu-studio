@@ -1,13 +1,14 @@
-# mix_studio_test.py — unit tests for pure audio/parsing helpers in engine/lib/mix_audio.py
+# mix_studio_test.py — unit tests for pure audio/parsing/timeline helpers in engine/lib
 import array, unittest, os, math, sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(HERE, '..', '..'))
 
 from engine.lib.mix_audio import (
-    wave_peaks, trim_edges, envelope_from_pcm,
+    wave_peaks, trim_edges, trim_edges_with_lead, envelope_from_pcm,
     parse_dialogue_text, validate_segments, validate_settings, validate_voice_name, talk_js_payload,
 )
+from engine.lib.timeline import apply_wordtimes, plan_timeline
 
 
 def pcm_sine(seconds, amp=12000, freq=440.0, rate=24000):
@@ -51,6 +52,11 @@ class TrimEdgesTest(unittest.TestCase):
         out = trim_edges(raw)
         self.assertEqual(len(out), len(raw))
 
+    def test_reports_leading_lead_seconds(self):
+        out, lead = trim_edges_with_lead(pcm_silence(1.0) + pcm_sine(1.0) + pcm_silence(0.5))
+        self.assertAlmostEqual(lead, 0.94, delta=0.01)
+        self.assertEqual(len(out) % 2, 0)
+
 
 class EnvelopeTest(unittest.TestCase):
     def test_envelope_shape_and_range(self):
@@ -81,6 +87,13 @@ class DialogueValidationTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, '0..1'):
             parse_dialogue_text('0|M|ok\n2|M|bad\n')
 
+    def test_speaker_must_be_one_letter_or_digit(self):
+        for bad in ['ab', '/', '.']:
+            with self.assertRaisesRegex(ValueError, 'speaker'):
+                parse_dialogue_text(f'0|{bad}|hello\n')
+        self.assertEqual(parse_dialogue_text('0|1|x\n')[0]['spk'], '1')
+        self.assertEqual(parse_dialogue_text('0|ก|x\n')[0]['spk'], 'ก')
+
 
 class SegmentValidationTest(unittest.TestCase):
     def test_valid_segments_normalize_to_tuples(self):
@@ -108,6 +121,36 @@ class SettingsValidationTest(unittest.TestCase):
         for key, value in [('tempo', 0.1), ('tempo', 'fast'), ('gap', -1), ('lineGap', True)]:
             with self.assertRaises(ValueError, msg=f'{key}={value}'):
                 validate_settings({key: value})
+
+
+class TimelineTest(unittest.TestCase):
+    SETTINGS = {'gap': 2.0, 'tempo': 1.0, 'trimThresh': 500.0, 'lineGap': 0.06}
+    LINES = parse_dialogue_text('0|M|one\n1|M|two\n2|H|three\n3|H|four\n')
+    SEGMENTS = [('a.wav', 0, 1), ('b.wav', 2, 3)]
+
+    def test_gap_is_only_between_segments(self):
+        clips = [(pcm_sine(1.0), 0.0), (pcm_sine(2.0), 0.0)]
+        plan = plan_timeline(self.LINES, self.SEGMENTS, self.SETTINGS, clips)
+        self.assertEqual(len(plan['narration']), 48000 + 96000 + 96000)
+        self.assertAlmostEqual(plan['talk_lines'][2]['t0'], 3.0, places=2)
+        self.assertAlmostEqual(plan['t_end'], 5.0, places=2)
+
+    def test_stub_timing_has_no_audio(self):
+        plan = plan_timeline(self.LINES, self.SEGMENTS, self.SETTINGS)
+        self.assertIsNone(plan['narration'])
+        self.assertEqual(len(plan['talk_lines']), 4)
+        self.assertTrue(all(sum(l['env']) == 0 for l in plan['talk_lines']))
+
+    def test_word_times_follow_trimmed_audio(self):
+        lines = [{'i': 0, 'spk': 'M', 't0': 0.0, 'dur': 2.0, 'txt': 'hello', 'env': [0] * 30}]
+        n = apply_wordtimes(lines, [(0, 0, 0.0, 0.94)], {'0': [['hello', 1.0, 1.5]]}, 1.0)
+        self.assertEqual(n, 1)
+        self.assertAlmostEqual(lines[0]['words'][0]['t0'], 0.06, places=2)
+
+    def test_word_times_reject_malformed_rows(self):
+        lines = [{'i': 0, 'spk': 'M', 't0': 0.0, 'dur': 2.0, 'txt': 'x', 'env': [0] * 30}]
+        with self.assertRaisesRegex(ValueError, 'malformed'):
+            apply_wordtimes(lines, [(0, 0, 0.0, 0.0)], {'0': [['x', 'a', 1]]}, 1.0)
 
 
 class TalkJsPayloadTest(unittest.TestCase):

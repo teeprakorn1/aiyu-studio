@@ -2,15 +2,18 @@
 /**
  * @file mux.mjs — final mux/encode: concat silent chunks, fix full-range color to limited BT.709,
  * mix narration + looped music bed, two-pass loudness normalize, AAC, faststart MP4.
+ * Every QC gate is a hard failure: the command exits non-zero unless the final file passes all of them.
  */
 
 import { existsSync, mkdirSync, statSync, readFileSync } from 'node:fs';
 import path from 'node:path';
-import { parseArgs, assertKnownFlags } from './lib/cli-args.mjs';
+import { parseArgs, assertKnownFlags, strFlag, numFlag } from './lib/cli-args.mjs';
 import { runProcess, printCommand, ffprobeJson, parseRational } from './lib/ffmpeg.mjs';
 import { scanMp4Boxes } from './lib/mp4-verify.mjs';
 import { extractLoudnormJson, regionSpec, measureAstats, audioMixGraph, finalAudioGraph, fmtDurationValue } from './lib/loudness.mjs';
 import { validateX264 } from './lib/encoding.mjs';
+import { parseConcatList } from './lib/concat.mjs';
+import { evaluateFinal } from './lib/verify.mjs';
 
 /** project root — engine scripts always run from the project root (npm scripts guarantee it) */
 const here = process.cwd();
@@ -19,7 +22,7 @@ function usage() {
   console.log(`Usage: node engine/mux.mjs --concat=out/v1concat.txt [options]
 
 Required:
-  --concat=<file>          FFmpeg concat-demuxer list of silent video chunks
+  --concat=<file>          FFmpeg concat-demuxer list of silent video chunks (entries are relative to the list file and must stay inside the project)
 
 Options:
   --narration=narration.wav
@@ -37,30 +40,16 @@ Options:
   --pause=a-b              Verification pause region, seconds (omit = skip bed-gap check;
                            measure at a REAL narration pause in your film or the reading is meaningless)
   --speech=a-b             Verification speech region, seconds
-  --skip-audio-verify      Do not run post-encode loudness/RMS measurements
+  --skip-audio-verify      Do not run post-encode loudness/RMS measurements (loudness and true-peak gates are then not evaluated)
+  --bed-duck               Sidechain-duck the bed under speech (opt-in); tunables --duck-threshold, --duck-ratio, --duck-attack, --duck-release
   --help
+
+Hard gates: stream shape, faststart, duration, frames = fps x duration, integrated loudness within 0.25 LU of target,
+true peak within the ceiling, and bed pause-vs-speech gap within 20-24 dB when measured. Any failure exits non-zero.
 
 Example:
   node engine/mux.mjs --concat=out/v1concat.txt
 `);
-}
-
-function parseConcatList(listPath) {
-  const dir = path.dirname(listPath);
-  const lines = readFileSync(listPath, 'utf8').split(/\r?\n/);
-  const files = [];
-  for (const raw of lines) {
-    const line = raw.trim();
-    if (!line || line.startsWith('#')) continue;
-    const m = line.match(/^file\s+(.+)$/i);
-    if (!m) throw new Error(`Unsupported concat-list line in ${listPath}: ${line}`);
-    let p = m[1].trim();
-    if ((p.startsWith("'") && p.endsWith("'")) || (p.startsWith('"') && p.endsWith('"'))) p = p.slice(1, -1);
-    p = p.replace(/'\\''/g, "'");
-    files.push(path.resolve(dir, p));
-  }
-  if (!files.length) throw new Error(`Concat list has no file entries: ${listPath}`);
-  return files;
 }
 
 const { flags } = parseArgs(process.argv.slice(2));
@@ -70,45 +59,42 @@ if (flags.help) {
   process.exit(0);
 }
 
-if (!flags.concat) {
+const concatArg = strFlag(flags, 'concat', undefined);
+if (!concatArg) {
   usage();
   throw new Error('--concat is required');
 }
 
-const concatList = path.resolve(here, String(flags.concat));
-const narration = path.resolve(here, String(flags.narration ?? 'narration.wav'));
-const bed = path.resolve(here, String(flags.bed ?? 'bed.wav'));
-const output = path.resolve(here, String(flags.out ?? 'final.mp4'));
-const bedGainDb = Number(flags['bed-gain-db'] ?? 3);
+const concatList = path.resolve(here, concatArg);
+const narration = path.resolve(here, strFlag(flags, 'narration', 'narration.wav'));
+const bed = path.resolve(here, strFlag(flags, 'bed', 'bed.wav'));
+const output = path.resolve(here, strFlag(flags, 'out', 'final.mp4'));
+const bedGainDb = numFlag(flags, 'bed-gain-db', 3, { min: -60, max: 24 });
 const duck = flags['bed-duck'] !== undefined ? {
-  threshold: Number(flags['duck-threshold'] ?? 0.02),
-  ratio: Number(flags['duck-ratio'] ?? 8),
-  attack: Number(flags['duck-attack'] ?? 25),
-  release: Number(flags['duck-release'] ?? 500),
+  threshold: numFlag(flags, 'duck-threshold', 0.02, { min: 0, max: 1 }),
+  ratio: numFlag(flags, 'duck-ratio', 8, { min: 1, max: 20 }),
+  attack: numFlag(flags, 'duck-attack', 25, { min: 1, max: 2000 }),
+  release: numFlag(flags, 'duck-release', 500, { min: 1, max: 5000 }),
 } : null;
 if (duck) console.log(`mux: bed ducking ON (sidechain, ratio ${duck.ratio}:1, release ${duck.release}ms) — bed rises in pauses, dips under speech`);
-const voiceLimit = Number(flags['voice-limit'] ?? 0.35);
-const { crf, preset } = validateX264(flags.crf ?? 19, flags.preset ?? 'medium');
-const targetI = Number(flags['loudness-i'] ?? -15.5);
-const targetTP = Number(flags['loudness-tp'] ?? -1.5);
-const verifyTP = Number(flags['verify-tp'] ?? targetTP);
-const targetLRA = Number(flags['loudness-lra'] ?? 11);
-const pauseRegion = flags.pause !== undefined ? regionSpec(flags.pause) : null;
-const speechRegion = flags.speech !== undefined ? regionSpec(flags.speech) : null;
+const voiceLimit = numFlag(flags, 'voice-limit', 0.35, { min: 0.0625, max: 1 });
+const { crf, preset } = validateX264(strFlag(flags, 'crf', '19'), strFlag(flags, 'preset', 'medium'));
+const targetI = numFlag(flags, 'loudness-i', -15.5, { min: -70, max: -5 });
+const targetTP = numFlag(flags, 'loudness-tp', -1.5, { min: -9, max: 0 });
+const verifyTP = numFlag(flags, 'verify-tp', targetTP, { min: -20, max: 0 });
+const targetLRA = numFlag(flags, 'loudness-lra', 11, { min: 1, max: 50 });
+const pauseRegion = flags.pause !== undefined ? regionSpec(strFlag(flags, 'pause', '')) : null;
+const speechRegion = flags.speech !== undefined ? regionSpec(strFlag(flags, 'speech', '')) : null;
 
 for (const [label, file] of [['concat list', concatList], ['narration', narration], ['bed', bed]]) {
   if (!existsSync(file)) throw new Error(`${label} not found: ${file}`);
 }
-if (!(voiceLimit >= 0.0625 && voiceLimit <= 1)) throw new Error('--voice-limit must be in ffmpeg alimiter range 0.0625..1');
-if (!Number.isFinite(bedGainDb)) throw new Error('--bed-gain-db must be numeric');
-for (const [name, x] of [['--loudness-i', targetI], ['--loudness-tp', targetTP], ['--verify-tp', verifyTP], ['--loudness-lra', targetLRA]]) if (!Number.isFinite(x)) throw new Error(`${name} must be numeric`);
 
-const chunks = parseConcatList(concatList);
+const chunks = parseConcatList(readFileSync(concatList, 'utf8'), path.dirname(concatList), here);
 console.log(`mux: concat list ${concatList}`);
 console.log(`mux: ${chunks.length} video chunk(s)`);
 
 let videoDuration = 0;
-const chunkInfos = [];
 for (const file of chunks) {
   if (!existsSync(file)) throw new Error(`concat chunk missing: ${file}`);
   if (!statSync(file).size) throw new Error(`concat chunk is empty: ${file}`);
@@ -121,13 +107,10 @@ for (const file of chunks) {
     ? frames / fps
     : Number(v.duration || probe.format?.duration);
   if (!Number.isFinite(duration) || duration <= 0) throw new Error(`could not determine duration for chunk: ${file}`);
+  if (v.width !== 1080 || v.height !== 1920 || Math.abs(fps - 30) > 0.001) throw new Error(`chunk ${path.basename(file)} is ${v.width}x${v.height}@${fps}fps; expected 1080x1920@30 — re-render it`);
   videoDuration += duration;
-  chunkInfos.push({ file, width: v.width, height: v.height, fps, frames, duration, pix_fmt: v.pix_fmt, color_range: v.color_range });
   console.log(`  ${path.basename(file)}: ${duration.toFixed(6)}s, ${frames || '?'} frames, ${v.width}x${v.height}, fps=${fps}, input_pix_fmt=${v.pix_fmt}, input_range=${v.color_range}`);
 }
-
-const badShape = chunkInfos.find(x => x.width !== 1080 || x.height !== 1920 || Math.abs(x.fps - 30) > 0.001);
-if (badShape) console.warn(`WARNING: chunk shape/fps differs from expected 1080x1920@30: ${path.basename(badShape.file)}`);
 
 const narrationProbe = await ffprobeJson(narration);
 const narrationDuration = Number(narrationProbe.format?.duration);
@@ -177,7 +160,7 @@ const finalGraph = `${videoGraph};${audioGraph}`;
 // PASS 2 + video encode/mux.
 const finalArgs = [
   '-y', '-hide_banner',
-  '-f', 'concat', '-safe', '0', '-i', concatList,
+  '-f', 'concat', '-i', concatList,
   '-i', narration,
   '-stream_loop', '-1', '-i', bed,
   '-filter_complex', finalGraph,
@@ -198,31 +181,10 @@ await runProcess('ffmpeg', finalArgs, { progress: true });
 if (!existsSync(output) || !statSync(output).size) throw new Error(`encode completed but output missing/empty: ${output}`);
 console.log(`\nmux: wrote ${output} (${statSync(output).size} bytes)`);
 
-// ffprobe stream/container verification.
 const probe = await ffprobeJson(output);
+const boxScan = scanMp4Boxes(output);
 const v = probe.streams?.find(s => s.codec_type === 'video');
 const a = probe.streams?.find(s => s.codec_type === 'audio');
-const boxScan = scanMp4Boxes(output);
-const failures = [];
-const warnings = [];
-
-if (v?.codec_name !== 'h264') failures.push(`video codec is ${v?.codec_name}, expected h264`);
-if (v?.width !== 1080 || v?.height !== 1920) failures.push(`video dimensions are ${v?.width}x${v?.height}, expected 1080x1920`);
-if (Math.abs(parseRational(v?.avg_frame_rate || v?.r_frame_rate) - 30) > 0.001) failures.push(`video frame rate is ${v?.avg_frame_rate || v?.r_frame_rate}, expected 30`);
-if (v?.pix_fmt !== 'yuv420p') failures.push(`pix_fmt is ${v?.pix_fmt}, expected yuv420p`);
-if (v?.color_range !== 'tv') failures.push(`color_range is ${v?.color_range}, expected tv`);
-if (v?.color_space !== 'bt709') failures.push(`colorspace is ${v?.color_space}, expected bt709`);
-if (v?.color_primaries !== 'bt709') failures.push(`color_primaries is ${v?.color_primaries}, expected bt709`);
-if (v?.color_transfer !== 'bt709') failures.push(`color_transfer is ${v?.color_transfer}, expected bt709`);
-if (a?.codec_name !== 'aac') failures.push(`audio codec is ${a?.codec_name}, expected aac`);
-if (Number(a?.sample_rate) !== 48000) failures.push(`audio sample_rate is ${a?.sample_rate}, expected 48000`);
-if (Number(a?.channels) !== 1) failures.push(`audio channels is ${a?.channels}, expected 1`);
-if (!boxScan.moovBeforeMdat) failures.push(`MP4 box order is ${boxScan.order.join('>')}; moov is not before mdat`);
-const formatDuration = Number(probe.format?.duration);
-if (!Number.isFinite(formatDuration) || Math.abs(formatDuration - targetDuration) > 0.15) {
-  failures.push(`format duration is ${formatDuration}, expected about ${targetDuration}`);
-}
-
 console.log('\nffprobe verification:');
 console.log(JSON.stringify({
   format: {
@@ -257,16 +219,18 @@ console.log(JSON.stringify({
   faststart: boxScan,
 }, null, 2));
 
-let loudnessMeasured = null;
-let pauseStats = null;
-let speechStats = null;
-if (!flags['skip-audio-verify']) {
+let audio = null;
+if (flags['skip-audio-verify'] !== undefined) {
+  console.log('\nmux: audio verification skipped (--skip-audio-verify) — loudness and true-peak gates not evaluated');
+} else {
   const measureArgs = ['-hide_banner', '-nostats', '-i', output, '-map', '0:a:0', '-af', `loudnorm=I=${targetI}:TP=${targetTP}:LRA=${targetLRA}:print_format=json`, '-f', 'null', '-'];
   console.log('\npost-encode loudness measurement command:');
   console.log(printCommand('ffmpeg', measureArgs));
   const lm = await runProcess('ffmpeg', measureArgs);
-  loudnessMeasured = extractLoudnormJson(lm.stderr + lm.stdout);
+  const loudnessMeasured = extractLoudnormJson(lm.stderr + lm.stdout);
   const hasRegions = pauseRegion && speechRegion;
+  let pauseStats = null;
+  let speechStats = null;
   if (hasRegions) {
     pauseStats = await measureAstats(output, pauseRegion);
     speechStats = await measureAstats(output, speechRegion);
@@ -274,19 +238,13 @@ if (!flags['skip-audio-verify']) {
     console.log('\nbed pause-vs-speech check skipped (pass --pause=a-b --speech=c-d at real regions of your film to enable it)');
   }
   const bedGap = hasRegions ? speechStats.rms - pauseStats.rms : null;
-
-  const integrated = Number(loudnessMeasured.input_i);
-  const truePeak = Number(loudnessMeasured.input_tp);
-  const lra = Number(loudnessMeasured.input_lra);
-  if (!(Math.abs(integrated - targetI) <= 0.25)) warnings.push(`integrated loudness ${integrated} LUFS differs from ${targetI} by more than 0.25 LU`);
-  if (!(truePeak <= verifyTP + 0.01)) failures.push(`measured true peak ${truePeak} dBTP exceeds delivery ceiling ${verifyTP} dBTP`);
-  if (bedGap !== null && !(bedGap >= 20 && bedGap <= 24)) warnings.push(`bed pause-vs-speech gap ${bedGap.toFixed(2)} dB is outside target 20-24 dB`);
+  audio = { integrated: Number(loudnessMeasured.input_i), truePeak: Number(loudnessMeasured.input_tp), bedGap };
 
   console.log('\naudio measurements:');
   console.log(JSON.stringify({
-    integrated_lufs: integrated,
-    true_peak_dbtp: truePeak,
-    lra_lu: lra,
+    integrated_lufs: audio.integrated,
+    true_peak_dbtp: audio.truePeak,
+    lra_lu: Number(loudnessMeasured.input_lra),
     threshold_lufs: Number(loudnessMeasured.input_thresh),
     pause_region: pauseStats && { ...pauseRegion, rms_db: pauseStats.rms, peak_db: pauseStats.peak },
     speech_region: speechStats && { ...speechRegion, rms_db: speechStats.rms, peak_db: speechStats.peak },
@@ -294,7 +252,7 @@ if (!flags['skip-audio-verify']) {
   }, null, 2));
 }
 
-for (const w of warnings) console.warn(`WARNING: ${w}`);
+const { failures } = evaluateFinal({ probe, boxScan, targetDuration, targetI, verifyTP, audio });
 if (failures.length) {
   for (const f of failures) console.error(`FAIL: ${f}`);
   throw new Error('mux verification failed');

@@ -4,6 +4,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { resolveExecutable } from '../../engine/lib/exec.mjs';
 import { existsSync, mkdirSync, rmSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,8 +18,8 @@ const SLOWSTART = path.join(TMP, 'slow.mp4');
 before(() => {
   mkdirSync(TMP, { recursive: true });
   const base = ['-y', '-v', 'error', '-f', 'lavfi', '-i', 'color=black:size=64x64:duration=0.5:rate=5', '-c:v', 'libx264', '-pix_fmt', 'yuv420p'];
-  execFileSync('ffmpeg', [...base, '-movflags', '+faststart', FASTSTART]);
-  execFileSync('ffmpeg', [...base, SLOWSTART]);
+  execFileSync(resolveExecutable('ffmpeg'), [...base, '-movflags', '+faststart', FASTSTART]);
+  execFileSync(resolveExecutable('ffmpeg'), [...base, SLOWSTART]);
 });
 
 after(() => { rmSync(TMP, { recursive: true, force: true }); });

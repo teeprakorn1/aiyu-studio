@@ -8,8 +8,7 @@ none — recorded voices, or TTS voices that refuse to emit word boundaries.
 
 Forced alignment is NOT transcription. `segments.json` already says exactly which dialogue
 lines each `vo/*.wav` contains — the text is *known*. The tool runs a wav2vec2 CTC model
-over each file and aligns the known characters against the audio (trellis/backtracking,
-torchaudio-tutorial style), emitting `story/wordtimes.phoneme.json` in the exact schema
+over each file and aligns the known characters against the audio (trellis and backtracking in pure Python in `lib_ctc.py`; torch is needed only for the wav2vec2 model), emitting `story/wordtimes.phoneme.json` in the exact schema
 `mix-studio.py` merges into talk.js for karaoke subtitles and `rvw()` keyword reveals.
 
 ```

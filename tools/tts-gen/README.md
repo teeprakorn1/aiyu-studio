@@ -43,13 +43,28 @@ Keeps its own dependencies, like every optional tool — the core pipeline never
 
 Every dialogue speaker must resolve to a provider+voice (own entry or `defaults`).
 
+## Listing voices
+
+```
+py tools/tts-gen/tts_gen.py --list-voices          # providers and their status
+py tools/tts-gen/tts_gen.py --list-voices edge     # edge-tts voices from the service (needs network)
+```
+
+Other providers do not list voices; set their voice names directly in `story/tts.json`.
+
 ## Providers — honest capability tiers
 
 | provider | tier | word timing | status | key |
 |---|---|---|---|---|
 | `edge` | A | yes — when the voice supports it | **verified against the live service** | none — free |
-| `elevenlabs` | A | yes, from character alignment | **EXPERIMENTAL — implemented per API spec, untested live** | `ELEVENLABS_API_KEY` |
-| `gemini` | B | **no** — karaoke unavailable | **EXPERIMENTAL — implemented per API spec, untested live** | `GEMINI_API_KEY` |
+| `elevenlabs` | A | yes, from character alignment | **verified live with one Thai sample** (`eleven_v4`, voice Sarah, 2026-11-27) | `ELEVENLABS_API_KEY` |
+| `gemini` | B | **no** — karaoke unavailable | **verified live with one Thai sample** (`gemini-3.8-flash-tts`, voice Kore, 2026-11-27) | `GEMINI_API_KEY` |
+
+Gemini uses the Interactions API (`POST /v1beta/interactions`, model `gemini-3.8-flash-tts`). The key travels in the `x-goog-api-key` header, never in the URL. `gemini-3.8-flash-tts` is the model that lists Thai; `gemini-3.8-flash-lite-tts` does not. The provider reads the last audio block of the response. The free tier may use submitted content to improve Google's products, so use a paid-tier key for real dialogue. The `rate` setting is ignored for Gemini, and there is no retry on rate limits.
+
+ElevenLabs uses the with-timestamps endpoint (`POST /v1/text-to-speech/{voice_id}/with-timestamps`, model `eleven_v4`). The key travels in the `xi-api-key` header, and `output_format` is a query parameter (`mp3_44100_128`). `eleven_multilingual_v2` does not list Thai, so the provider uses `eleven_v4`. Voices are identified by voice ID, not by name. Word timing comes from the returned alignment; in the sample checked, the last word's end ran about 0.2 s past the speech, so karaoke may linger briefly on the final word. The `rate` setting is ignored, and there is no retry on rate limits.
+
+Each provider was checked with one Thai sample. Other voices, languages, and models are untested; treat them as a test.
 
 ### The edge-tts word-timing quirk (verified live, matters for karaoke)
 

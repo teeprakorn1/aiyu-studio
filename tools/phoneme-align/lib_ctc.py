@@ -1,49 +1,54 @@
-"""Pure CTC forced-alignment logic — no I/O, no model loading.
+"""Pure CTC forced-alignment logic — no torch, no I/O, no model loading.
 
-Implements the trellis/backtrack/merge pipeline from the torchaudio forced-alignment
-tutorial as dependency-light torch tensor ops, plus grouping of aligned characters into
-word chunks in the mix-studio wordtimes schema. Separated from the CLI so the logic is
-unit-testable with synthetic emissions (no model, no network, no audio).
+Operates on plain lists of log-probabilities shaped [frames][vocab]. The trellis has a
+start-of-sequence column 0 (blank-only paths); column j in 1..N means the first j target
+tokens have been emitted. Each token occupies its emission frame and blank frames keep
+the current column, so a token's span runs from its frame to the frame before the next token.
 """
+
+from array import array
+
+NEG_INF = float('-inf')
 
 
 def get_trellis(emission, tokens, blank_id=0):
-    """CTC alignment trellis.
+    """CTC alignment trellis with a start-of-sequence column.
 
-    @param {torch.Tensor} emission - log-probabilities [num_frame, num_tokens]
+    @param {list[list[float]]} emission - log-probabilities [frames][vocab]
     @param {list[int]} tokens - target token ids (transcript, no blanks)
     @param {int} blank_id - CTC blank token id
-    @returns {torch.Tensor} trellis [num_frame, len(tokens)] of best-path scores
+    @returns {list[list[float]]} trellis [frames+1][len(tokens)+1] of best-path scores
     """
-    import torch
-    num_frame = emission.size(0)
-    num_tokens = len(tokens)
-    trellis = torch.zeros((num_frame, num_tokens))
-    trellis[1:, 0] = torch.cumsum(emission[1:, blank_id], 0)
-    trellis[0, 1:] = -float('inf')
-    trellis[-num_tokens + 1:, 0] = float('inf')
-    for t in range(num_frame - 1):
-        trellis[t + 1, 1:] = torch.maximum(
-            trellis[t, 1:] + emission[t, blank_id],        # stay on same token
-            trellis[t, :-1] + emission[t, tokens[1:]],     # advance to next token
-        )
-    return trellis
+    T, N = len(emission), len(tokens)
+    tr = [array('d', [NEG_INF]) * (N + 1) for _ in range(T + 1)]
+    tr[0][0] = 0.0
+    for t in range(T):
+        tr[t + 1][0] = tr[t][0] + emission[t][blank_id]
+    for t in range(T):
+        e, prev, cur = emission[t], tr[t], tr[t + 1]
+        for j in range(1, N + 1):
+            stay = prev[j] + e[blank_id]
+            change = prev[j - 1] + e[tokens[j - 1]]
+            cur[j] = stay if stay >= change else change
+    return tr
 
 
 def backtrack(trellis, emission, tokens, blank_id=0):
     """Backtrack the best path through the trellis.
 
-    @returns {list[tuple[int,int]]} (frame, token_pos) path, one entry per frame,
-        token_pos is 1-based against the target token list (0 = pre-start)
+    @param {list[list[float]]} trellis - from get_trellis
+    @param {list[list[float]]} emission - log-probabilities [frames][vocab]
+    @param {list[int]} tokens - target token ids
+    @returns {list[tuple[int,int]]} (frame, column) per frame once the first token is reached; column j means tokens[0..j-1] have been emitted
     """
-    t, j = trellis.size(0) - 1, trellis.size(1) - 1
+    t, j = len(trellis) - 1, len(trellis[0]) - 1
     path = []
     while j > 0 and t > 0:
-        p_stay = trellis[t - 1, j] + emission[t - 1, blank_id]
-        p_change = trellis[t - 1, j - 1] + emission[t - 1, tokens[j - 1]] if j - 1 >= 0 else -float('inf')
+        stay = trellis[t - 1][j] + emission[t - 1][blank_id]
+        change = trellis[t - 1][j - 1] + emission[t - 1][tokens[j - 1]]
         path.append((t - 1, j))
         t -= 1
-        if p_change > p_stay:
+        if change > stay:
             j -= 1
     return path[::-1]
 
@@ -53,8 +58,7 @@ def merge_segments(path, frame_sec):
 
     @param {list[tuple[int,int]]} path - from backtrack()
     @param {float} frame_sec - seconds per emission frame (wav2vec2 stride, ~0.02)
-    @returns {list[tuple[int,float,float]]} (token_pos, start_sec, end_sec), one per
-        contiguous run of the same token_pos — token_pos is 1-based transcript position
+    @returns {list[tuple[int,float,float]]} (token_pos, start_sec, end_sec), one per contiguous run of the same column; token_pos is 1-based against the target tokens
     """
     if not path:
         return []
@@ -70,6 +74,23 @@ def merge_segments(path, frame_sec):
         prev_f = f
     segs.append((prev_j, start_frame * frame_sec, (prev_f + 1) * frame_sec))
     return segs
+
+
+def align_spans(emission, tokens, frame_sec, blank_id=0):
+    """Forced alignment of target tokens against emission frames.
+
+    @param {list[list[float]]} emission - log-probabilities [frames][vocab]
+    @param {list[int]} tokens - target token ids
+    @param {float} frame_sec - seconds per frame
+    @param {int} blank_id - CTC blank token id
+    @returns {list[tuple[int,float,float]]} (1-based token position, start seconds, end seconds); empty when the frames cannot hold every token
+    """
+    if not tokens or len(emission) < len(tokens):
+        return []
+    trellis = get_trellis(emission, tokens, blank_id)
+    if trellis[-1][-1] == NEG_INF:
+        return []
+    return merge_segments(backtrack(trellis, emission, tokens, blank_id), frame_sec)
 
 
 def split_runs_keep_spaces(transcript):

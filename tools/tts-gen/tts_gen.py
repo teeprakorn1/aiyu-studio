@@ -14,12 +14,12 @@ Workflow:
      the provider supplies word timing (tier A providers — enables karaoke subtitles).
   3. Review, rename the drafts to segments.json / wordtimes.json, npm run mix as usual.
 
-Providers: edge (free, no key, verified) · elevenlabs / gemini (EXPERIMENTAL — implemented
-per API spec but untested against the live services; treat first use as a test).
+Providers: edge (free, no key), elevenlabs, and gemini. Each was verified against the live
+service with one Thai sample on 2026-11-27; other voices and models are untested.
 
 Usage:
   py tools/tts-gen/tts_gen.py <project-dir> [--narrator M] [--write] [--force] [--dry-run]
-      [--only 3,4,5] [--list-voices edge]
+      [--only 3,4,5] [--list-voices [PROVIDER]]
 """
 import argparse
 import json
@@ -47,21 +47,31 @@ def fail(msg):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description='synthesize dialogue lines into vo/*.wav + draft segments.json')
-    ap.add_argument('project', help='project directory (contains story/dialogue.txt)')
+    ap.add_argument('project', nargs='?', help='project directory (contains story/dialogue.txt)')
     ap.add_argument('--narrator', default='M', help='narrator speaker id (file naming convention)')
     ap.add_argument('--write', action='store_true', help='write vo/ files and drafts (default: dry-run plan only)')
     ap.add_argument('--force', action='store_true', help='overwrite existing draft files')
     ap.add_argument('--dry-run', action='store_true', help='print the plan and exit (default behavior without --write)')
     ap.add_argument('--only', default='', help='comma-separated line indexes to synthesize (default: all)')
-    ap.add_argument('--list-voices', metavar='PROVIDER', help='list providers and exit')
+    ap.add_argument('--list-voices', nargs='?', const='', metavar='PROVIDER', help='list providers (no value) or the voices of PROVIDER, then exit')
     args = ap.parse_args(argv)
 
-    if args.list_voices is not None or args.project == '--list-voices':
-        for name, p in sorted(lib_providers.PROVIDERS.items()):
-            tag = 'EXPERIMENTAL' if p['experimental'] else 'verified'
-            print(f'{name:12s} tier {p["tier"]}  [{tag}]  {p["desc"]}')
+    if args.list_voices is not None:
+        if args.list_voices == '':
+            for name, p in sorted(lib_providers.PROVIDERS.items()):
+                tag = 'EXPERIMENTAL' if p['experimental'] else 'verified'
+                print(f'{name:12s} tier {p["tier"]}  [{tag}]  {p["desc"]}')
+            return 0
+        try:
+            voices = lib_providers.list_voices(args.list_voices)
+        except (RuntimeError, ValueError) as exc:
+            fail(str(exc))
+        for v in voices:
+            print(f"{v.get('ShortName', ''):32s} {v.get('Locale', ''):8s} {v.get('Gender', '')}")
         return 0
 
+    if not args.project:
+        ap.error('project directory is required (or use --list-voices)')
     proj = os.path.abspath(args.project)
     dialogue_path = os.path.join(proj, 'story', 'dialogue.txt')
     config_path = os.path.join(proj, 'story', 'tts.json')

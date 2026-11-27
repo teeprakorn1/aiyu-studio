@@ -9,7 +9,8 @@ Usage: python align_phoneme.py [project] [--model HF_ID] [--write] [--force]
 
 Optional tool with heavy isolated dependencies (torch + transformers — gigabytes).
 Install into its own venv: pip install -r requirements.txt — the core pipeline,
-fuzzy auto-segment path, and tests never import any of this.
+fuzzy auto-segment path, and tests never import any of this. The CTC trellis and
+span logic live in lib_ctc.py and run without torch.
 """
 import argparse
 import json
@@ -22,6 +23,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'
 
 import lib_ctc  # noqa: E402
 import mix_audio  # noqa: E402
+from exec_path import find_executable  # noqa: E402
 
 SR = 16000
 DEFAULT_MODEL = 'airesearch/wav2vec2-large-xlsr-53-th'
@@ -35,7 +37,7 @@ def fail(msg):
 def decode_wav_f32(path):
     """Decode any audio file to mono 16kHz float32 PCM via ffmpeg (already a project dep).
     @returns {bytes} raw little-endian f32 samples"""
-    r = subprocess.run(['ffmpeg', '-v', 'error', '-i', path, '-f', 'f32le', '-ac', '1',
+    r = subprocess.run([find_executable('ffmpeg'), '-v', 'error', '-i', path, '-f', 'f32le', '-ac', '1',
                         '-ar', str(SR), '-'], capture_output=True)
     if r.returncode != 0:
         fail(f'ffmpeg failed decoding {os.path.basename(path)}: {r.stderr.decode(errors="replace")[-300:]}')
@@ -59,41 +61,39 @@ def load_model(model_id):
 
 def transcript_tokens(processor, text):
     """Encode transcript characters to token ids using the model's own tokenizer.
-    Characters outside the vocab are dropped with a warning — alignment then interpolates
-    across them rather than crashing. Spaces map to the model's word delimiter if it has one."""
+    Characters outside the vocab are dropped with a warning. Spaces map to the model's word delimiter if it has one.
+    @returns {tuple[list[int], list[int]]} token ids and the transcript index each id came from"""
     vocab = processor.tokenizer.get_vocab()
-    ids = []
-    dropped = set()
-    for ch in text:
+    ids, index, dropped = [], [], set()
+    for i, ch in enumerate(text):
         key = ch
         if key not in vocab and ch == ' ' and '|' in vocab:
             key = '|'
         if key in vocab:
             ids.append(vocab[key])
+            index.append(i)
         else:
             dropped.add(ch)
     if dropped:
         print(f'align-phoneme: warning: {len(dropped)} chars outside model vocab dropped: '
               + ''.join(sorted(dropped))[:40], file=sys.stderr)
-    return ids
+    return ids, index
 
 
 def align_file(processor, model, pcm_bytes, transcript, frame_sec=0.02):
     """Forced-align one audio buffer against its known transcript.
     @returns {list[list]} [[word, start, end], ...] seconds relative to file start"""
-    import torch
     import numpy as np
+    import torch
     samples = torch.from_numpy(np.frombuffer(pcm_bytes, dtype=np.float32).copy())
     with torch.no_grad():
         logits = model(samples.unsqueeze(0)).logits[0]
-    emission = torch.log_softmax(logits, dim=-1)
-    tokens = transcript_tokens(processor, transcript)
-    if not tokens:
-        return []
-    trellis = lib_ctc.get_trellis(emission, tokens)
-    path = lib_ctc.backtrack(trellis, emission, tokens)
-    spans = lib_ctc.merge_segments(path, frame_sec)
-    return lib_ctc.group_words_by_runs(spans, transcript)
+    emission = torch.log_softmax(logits, dim=-1).tolist()
+    ids, index = transcript_tokens(processor, transcript)
+    blank = processor.tokenizer.pad_token_id
+    spans = lib_ctc.align_spans(emission, ids, frame_sec, 0 if blank is None else blank)
+    mapped = [(index[pos - 1] + 1, s, e) for pos, s, e in spans]
+    return lib_ctc.group_words_by_runs(mapped, transcript)
 
 
 def main():
@@ -111,8 +111,15 @@ def main():
         fail('no story/segments.json — run the mix prep first (segments must be final)')
     if not os.path.isfile(dia_path):
         fail('no story/dialogue.txt')
-    segs = json.load(open(seg_path, encoding='utf-8'))['segments']
-    lines = {ln['i']: ln['txt'] for ln in mix_audio.parse_dialogue_text(open(dia_path, encoding='utf-8').read())}
+    with open(dia_path, encoding='utf-8') as f:
+        dialogue = mix_audio.parse_dialogue_text(f.read())
+    lines = {ln['i']: ln['txt'] for ln in dialogue}
+    with open(seg_path, encoding='utf-8') as f:
+        spec = json.load(f)
+    try:
+        segs = mix_audio.validate_segments(spec['segments'], len(dialogue))
+    except (KeyError, TypeError, ValueError) as exc:
+        fail(f'story/segments.json: {exc}')
 
     processor, model = load_model(args.model)
 

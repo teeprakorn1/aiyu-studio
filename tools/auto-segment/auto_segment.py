@@ -30,6 +30,7 @@ sys.path.insert(0, os.path.join(HERE, '..', '..', 'engine', 'lib'))
 
 import lib_align  # noqa: E402
 import mix_audio  # noqa: E402
+from exec_path import find_executable  # noqa: E402
 
 AUDIO_EXTS = ('.wav', '.mp3', '.m4a', '.flac', '.ogg', '.aac')
 
@@ -64,7 +65,7 @@ def transcribe_words(model, path, lang):
 def ffmpeg_dur(path):
     try:
         out = subprocess.run(
-            ['ffprobe', '-v', 'quiet', '-show_entries', 'format=duration', '-of', 'csv=p=0', path],
+            [find_executable('ffprobe'), '-v', 'quiet', '-show_entries', 'format=duration', '-of', 'csv=p=0', path],
             capture_output=True, text=True, check=True)
         return float(out.stdout.strip())
     except Exception as exc:
@@ -74,7 +75,7 @@ def ffmpeg_dur(path):
 def slice_audio(src, dst, a, b):
     os.makedirs(os.path.dirname(dst), exist_ok=True)
     r = subprocess.run(
-        ['ffmpeg', '-y', '-v', 'error', '-i', src, '-ss', f'{a:.3f}', '-to', f'{b:.3f}',
+        [find_executable('ffmpeg'), '-y', '-v', 'error', '-i', src, '-ss', f'{a:.3f}', '-to', f'{b:.3f}',
          '-ac', '1', '-ar', '24000', dst],
         capture_output=True, text=True)
     if r.returncode != 0:

@@ -45,9 +45,9 @@ test('every core and feature module uses an explicit IIFE/globalThis export wrap
   }
 });
 
-test('exported functions in core/base.js, features/environment.js, and features/atmosphere.js carry JSDoc with every parameter and a return', () => {
+test('exported functions in core/base.js and listed feature modules carry JSDoc with every parameter and a return', () => {
   const problems = [];
-  for (const f of ['template/core/base.js', 'template/features/environment.js', 'template/features/atmosphere.js']) {
+  for (const f of ['template/core/base.js', 'template/features/environment.js', 'template/features/atmosphere.js', 'template/features/globe.js']) {
     const src = read(f);
     for (const name of exportedNames(src)) {
       const decl = declaration(src, name);

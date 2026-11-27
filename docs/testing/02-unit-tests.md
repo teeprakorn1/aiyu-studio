@@ -23,6 +23,7 @@ Fast, deterministic, no browser, no video renders. Run with `npm test` (node + p
 | `base-color.test.mjs` | `core/base.js` `mixHex`, `hexA` | valid `#rrggbb` output unchanged, endpoints, `p` and alpha clamped to 0..1, any other color, or a non-number or non-finite `p`/alpha, throws `TypeError` |
 | `base-noise.test.mjs` | `core/base.js` `noise2` | exact zero at the origin, range about -1..1, smoothness, pinned reference values, agreement with an independent sqrt-based reference, no `Math.sin`/`cos`/`sqrt` calls, `TypeError` on non-finite input |
 | `determinism-static.test.mjs` | template core, features, story | no `Math.random`, `Date.now`, `performance.now`, `new Date`, or crypto randomness in render code |
+| `globe.test.mjs` | `features/globe.js` via the load-script harness | fibonacci lattice unit-sphere/uniformity/determinism, baked landmask against known geography, lat/lon→3D pins, rotation length preservation, `face`→center-front conversion, projection culling, arc reveal progress, stub-context draw smoke |
 
 ## Python tests (`unittest` — stdlib only)
 

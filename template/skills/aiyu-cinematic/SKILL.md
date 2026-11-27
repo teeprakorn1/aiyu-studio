@@ -78,6 +78,22 @@ The animated-map system (parchment base, hachure mountains, flow paths, city mar
 3. **Rename-collisions warning**: runtime files expose globals via `globalThis` only, but copied example code with `const`/`function` at top level can collide with each other across files — keep map code inside your single style.js or wrap in an IIFE
 4. Copy/adapt freely — the example is a library of patterns, but the layering order (ocean → shelf glow → land shadow → clipped land gradient → hachures → rivers → coastline → graticule) is what makes it look expensive; keep it intact
 
+## The dot-matrix globe (features/globe.js)
+
+A rotating Earth of dots for globalization/"X to Y" stories — the modern counterpart to the parchment map. Real `[lat, lon]` coordinates throughout:
+
+```js
+const GLOBE = { cx: 540, cy: 700, r: 360, spin: .14, face: [20, 20] }; // face = [lat, lon] aimed at camera at t=0
+dotGlobe(GLOBE, o.t, { land: '#cfe0ff', ocean: .1, glow: '120,160,255' });
+globeArc(GLOBE, o.t, [20, 20], [40.7, -74], rv(o, 3), { color: '#7fd4ff' });  // p = reveal 0..1, drive with rv()
+globeMark(GLOBE, o.t, [40.7, -74], rv(o, 4), { color: '#ffd166' });        // auto-hides behind the disc
+```
+
+- `spin` is rad/s; `face` beats `phi0`/`theta`. Spec is a plain object — never mutate it, all calls read it fresh per frame.
+- Draw `dotGlobe` first, arcs/marks after. ~2 ms/frame at default density; lower `opts.dots` for multiple globes.
+- Landmask is baked in (~5 KB) — no assets, works over `file://`. Polar caps read as ice, intentional.
+- Full guide: `docs/authoring/06-globe.md` in the aiyu-studio repository (docs are not copied into projects).
+
 ## Palettes as named systems
 
 Don't scatter raw hex through scenes. Define per-story palette objects (`const PAL = { skyTop: ..., skin: ... }`) at the top of style.js — one place to regrade the whole film.

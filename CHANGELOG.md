@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- **Runtime:** `features/globe.js` — optional dot-matrix globe (`dotGlobe`, `globeArc`, `globeMark`) with real lat/lon coordinates, a baked 1-bit landmask, fibonacci-lattice dots, bezier great-circle arcs, and silhouette-culled markers. Technique adapted from cobe (MIT); see docs/acknowledgements.md. Guide: `docs/authoring/06-globe.md`.
 - **Runtime:** `noise2(x, y)` — deterministic 2D simplex noise, about -1..1. It uses integer hashing and IEEE arithmetic only (no trigonometry or sqrt), so its values do not depend on engine-specific math approximations. The demo does not call it yet.
 
 ### Changed

@@ -88,6 +88,7 @@ const API = [
   ['template/core/base.js', ['TXT', 'fitTXT', 'srnd', 'noise2', 'mixHex', 'hexA', 'RRECT', 'CIRC', 'LINE', 'LIMB', 'PATH', 'SHAPE']],
   ['template/features/cards.js', ['pop', 'chip', 'quoteCard', 'chartCard']],
   ['template/features/environment.js', ['rain', 'wall', 'floorY', 'city', 'stars', 'glow', 'win', 'lamp', 'rim', 'circuitField', 'tint', 'vig']],
+  ['template/features/globe.js', ['dotGlobe', 'globeArc', 'globeMark']],
 ];
 const callsOf = (src, name) => [...src.matchAll(new RegExp(`(?<![\\w$])${name}\\(([^()]*)\\)`, 'g'))].map(m => m[1]);
 

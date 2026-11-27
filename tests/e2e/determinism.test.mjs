@@ -58,6 +58,7 @@ async function compareJpegPair(fileA, fileB) {
 const FIXTURE_STYLE = `definePeople({ walker: { skin: '#B97B50', skinShade: '#9A6340', hair: '#211B18', cloth: '#8F3F34', sash: '#D6A03D', hairStyle: 'topknot' } });
 defineCharacters({ host: { skin: '#d9a06e', hair: '#7d8087', top: '#1c1c20', bot: '#25262c', hs: 'jensen', jacket: true } });
 SUB_KARAOKE = true;
+const GLOBE_FIX = { cx: 540, cy: 640, r: 330, spin: .18, face: [13.7, 100.5] };
 function scA(o) {
   cam(o, { z0: 1.03, z1: 1.09, cy: 980, punch: .014, driftX: 4 }, () => {
     skyStops([[0, '#151B2F'], [.42, '#342D45'], [.68, '#87513C'], [.82, '#D99154']], 0, 1240);
@@ -65,6 +66,9 @@ function scA(o) {
     waterBody(1244, '#243846', '#0B1720');
     ripples(1256, 1620, o.t, 5);
     motes(12, 400, 1200, o.t, 7);
+    dotGlobe(GLOBE_FIX, o.t, { land: '#e8d9b0', ocean: .1, glow: '216,190,140' });
+    globeArc(GLOBE_FIX, o.t, [13.75, 100.5], [35.68, 139.69], rv(o, 1), { color: '#e8a24a' });
+    globeMark(GLOBE_FIX, o.t, [35.68, 139.69], rv(o, 1), { color: '#ffd166' });
     personTH('walker', { x: 540, y: 1560, scale: .9, t: o.t, walk: true, walkSpeed: 1.6, mouth: mouthFor('M', o) });
   });
   sketchArrow(200, 700, 500, 900, { seed: 9001, rough: 1.2, boil: 3, t: o.t });

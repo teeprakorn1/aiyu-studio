@@ -79,7 +79,7 @@ Everything inside the callback is zoomed/panned; overlays outside stay fixed. **
 
 ## Speaker-aware lip sync — the contract
 
-`spk` in dialogue.txt is a single character (`M`, `J`, …). Mouths move only when you wire them:
+`spk` in dialogue.txt is one letter or digit (`M`, `J`, `1`, …). Mouths move only when you wire them:
 
 ```js
 person('host', { x: 320, y: 1560, scale: 1, t: o.t, mouth: mouthFor('M', o) });
@@ -102,10 +102,10 @@ Cards (`nameCard`/`newsCard`/`emailCard`/`quoteCard`/`chartCard`) and `pop()` al
 
 ## Runtime API quick reference (all global)
 
-- **Primitives**: `RRECT(x,y,w,h,r,fill)` · `TXT(txt,x,y,size,color,align,maxW)` · `LINE/CIRC/LIMB/PATH/SHAPE` · `g` (the ctx) · `W=1080 H=1920` · `srnd(seed)` · `mixHex/hexA` · `clamp01/lerp`
-- **Environment**: `wall(floor,ceiling)` `floorY(y,color)` `city()` `stars(n)` `rain(alpha,spd)` `glow(x,y,r,rgb,a)` `rim()` `vig()` `tint(rgb,a)` `lamp` `win` `circuitField`
+- **Primitives**: `RRECT(x,y,w,h,r,fill)` · `TXT(txt,x,y,size,color,align,weight)` · `fitTXT(txt,x,y,maxW,size,color,align,weight)` (shrinks the font until it fits `maxW` — use it for variable strings) · `LINE/CIRC/LIMB/PATH/SHAPE` · `g` (the ctx) · `W=1080 H=1920` · `srnd(seed)` · `mixHex/hexA` · `clamp01/lerp`
+- **Environment**: `wall(top,bottom)` `floorY(y,color)` `city(x,y,w,h,n,color)` `stars(n)` `rain(alpha,n,t)` `glow(x,y,r,rgb,a)` `rim(x,y,s,side,col)` `vig()` `tint(rgb,a)` `lamp(x,y,s)` `win(x,y,w,h,sky,div)` `circuitField(alpha,col)`
 - **Character (chibi)**: `person(id, opts)` — opts: x y scale t flip look blink mood mouth back young ghost bw glasses lashes earring; `hs` hairstyles: `jensen|swoop|bob|blonde|longF|pony|none`; clothing flags in CH: `jacket/suit/tie/blazer/dress/floral`
-- **Cards**: `pop(txt,x,y,color,p,maxW)` `chip(txt,x,y)` `quoteCard(lines,p,x?)` `chartCard(x,y,w,h,series,color,label)`
+- **Cards**: `pop(txt,x,y,color,p,size)` `chip(txt,x,y,color,size)` `quoteCard(lines,p,y)` `chartCard(x,y,w,h,pts,col,label)`
 
 ## Battle-tested scene patterns
 
@@ -131,7 +131,7 @@ Open `preview.html` and scrub — catches layout/safe-zone/lip-sync problems in 
 
 > ❌ Declaring done without previewing = the scene is not done. ✅ Scrub first, then stills, then render.
 
-## Keyword-beat reveals (rvw) — v0.5.0
+## Keyword-beat reveals (rvw)
 
 `rv(o, n)` reveals at line start. `rvw(o, n, needle)` reveals when the narration SPEAKS the keyword —
 the chart pops exactly on "42", not at the top of the line. Requires word timing in talk.js
@@ -148,6 +148,7 @@ if (p > 0) drawBigNumber(ctx, easeBack(p), '42%');
 but NEVER depend on word timing existing for correctness; design scenes so the line-granular
 fallback still reads well. Prefer short distinctive needles (they match Thai subword chunks via
 substring tolerance); repeated words in one line match the FIRST occurrence.
+
 ## Hand-drawn sketch annotations (features/sketch.js)
 
 Five opt-in primitives for documentary emphasis: `sketchLine/sketchRect/sketchCircle/sketchArrow/sketchUnderline(x…, {seed, rough, bow, width, color, boil, t})`.

@@ -13,7 +13,7 @@ This folder is the starting point of every production (copied by `py new-project
 
 ## Files you never edit
 
-- `core/` + `features/` — all machinery: person/cam/helpers/subtitles/chips (for extra props, copy from `examples/legacy/jensen-legend/style-v4.js` into `story/style.js`)
+- `core/` + `features/` — all machinery: person/cam/helpers/subtitles/chips (for extra props, copy from `examples/legacy/jensen-legend/style-v4.js` in the aiyu-studio repository into `story/style.js`)
 - `engine/` — render/publish/mux/mix/measure scripts + shared `lib/` (invoke through the npm scripts in `package.json`)
 
 ## Agent skills (`skills/`)

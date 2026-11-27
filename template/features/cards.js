@@ -20,7 +20,7 @@ function nameCard(x, y, w, id, cap, sub, p = 1) {
   g.save(); g.beginPath(); g.roundRect(-w / 2 + 18, -h / 2 + 18, w - 36, w * .8, 8); g.clip();
   g.fillStyle = '#24303a'; g.fillRect(-w / 2 + 18, -h / 2 + 18, w - 36, w * .8);
   g.translate(0, -h / 2 + w * .66); g.scale(.52, .52);
-  runtimeConfig().portrait(c);
+  renderPortrait(c);
   g.restore();
   g.beginPath(); g.roundRect(-w / 2 + 18, -h / 2 + 18, w - 36, w * .8, 8); g.lineWidth = 6; g.strokeStyle = OL; g.stroke();
   TXT(cap, 0, h / 2 - 82, 38, '#2a2420');

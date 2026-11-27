@@ -216,7 +216,7 @@ function mascotPortrait(c) {
 }
 registerPortraitRenderer(mascotPortrait);
 
-const ms = o => o.em * 1.6;
+const ms = o => Math.min(1, o.em * 1.6);
 /** Mouth openness for one character: envelope only while lines carry this spk, else 0.
  *  Always use this for lip sync — feeding o.em directly makes every character chew along.
  *  @param {string} who - single-letter speaker id matching spk in dialogue.txt

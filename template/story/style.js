@@ -39,7 +39,7 @@ function bgStudio() {
 function scOpening(o) {
   cam(o, { z0: 1.05, z1: 1.13, cy: 1060, punch: .018, driftX: 5 }, () => {
     bgNight();
-    rain(.07, 20);
+    rain(.07, 20, o.t);
     person('host', { x: 540, y: 1660, scale: .95, t: o.t, back: true });
     rim(540, 1660, .95, 1, 'rgba(118,185,0,.4)');
   });

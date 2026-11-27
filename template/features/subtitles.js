@@ -5,6 +5,8 @@
 
 (() => {
 
+const SUB_FRAME_MAX = 840, SUB_PAD_X = 24, SUB_STROKE = 10, SUB_TEXT_MAX = SUB_FRAME_MAX - SUB_PAD_X * 2 - SUB_STROKE;
+const SUB_BASE = 52, SUB_MIN = 40, SUB_MAX_ROWS = 3;
 const SUB_CACHE = new Map();
 /** Split subtitle text into wrappable units. Punctuation-only units merge into the
  *  preceding word so no row ever starts with a bare "," or "." — applies to all languages. */
@@ -138,12 +140,13 @@ function subs(o) {
     const found = ln.txt.indexOf(row, rowSearchPos);
     const rowStart = found !== -1 ? found : rowSearchPos;
     rowSearchPos = rowStart + row.length;
-    let x = W / 2 - lay.widths[i] / 2;
+    const x0 = W / 2 - lay.widths[i] / 2;
     g.textAlign = 'left';
     for (let ci = 0; ci < row.length; ci++) {
       const wi = kmap[rowStart + ci] ?? -1;
       const ch = row[ci];
       const cw = g.measureText(ch).width;
+      const x = x0 + g.measureText(row.slice(0, ci)).width;
       if (wi !== -1 && wi <= activeIdx) {
         const isActive = wi === activeIdx;
         if (isActive) {
@@ -157,7 +160,6 @@ function subs(o) {
         g.fillStyle = HI; g.fillText(ch, x, baseline);
         if (isActive) g.restore();
       }
-      x += cw;
     }
     g.textAlign = 'center';
   });
@@ -167,5 +169,6 @@ function subs(o) {
  *  Use for any element that appears at a line and must NOT re-animate on later lines —
  *  feeding o.lp directly re-triggers the animation every time the narration advances. */
 
+registerOverlay(20, subs);
 Object.assign(globalThis, { layoutSubs, subs, karaokeMap, karaokeActiveIdx });
 })();

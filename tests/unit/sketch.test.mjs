@@ -54,7 +54,12 @@ test('primitives draw without throwing on a recording stub context', () => {
 test('boil quantizes time — same bucket same jitter, next bucket different jitter', () => {
   // boil=3 means re-seed every 3 frames at 30fps -> bucket = floor(t*10)
   // this property is what keeps boil a pure function of t (chunk-safe squigglevision)
-  const q = (t, boil) => Math.floor(t * 30 / boil);
-  assert.equal(q(0.05, 3), q(0.09, 3));   // same 3-frame bucket
-  assert.notEqual(q(0.05, 3), q(0.35, 3)); // different bucket
+  const calls = [];
+  globalThis.g = new Proxy({}, {
+    get: (t, k) => (...a) => { if (k === 'moveTo' || k === 'lineTo') calls.push([k, ...a]); },
+    set: () => true,
+  });
+  const draw = t => { calls.length = 0; env.sketchLine(0, 0, 200, 0, { seed: 42, boil: 3, t }); return calls.slice(); };
+  assert.deepEqual(draw(0.05), draw(0.09));
+  assert.notDeepEqual(draw(0.05), draw(0.35));
 });

@@ -69,13 +69,17 @@ function shot(t) {
 }
 function render(t) {
   adoptLegacyConfig();
-  g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
-  g.__t = t;
-  const s = shot(t);
-  s.fn(s);
-  sourceChips(s);
-  subs(s);
-  footnote();
+  g.save();
+  try {
+    g.beginPath();
+    g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#000'; g.fillRect(0, 0, W, H);
+    g.__t = t;
+    const s = shot(t);
+    s.fn(s);
+    sourceChips(s);
+    runtimeConfig().overlays.forEach(({ fn }) => fn(s));
+    footnote();
+  } finally { g.restore(); }
 }
 
 Object.assign(globalThis, { sourceChips,footnote,shot,render });

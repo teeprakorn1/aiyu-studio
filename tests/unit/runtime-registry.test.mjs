@@ -41,3 +41,11 @@ test('story metadata registration is explicit', () => {
 test('character module registers its portrait renderer through the core registry', () => {
   assert.equal(typeof api.runtimeConfig().portrait, 'function');
 });
+
+test('scene boundaries must be whole dialogue line indexes of at least 1', () => {
+  const scene = () => {};
+  for (const bad of [0, -1, 2.5, NaN]) {
+    assert.throws(() => api.defineScenes([[bad, scene], [Infinity, scene]]), /whole dialogue line index/, String(bad));
+  }
+  assert.doesNotThrow(() => api.defineScenes([[1, scene], [Infinity, scene]]));
+});

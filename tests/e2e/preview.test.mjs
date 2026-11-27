@@ -5,7 +5,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, rmSync } from 'node:fs';
-import { createRequire } from 'node:module';
+import { launchBrowser, resolvePlaywright } from '../../engine/lib/playwright-env.mjs';
 import { pathToFileURL } from 'node:url';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -22,12 +22,7 @@ before(async function () {
   run(PY, [path.join(REPO, 'new-project.py'), PROJ], REPO);
   npmInstall(PROJ);
   npmRun('stub', [], PROJ);
-  const require = createRequire(path.join(PROJ, 'package.json'));
-  const { chromium } = require('playwright-core');
-  for (const opts of [{ channel: 'chrome' }, {}, { channel: 'chromium' }]) {
-    try { browser = await chromium.launch(opts); break; } catch { /* next flavor */ }
-  }
-  if (!browser) throw new Error('no browser available');
+  browser = await launchBrowser(resolvePlaywright(PROJ));
   page = await browser.newPage({ viewport: { width: 1280, height: 900 } });
   errors = [];
   page.on('pageerror', e => errors.push(e.message));
@@ -37,7 +32,7 @@ before(async function () {
 
 after(async () => {
   if (browser) await browser.close();
-  rmSync(PROJ, { recursive: true, force: true });
+  if (!process.env.AIYU_KEEP_WORKSPACES) rmSync(PROJ, { recursive: true, force: true });
 });
 
 test('loads without page errors', () => {

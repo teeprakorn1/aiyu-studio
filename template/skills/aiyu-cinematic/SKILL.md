@@ -32,23 +32,26 @@ Characters are registered with `definePeople({ id: {skin, hair, top, ...} })` �
 
 ## The layered background recipe (atmosphere.js)
 
-Build depth with translucent layers back-to-front, each pure in `t`:
+Build depth with opaque layers back-to-front, each pure in `t`. Depth comes from color mixing toward the horizon (`mixHex`), never from lowering alpha:
 
 1. **Sky** — `skyStops([[0,'#1a2436'],[.55,'#3a2a3a'],[1,'#0c0f18']])` multi-stop vertical gradient
 2. **Celestial/depth** — `starField(n, seed, yMax, t)`, `cloudsDusk`, `birdsFlock`
-3. **Landforms** — `hillsLayer(yBase, amp, seed, col)` several layers at decreasing alpha = atmospheric perspective
+3. **Landforms** — `hillsLayer(yBase, amp, seed, col)` several layers, each pre-mixed toward the sky color = atmospheric perspective
 4. **Water** — `waterBody` + `ripples` + `lightReflection` as a system: still reflections of bright elements, moving ripple lines over them
 5. **Air** — `motes`, `smokeColumn`, weather (`rain` from environment.js)
 6. **Haze bands** — `hazeBand(y, h, color, a)` between depth layers
 
-## Frame treatments — always last, fixed order
+## Frame treatments — fixed order, always last
 
-After everything else in the scene, in this exact order:
+Three treatments, in this exact order:
 
 ```js
-grainLayer(.035);        // film grain — seeded internally, deterministic
-captionScrim(.5);        // darkens the subtitle zone so text reads over anything
-screenVig(.3);           // vignette — cinematic edge falloff
+cam(o, cfg, () => {
+  // background and characters
+  captionScrim(.5);      // inside the scene: darkens the subtitle zone so text reads over anything
+});
+screenVig(.3);           // outside cam(): lens falloff, must not drift with the camera
+grainLayer(.035);        // last: film grain over everything — seeded internally, deterministic
 ```
 
 `labelPlate(txt, x, y)` for archival-style caption plaques; `TXTW` is the weighted text variant; `focusGlow` for attention spots.
@@ -61,8 +64,8 @@ Every scatter (stars, motes, trees, raindrops) must be seeded: `srnd(seed)` with
 |---|---|
 | `srnd(o.t)` — seed changes every frame: stars boil/flicker, chunks disagree | `srnd(31)` constant per family — positions frozen, only brightness/phase animates with `t` |
 | animating raindrops by randomizing positions per frame | fixed drop positions from seed + falling offset `= f(t)` |
-| one detailed background drawing | ≥4 translucent layers — depth comes from layering, not detail |
-| frame treatments scattered through the scene | grain → scrim → vig, once, at the very end |
+| one detailed background drawing | ≥4 opaque, color-mixed layers — depth comes from layering, not detail |
+| frame treatments scattered through the scene | captionScrim inside the scene, then screenVig and grainLayer once, at the very end |
 
 > 🔴 Flickering elements in the render = seeded randomness violated somewhere. Chunk seams that don't match = same cause. There is no other suspect — hunt the seed.
 
@@ -81,9 +84,9 @@ Don't scatter raw hex through scenes. Define per-story palette objects (`const P
 
 ## The master checklist for a cinematic scene
 
-- [ ] depth comes from ≥4 translucent layers, not one detailed drawing
+- [ ] depth comes from ≥4 opaque, color-mixed layers, not one detailed drawing
 - [ ] every scatter seeded with constants
-- [ ] frame treatments last in fixed order (grain → scrim → vig)
+- [ ] frame treatments in order: captionScrim inside the scene, then screenVig and grainLayer last
 - [ ] walk cycles use `walk:true` + `walkSpeed`, never manual leg math
 - [ ] safe zones still respected — cinematic is no excuse for unreadable text
 - [ ] verified in preview.html scrub + stills before any render

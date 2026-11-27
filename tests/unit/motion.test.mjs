@@ -70,7 +70,7 @@ test('rv line-scoped reveal: 0 before line, ramps during, 1 after', () => {
   assert.equal(rv({ i: 4, lp: 0 }, 3), 1);          // after the line
 });
 
-/* ---- wordT / rvw — keyword-beat reveal helpers (v0.5.0) ---- */
+/* ---- wordT / rvw — keyword-beat reveal helpers (v0.4.0) ---- */
 
 const LINE = {
   t0: 10, dur: 4, txt: 'the price hit 42 today',

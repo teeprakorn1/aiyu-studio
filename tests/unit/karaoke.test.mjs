@@ -6,7 +6,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { loadScripts } from '../helpers/load-script.mjs';
 
-const env = loadScripts(['core/base.js', 'core/motion.js', 'features/subtitles.js'], ['karaokeMap', 'karaokeActiveIdx']);
+const env = loadScripts(['core/base.js', 'core/registry.js', 'core/motion.js', 'features/subtitles.js'], ['karaokeMap', 'karaokeActiveIdx']);
 const { karaokeMap, karaokeActiveIdx } = env;
 
 const WORDS = [

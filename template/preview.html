@@ -266,7 +266,7 @@ function tick(now) {
   requestAnimationFrame(tick);
 }
 
-window.ready = document.fonts.ready.then(() => { render(0); return true; });
+window.ready = Promise.all([...document.fonts].map(f => f.load())).then(() => document.fonts.ready).then(() => { render(0); return true; });
 fit();
 paintBase();
 buildSceneMenu();

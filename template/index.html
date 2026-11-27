@@ -26,6 +26,6 @@ html,body{margin:0;background:#000;overflow:hidden}canvas{display:block}
 <script src="story/style.js"></script>
 <script>
 window.render = render; window.DURATION = TALK.dur;
-window.ready = document.fonts.ready.then(() => { render(0); return true; });
+window.ready = Promise.all([...document.fonts].map(f => f.load())).then(() => document.fonts.ready).then(() => { render(0); return true; });
 </script>
 </body></html>

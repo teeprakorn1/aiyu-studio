@@ -4,7 +4,7 @@
  */
 (() => {
   const state = {
-    characters: {}, people: {}, scenes: null, sourceChips: [], footnote: '', portrait: null,
+    characters: {}, people: {}, scenes: null, sourceChips: [], footnote: '', portrait: null, overlays: [],
   };
   const obj = v => { if (!v || typeof v !== 'object') throw new Error('registry value must be an object'); return v; };
 
@@ -30,6 +30,7 @@
    */
   function defineScenes(rows) {
     if (!Array.isArray(rows) || !rows.length || rows.some(r => !Array.isArray(r) || typeof r[1] !== 'function' || typeof r[0] !== 'number')) throw new Error('defineScenes expects [[line, sceneFn], ...]');
+    rows.slice(0, -1).forEach(([till]) => { if (!Number.isInteger(till) || till < 1) throw new Error(`defineScenes boundary ${till} must be a whole dialogue line index >= 1 (the first line of the next scene)`); });
     for (let i = 1; i < rows.length; i++) if (!(rows[i][0] > rows[i - 1][0])) throw new Error('defineScenes rows must be sorted by increasing line index');
     if (rows[rows.length - 1][0] !== Infinity) throw new Error('defineScenes must end with Infinity');
     state.scenes = rows.slice();
@@ -87,8 +88,30 @@
    */
   function runtimeConfig() { return state; }
 
+  /**
+   * Register a draw stage that runs after the scene and source chips, before the footnote.
+   * @param {number} order - ascending stage order; subtitles register at 20
+   * @param {Function} fn - overlay `(shot)` drawing into the current canvas state
+   * @returns {void}
+   */
+  function registerOverlay(order, fn) {
+    if (typeof fn !== 'function') throw new Error('overlay must be a function');
+    state.overlays.push({ order, fn });
+    state.overlays.sort((a, b) => a.order - b.order);
+  }
+
+  /**
+   * Draw the registered portrait for a character, failing loudly when no renderer is loaded.
+   * @param {object} c - character configuration from defineCharacters()
+   * @returns {void}
+   */
+  function renderPortrait(c) {
+    if (!state.portrait) throw new Error('no portrait renderer registered — load features/character.js before features/cards.js');
+    state.portrait(c);
+  }
+
   Object.assign(globalThis, {
     defineCharacters, definePeople, defineScenes, defineSourceChips, setFootnote,
-    registerPortraitRenderer, characterOf, personConfigOf, runtimeConfig,
+    registerPortraitRenderer, characterOf, personConfigOf, runtimeConfig, registerOverlay, renderPortrait,
   });
 })();

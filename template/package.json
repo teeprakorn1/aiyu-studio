@@ -1,6 +1,9 @@
 {
   "name": "video-project",
   "private": true,
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "mix": "node engine/run-py.mjs engine/mix-studio.py",
     "stub": "node engine/run-py.mjs engine/mix-studio.py --stub",

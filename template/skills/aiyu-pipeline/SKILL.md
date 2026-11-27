@@ -47,7 +47,7 @@ story/dialogue.txt + story/segments.json + vo/*.wav
 15|J|ผมตัดสินใจลาออก มีผลทันที
 ```
 
-`index|spk|text` — index runs 0..N-1 contiguous, `spk` is one character and **must match `mouthFor('X', o)`** in style.js. Keep lines short; subtitles re-wrap automatically (Thai line-breaking is built in).
+`index|spk|text` — index runs 0..N-1 contiguous, `spk` is one letter or digit and **must match `mouthFor('X', o)`** in style.js. Keep lines short; subtitles re-wrap automatically (Thai line-breaking is built in).
 
 ### story/segments.json
 
@@ -78,11 +78,11 @@ Recommended order: write dialogue → stub → finish scenes → generate voices
 1. **preview.html** — scrub live, check lip sync per line, catch layout problems
 2. `npm run stills -- 1,5,10` then open `stills/sheet.jpg` — verify layout/safe zones statically
 3. `npm run check-subs` — subtitle width/overflow verification
-4. After mux: check the verification output — loudness ≈ −15.5 LUFS, true peak within limit, bed sits 20–24 dB below speech
+4. After mux: the command exits non-zero unless every hard gate passes — stream shape, faststart, duration, frames = fps × duration, loudness within 0.25 LU of −15.5 LUFS, true peak within the ceiling, and the bed 20–24 dB below speech when measured with `--pause` and `--speech`
 
 ## Versioning rules (sacred)
 
-- **Never overwrite older versions** — `--out` is `v1` by default; increment: `--out=v2`, `--out=v3` (publish chunks → `out/v2_*.mp4`, mux `--out=final-v2.mp4`)
+- **Never overwrite older versions** — `--out` is `v1` by default; increment: `--out=v2`, `--out=v3` (publish chunks → `out/v2_*.mp4`, mux `--out=final-v2.mp4`). `render` and `publish` refuse to overwrite an existing output unless `--force` is passed.
 - **Never commit media** — `vo/*.wav`, `out/`, `*.mp4` are gitignored
 - `bed.wav` (music bed) is a **required** mux input — create/copy it into the project root before muxing; keep it quiet
 
@@ -104,15 +104,18 @@ Recommended order: write dialogue → stub → finish scenes → generate voices
 | Chunks differ at seams | non-deterministic code in story/ (Math.random/Date.now) | use `srnd(seed)` — this breaks the determinism law |
 | No waveform in preview | only ran stub | normal — real waveform appears after `npm run mix` |
 | Publish stalls/hangs | stuck headless browser or bad flags | check error output; unknown flags are rejected loudly — read the message |
+| `already exists — choose a new --out prefix` | a rendered version with that prefix is on disk | pick a new `--out` (`v2`, `v3`…); pass `--force` only to overwrite deliberately |
+| `--X requires a value` | a flag was typed without `=value` | write `--X=<value>` |
+| `frame count is N, expected M` | the final file does not match fps × duration | re-publish the affected chunks and mux again — never accept the file |
 
 ## Rendering flags cheatsheet
 
 - `npm run publish -- --chunks=4` — parallel chunk count (default usually fine; more chunks = more browser processes)
 - `--crf` / `--preset` — encoding quality/speed, validated and forwarded to every chunk
-- `npm run render -- --range=0:10` — single-range test render (see `--help`)
-- `npm run mux -- --verify-tp` — documented in mux `--help`
+- `npm run render -- video 0,10 --out=<new-prefix>` — single-range test render; the range is a positional `from,to` in seconds (see `--help`)
+- `npm run mux -- --verify-tp=-2.0` — true-peak ceiling for the final file; a bare `--verify-tp` is an error (see `--help`)
 
-## Word timing sources (karaoke + rvw) — v0.5.0
+## Word timing sources (karaoke + rvw)
 
 `story/wordtimes.json` is the single input; three ways to produce it, pick per voice type:
 

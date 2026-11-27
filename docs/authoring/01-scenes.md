@@ -89,8 +89,8 @@ example's README for the full story.
 **`features/atmosphere.js`** — atmosphere & nature: `skyStops()` multi-stop skies, `hillsLayer()` /
 `treeMass()` / `cloudsDusk()` / `birdsFlock()` for living horizons, `waterBody()` +
 `ripples()` + `lightReflection()` for water, `smokeColumn()` / `motes()` / `starField()`
-for air, and the frame treatments `grainLayer()` + `screenVig()` + `captionScrim()`
-(always draw those three last, in that order, vignette outside cam). See the module
+for air. Frame treatments: `captionScrim()` inside the scene (before subtitles), then `screenVig()` outside `cam()`, then `grainLayer()` last
+(always draw them last, in that order; see the aiyu-cinematic skill). See the module
 header for copy-paste recipes.
 
 **`features/people.js`** — `personTH()` as an alternative to the runtime's `person()`:

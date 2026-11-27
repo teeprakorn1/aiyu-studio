@@ -45,7 +45,7 @@
 - **scaffold คำสั่งเดียว** — `new-project.py` ให้โปรเจกต์ demo ที่เรนเดอร์ได้จริงในไม่กี่วินาที
 - **agent skills ในทุกโปรเจกต์** — กฎฉบับย่อ (`aiyu-authoring` / `aiyu-pipeline` / `aiyu-cinematic`) ถูก scaffold ไปใน `skills/` เสมอ coding agent เขียนโค้ดฉากถูกตั้งแต่พรอมป์แรก แทนที่จะค่อย ๆ เรียนรู้กฎจากความผิดพลาด
 - **auto-segmentation แบบ optional** — `tools/auto-segment` ร่าง `segments.json` และตัดไฟล์เสียงย่อยจากเสียงยาวไฟล์เดียวต่อผู้พูดด้วย whisper word-alignment วิถี manual เดิมยังเป็น first-class เต็มตัว
-- **generate เสียง TTS คำสั่งเดียว** — `tools/tts-gen` สังเคราะห์บทพูดทั้งเรื่องเป็นไฟล์เสียงทีละบรรทัดพร้อม segments ที่แม่นตั้งแต่เกิด (ไม่ต้อง align อะไรเลย) edge-tts ฟรีไม่ต้องมี key ยืนยันเสียงไทยแล้ว ส่วน ElevenLabs/Gemini ต่อผ่าน provider interface เดียวกัน
+- **generate เสียง TTS คำสั่งเดียว** — `tools/tts-gen` สร้างไฟล์เสียงทีละบรรทัดพร้อม segments ที่ตรงกันโดยไม่ต้อง align; Edge, ElevenLabs และ Gemini ผ่านการทดสอบเสียงไทยอย่างละหนึ่งตัวอย่างแล้ว โดย Edge ฟรีและไม่ต้องใช้ key (เสียงและภาษาอื่นยังไม่ได้ทดสอบครอบคลุม)
 - **ซับคาราโอเกะ** — เปิด `SUB_KARAOKE` แล้วคำที่พูดไฮไลต์ไล่ซ้ายไปขวาตามเสียงจริง word timing มาจาก tts-gen, auto-segment, phoneme alignment แบบ opt-in หรือเขียน `story/wordtimes.json` เอง
 - **reveal ตามจังหวะคำพูด** — `rvw(o, n, needle)` ให้กราฟ/ตัวเลขเด้งเป๊ะตอนพากย์พูดคำสำคัญ (fallback เป็น `rv()` แบบเดิมเมื่อไม่มี word timing) เวลารายคำมาจาก tts-gen, auto-segment หรือ phoneme alignment แบบ opt-in
 

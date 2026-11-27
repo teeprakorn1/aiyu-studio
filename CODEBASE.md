@@ -29,7 +29,7 @@ aiyu-studio/  (repo: github.com/teeprakorn1/aiyu-studio)
 │   ├── publish.mjs       parallel chunk rendering
 │   ├── mux.mjs           concat + loudness + faststart + self-verification → final.mp4
 │   ├── measure-subs.mjs  subtitle overflow acceptance
-│   └── lib/              all shared logic (cli-args, playwright-env, ffmpeg, encoding, loudness, mp4-verify, chunking, talk, mix_audio)
+│   └── lib/              shared CLI, rendering, chunking, concat, QC, path, executable, timeline, and audio logic
 ├── tests/                the pyramid — unit (node:test + python unittest) + e2e; never scaffolded
 ├── tools/auto-segment/   optional whisper-based segments.json drafter — own dependencies, never scaffolded
 ├── tools/tts-gen/        optional multi-provider TTS synthesizer (edge/elevenlabs/gemini) — per-line vo files, exact segments, wordtimes; own dependencies, never scaffolded

@@ -73,7 +73,7 @@ Review every scene in stills/: headings must sit below y≈260, nothing may coll
 
 ```bash
 npm run publish -- --chunks=6 --out=v1        # duration is read from talk.js automatically
-# or a single range when fixing one scene: npm run render -- video 0,100 --out=v1
+# to re-render one range, use a NEW prefix (rendered versions are never overwritten): npm run render -- video 0,100 --out=v2
 ```
 
 (arguments after `--` pass straight through to the underlying engine script)
@@ -95,4 +95,4 @@ Follow [qc-publish.md](../delivery/01-qc-publish.md) completely, then **watch th
 
 ## Fixing one scene without re-rendering everything
 
-Edit `story/style.js` → render only the affected chunk(s) → copy untouched chunks from the previous version → re-mux. Saves half the time (this is exactly how v5d of jensen-legend was produced).
+Edit `story/style.js`, then choose a new `--out` prefix such as `v2`. Render only the affected ranges with `npm run render -- video <from,to> --out=v2`, copy every untouched chunk from `out/v1_<from>-<to>.mp4` to `out/v2_<from>-<to>.mp4`, list the chunks in publish order in `out/v2concat.txt`, and run `npm run mux -- --concat=out/v2concat.txt --out=final-v2.mp4`. Keep the chunk boundaries from the original publish run.

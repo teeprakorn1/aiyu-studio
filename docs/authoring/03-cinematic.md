@@ -251,5 +251,5 @@ which measurably affects retention.
 6. Vegetation masses filling gaps between man-made structures
 7. Smoke/motes/fireflies for air
 8. Characters walking with staggered phases; idle characters breathing
-9. captionScrim inside, screenVig + grainLayer outside cam, in that order
+9. captionScrim inside the scene, then screenVig, then grainLayer last (both outside cam)
 10. Verify with stills at several times — t=0 hides animation-phase bugs

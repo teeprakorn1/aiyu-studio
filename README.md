@@ -5,7 +5,7 @@
 **Video-as-code for vertical documentaries.** Write scenes in JavaScript, narrate with TTS, and render publish-ready 1080×1920 videos for Reels & TikTok — no video editor, no timeline scrubbing, no manual subtitle sync.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.4.0-blue.svg?style=for-the-badge)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-0.5.0-blue.svg?style=for-the-badge)](CHANGELOG.md)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg?style=for-the-badge)](#requirements)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge)](#contributing)
 
@@ -46,7 +46,7 @@ Vertical documentaries are repetitive to produce: sync subtitles by hand, resize
 - **One-command scaffolding** — `new-project.py` gives you a working, renderable demo project in seconds
 - **Agent skills in every project** — condensed operational rules (`aiyu-authoring` / `aiyu-pipeline` / `aiyu-cinematic`) are scaffolded into `skills/`, so a coding agent writes correct scene code from the first prompt instead of learning the laws by trial and error
 - **Optional auto-segmentation** — `tools/auto-segment` drafts `segments.json` and sliced voice files from one long recording per speaker via whisper word-alignment; the manual voice-file workflow stays fully first-class
-- **One-command TTS generation** — `tools/tts-gen` synthesizes the whole dialogue into per-line voice files with an exact segments mapping (no alignment anywhere); edge-tts is free and keyless with verified Thai voices, ElevenLabs/Gemini plug in behind the same provider interface
+- **One-command TTS generation** — `tools/tts-gen` creates per-line voice files and an exact segments mapping; Edge, ElevenLabs, and Gemini were each verified with one Thai sample. Edge is free and keyless; other voices and languages are not broadly verified.
 - **Karaoke subtitles** — flip `SUB_KARAOKE` and spoken words highlight left-to-right; word timing flows from tts-gen synthesis, auto-segment emission, optional phoneme-grade alignment, or `story/wordtimes.json` by hand
 - **Keyword-beat reveals** — `rvw(o, n, needle)` pops scene elements exactly when the narrator speaks the keyword (falls back to line-granular `rv()` when timing is absent); word timing flows from tts-gen, auto-segment, or optional phoneme-grade forced alignment
 

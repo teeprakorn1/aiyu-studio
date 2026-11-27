@@ -7,7 +7,7 @@ index|spk|text
 ```
 
 - `index` runs 0..N-1 contiguously, no gaps (validated with an explicit error)
-- `spk` is a single character: `M` = narrator, anything else = a character — **must match `mouthFor('X', o)` in style.js** or mouths won't move
+- `spk` is one letter or digit (one code point): `M` = narrator, anything else = a character — **must match `mouthFor('X', o)` in style.js** or mouths won't move. Other speaker ids are rejected at parse time.
 - Keep lines short and speakable — subtitles re-wrap automatically by width; no manual line breaks needed
 
 Example (Thai content, since this pipeline targets Thai-language videos):
@@ -43,7 +43,7 @@ Example (Thai content, since this pipeline targets Thai-language videos):
 
 ## 3. Generating voices (TTS)
 
-**Automated path — `tools/tts-gen/`** (optional tool in the repo, not scaffolded): write `story/tts.json` mapping each speaker to a provider+voice, run it, and it synthesizes **one file per line** — which makes the segments mapping exact by construction, with no alignment anywhere — drafts `segments.auto.json`, and emits `wordtimes.auto.json` when the provider supports word timing. edge-tts is free, keyless, and verified (including Thai voices); ElevenLabs/Gemini are experimental. Caveat verified live: word boundaries are **voice-specific** — th-TH-NiwatNeural emits them, th-TH-PremwadeeNeural refuses — the tool detects this at runtime and says so per line. See `tools/tts-gen/README.md`.
+**Automated path — `tools/tts-gen/`** (optional tool in the repo, not scaffolded): write `story/tts.json` mapping each speaker to a provider+voice, run it, and it synthesizes **one file per line** — which makes the segments mapping exact by construction, with no alignment anywhere — drafts `segments.auto.json`, and emits `wordtimes.auto.json` when the provider supports word timing. edge-tts is free, keyless, and verified (including Thai voices); ElevenLabs and Gemini were each verified live with one Thai sample; their limits are listed in the tool README. Caveat verified live: word boundaries are **voice-specific** — th-TH-NiwatNeural emits them, th-TH-PremwadeeNeural refuses — the tool detects this at runtime and says so per line. See `tools/tts-gen/README.md`.
 
 **Manual path (first-class as always):**
 
@@ -89,14 +89,14 @@ If you prefer recording **one long take per speaker** over generating per-segmen
 
 ## 6b. Optional: word timing + karaoke subtitles
 
-When `story/wordtimes.json` exists (rename the tts-gen draft, or write your own — `{ "0": [["word", start, end], ...] }` with times relative to that line's audio file), `npm run mix` merges it into talk.js as absolute per-word timing. Setting `SUB_KARAOKE = true` in `story/style.js` then renders karaoke subtitles: spoken words highlight left-to-right, active word pops. Default is off. Honest caveat: Thai "words" from TTS/whisper are subword-ish segmentation — visually fine, not linguistic-grade — and silence trimming makes timing approximate by tens of milliseconds, which is invisible in practice.
+When `story/wordtimes.json` exists (rename the tts-gen draft, or write your own — `{ "0": [["word", start, end], ...] }` with times relative to that line's audio file), `npm run mix` merges it into talk.js as absolute per-word timing. Setting `SUB_KARAOKE = true` in `story/style.js` then renders karaoke subtitles: spoken words highlight left-to-right, active word pops. Default is off. Honest caveat: Thai "words" from TTS/whisper are subword-ish segmentation — visually fine, not linguistic-grade — silence trimming is compensated for, so word times stay aligned to the trimmed narration.
 
-### Word timing for non-TTS voices (backfill paths) — v0.5.0
+### Word timing for non-TTS voices (backfill paths)
 
 `wordtimes.json` is not TTS-exclusive. Two more generators write the same schema:
 
 - **auto-segment** now emits `wordtimes.auto.json` alongside its segments draft — whisper's own
-  word timestamps, cut-relative. Fuzzy-grade: solid for karaoke highlighting and `rvw` reveal beats.
+  word timestamps, cut-relative. Fuzzy-grade: solid for karaoke highlighting and `rvw` reveal beats. The draft segments file it writes carries `tempo: 1.0` because recorded voices keep their natural pace; set `settings.tempo` in `segments.json` (for example `1.15`) to match the pace you want.
 - **tools/phoneme-align** (optional, heavy isolated deps) runs wav2vec2 CTC forced alignment of each
   vo file against the transcript segments.json already says it contains — no ASR involved, the text
   is known exactly. Phoneme-grade precision even for TTS voices that refuse word boundaries.

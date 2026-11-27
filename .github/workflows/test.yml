@@ -17,11 +17,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
       # ffmpeg is NOT preinstalled on current ubuntu-latest runners (verified by a
@@ -35,17 +35,19 @@ jobs:
       # npm test is the single source of truth — add new unit test files in
       # package.json only, never here.
       - name: unit tests (node + python)
+        env:
+          PYTHON: python
         run: npm test
 
   e2e:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
         with:
           python-version: '3.12'
       # ffmpeg is NOT preinstalled on current ubuntu-latest runners (verified by a
@@ -64,13 +66,64 @@ jobs:
       # the key contains the exact resolved version: a version bump misses cleanly
       # and re-caches instead of restoring a stale browser.
       - name: cache chromium binaries
-        uses: actions/cache@v5
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}
       - name: install chromium (once, shared by scaffolded projects)
         run: npx playwright-core install chromium --with-deps || npx playwright-core install chromium
-      - name: e2e pipeline + determinism + preview
+      - name: e2e pipeline + determinism + preview + real-audio mix
         env:
           PYTHON: python
+          AIYU_KEEP_WORKSPACES: '1'
         run: npm run test:e2e
+      - name: upload e2e workspaces on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: e2e-workspaces-linux
+          path: |
+            tests/e2e/.tmp-*/stills
+            tests/e2e/.tmp-*/out
+            tests/e2e/.tmp-*/talk.js
+          if-no-files-found: ignore
+
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: install ffmpeg
+        run: choco install ffmpeg --no-progress -y; ffmpeg -version | Select-Object -First 1
+      - name: install locked root dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: unit tests (node + python)
+        env:
+          PYTHON: python
+        run: npm test
+      - name: install playwright cli
+        shell: bash
+        run: npm install --no-save playwright-core@$(node -p "require('./template/package-lock.json').packages['node_modules/playwright-core'].version")
+      - name: install chromium
+        run: npx playwright-core install chromium
+      - name: e2e pipeline + determinism + preview + real-audio mix
+        env:
+          PYTHON: python
+          AIYU_KEEP_WORKSPACES: '1'
+        run: npm run test:e2e
+      - name: upload e2e workspaces on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: e2e-workspaces-windows
+          path: |
+            tests/e2e/.tmp-*/stills
+            tests/e2e/.tmp-*/out
+            tests/e2e/.tmp-*/talk.js
+          if-no-files-found: ignore

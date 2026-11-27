@@ -6,6 +6,38 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-27
+
+Correctness and hardening release. **Breaking:** stricter speaker IDs, numeric flags and mux QC; existing renders are protected from accidental overwrite. `t2.000.jpg` was regenerated after the font-loading fix.
+
+### Added
+
+- **Runtime:** `fitTXT` for text fitting, `renderPortrait` for registered portraits, and ordered `registerOverlay` draw stages.
+- **Tests and CI:** Windows coverage, e2e failure artifacts, and stronger determinism, scaffold, and golden checks.
+
+### Changed
+
+- **Breaking:** `mux` now fails on QC errors (loudness, true peak, frame count, output shape, or measured bed gap); dialogue speaker IDs must be one Unicode letter or digit; numeric flags require valid values; `render` and `publish` require `--force` to replace existing output.
+- Runtime timing/configuration is stricter and more deterministic: `defineScenes()` validates boundaries, `mouthFor()` clamps its output, and `rain()` accepts explicit time. Engine logic now lives in tested `engine/lib/` modules; unused `out/cues.json` output was removed.
+- Root and scaffolded projects require Node.js 20 or newer. Missing visual goldens now fail tests unless explicitly regenerated with `AIYU_WRITE_GOLDENS=1`.
+- Gemini and ElevenLabs are verified with one Thai sample each (`gemini-3.8-flash-tts` / Kore; `eleven_v4` / Sarah). Other voices and languages remain untested; ASR heard Gemini's `นี่` as `มี`, though it was judged clear by ear.
+
+### Fixed
+
+- Fixed timeline gaps and trimmed-audio word offsets; corrected karaoke highlight drift and first-frame font loading.
+- Fixed CTC alignment offsets/final-token loss, Gemini Interactions response handling, and ElevenLabs request format/Thai model selection. `tts-gen --list-voices edge` now lists voices.
+- Failed renders clean up partial files; `publish` stops child renders on Ctrl+C; `measure-subs` honors `--browser` and closes the browser reliably.
+
+### Security
+
+- Chromium sandbox is enabled by default (`AIYU_CHROMIUM_NO_SANDBOX=1` opts out); external tools resolve from PATH only; user-supplied page and concat paths are confined to the project.
+- TTS keys use auth headers, not URLs or error text. GitHub Actions use commit-SHA pins.
+
+### Upgrading from 0.4.0
+
+- Rename speaker IDs longer than one character (including matching TTS config and voice filenames); pass `--force` only when replacing output; provide values for numeric flags.
+- Check scripts that invoke `mux`: QC failures now return a non-zero exit code.
+
 ## [0.4.0] - 2026-11-26
 
 Feature release — word timing everywhere (karaoke, keyword-beat reveals, three generator paths), TTS generation, auto-ducking, hand-drawn sketch annotations, agent skills, and preview quality-of-life. No breaking changes.
@@ -139,7 +171,8 @@ First public release — extracted from the real production of `jensen-legend` (
 - `examples/jensen-legend/` reference implementation (code only)
 
 
-[Unreleased]: https://github.com/teeprakorn1/aiyu-studio/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/teeprakorn1/aiyu-studio/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/teeprakorn1/aiyu-studio/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/teeprakorn1/aiyu-studio/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/teeprakorn1/aiyu-studio/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/teeprakorn1/aiyu-studio/compare/v0.2.0...v0.3.0

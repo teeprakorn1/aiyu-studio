@@ -77,7 +77,7 @@ Rules:
 
 - Put new pure logic in an importable `engine/lib/` module first, then unit-test it. Do not test production logic by extracting source text with regex/`eval`.
 - Runtime visual behavior belongs in golden stills and preview/e2e coverage, not brittle pixel-value assertions.
-- If a visual change is intentional, delete `tests/e2e/fixtures/golden/`, run e2e once to reinitialize it, review the new stills visually, then commit them.
+- If a visual change is intentional, rewrite the goldens with `AIYU_WRITE_GOLDENS=1 node --test tests/e2e/determinism.test.mjs`, review the new stills visually, and record the reason in CHANGELOG.md.
 - If the change affects subtitles, timing, or layout, include before/after stills in the PR.
 
 ## Commit conventions
@@ -117,3 +117,12 @@ By contributing, you agree that your contributions are licensed under the [MIT L
 ## Architecture and conventions
 
 See **AGENTS.md** — it defines the dependency-direction law, the five development laws (determinism, talk.js truth, DRY engine, no per-project engine edits, verification gate), the mandatory JSDoc policy, and file naming rules. It binds all contributors, human or AI.
+
+## Release checklist
+
+1. Bump the version with `npm version X.Y.Z --no-git-tag-version` in the repo root (updates `package.json` and the lockfile).
+2. Add the CHANGELOG entry for the version, with the reason for every golden rewrite.
+3. `npm test` and `npm run test:e2e` pass locally (`PYTHON=py` on Windows).
+4. Golden stills change only through `AIYU_WRITE_GOLDENS=1`, and the new images are reviewed by eye.
+5. `npm audit --omit=dev` is clean in `template/`.
+6. CI is green on Linux and Windows before tagging.

@@ -1,12 +1,15 @@
 {
   "name": "aiyu-studio",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Template engine repo — tests and tooling. Scaffolded projects get their own package.json from template/.",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "test": "npm run test:unit && npm run test:unit:py",
-    "test:unit": "node --test tests/unit/cli-args.test.mjs tests/unit/loudness.test.mjs tests/unit/motion.test.mjs tests/unit/ffmpeg.test.mjs tests/unit/engine-cli.test.mjs tests/unit/runtime-registry.test.mjs tests/unit/architecture.test.mjs tests/unit/skills.test.mjs tests/unit/karaoke.test.mjs tests/unit/sketch.test.mjs",
-    "test:unit:py": "node engine/run-py.mjs tests/unit/mix_studio_test.py && node engine/run-py.mjs tests/unit/auto_segment_test.py && node engine/run-py.mjs tests/unit/tts_gen_test.py && node engine/run-py.mjs tests/unit/phoneme_align_test.py",
-    "test:e2e": "node --test tests/e2e/pipeline.test.mjs tests/e2e/determinism.test.mjs tests/e2e/preview.test.mjs"
+    "test:unit": "node --test tests/unit/cli-args.test.mjs tests/unit/loudness.test.mjs tests/unit/motion.test.mjs tests/unit/ffmpeg.test.mjs tests/unit/engine-cli.test.mjs tests/unit/runtime-registry.test.mjs tests/unit/architecture.test.mjs tests/unit/skills.test.mjs tests/unit/karaoke.test.mjs tests/unit/sketch.test.mjs tests/unit/verify.test.mjs tests/unit/containment.test.mjs tests/unit/exec.test.mjs tests/unit/chunking.test.mjs tests/unit/base-fit.test.mjs tests/unit/determinism-static.test.mjs",
+    "test:unit:py": "node engine/run-py.mjs tests/unit/mix_studio_test.py && node engine/run-py.mjs tests/unit/auto_segment_test.py && node engine/run-py.mjs tests/unit/tts_gen_test.py && node engine/run-py.mjs tests/unit/phoneme_align_test.py && node engine/run-py.mjs tests/unit/exec_path_test.py",
+    "test:e2e": "node --test tests/e2e/pipeline.test.mjs tests/e2e/determinism.test.mjs tests/e2e/preview.test.mjs tests/e2e/mix-real.test.mjs"
   }
 }

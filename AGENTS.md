@@ -24,7 +24,7 @@ measure-subs.mjs  subtitle QC — reads the same runtime
 
 - Template runtime layers: `core/` (kernel — base/registry/motion/camera/runtime) ← `features/` (character/subtitles/environment/cards + optional atmosphere/people) ← `story/` (style.js, srchips.js, dialogue.txt, segments.json — everything an author edits). Story configuration uses the explicit registry (`defineCharacters()`, `defineScenes()`, `definePeople()`, `defineSourceChips()`, `setFootnote()`); legacy global adoption exists only as a compatibility fallback. Lower layers never know about upper ones; features must not depend on each other (shared primitives belong in `core/base.js`). Classic scripts only — ES modules are impossible over file://.
 - `preview.html` loads the exact same scripts as `index.html` and drives the same `render(t)` — it is a debugging surface, not a second render path. Never implement preview-only rendering logic.
-- `engine/lib/` — shared infrastructure: `cli-args.mjs` (the one CLI parser), `playwright-env.mjs` (browser resolution + launch fallback chain + page readiness), `ffmpeg.mjs` (process helpers), `encoding.mjs` (x264 option validation), `loudness.mjs` (filter graphs + measurement), `mp4-verify.mjs` (container structure), `chunking.mjs` (parallel boundary math), `talk.mjs` (generated talk parsing), plus Python audio helpers in `mix_audio.py`. Never duplicate logic that lives here.
+- `engine/lib/` — shared infrastructure: `cli-args.mjs` (the one CLI parser), `playwright-env.mjs` (browser resolution + launch fallback chain + page readiness), `ffmpeg.mjs` (process helpers), `encoding.mjs` (x264 option validation), `loudness.mjs` (filter graphs + measurement), `mp4-verify.mjs` (container structure), `chunking.mjs` (parallel boundary math and chunk job planning), `render-spec.mjs` (time specs and output names), `verify.mjs` (final-file QC gates), `concat.mjs` (concat list parsing), `exec.mjs` and `paths.mjs` (PATH-only executables and containment), `talk.mjs` (generated talk parsing); Python helpers in `mix_audio.py` (parsing, trimming, envelopes), `timeline.py` (timeline planning), and `exec_path.py` (PATH-only executables). Never duplicate logic that lives here.
 - Engine scripts are thin shells over `engine/lib/` and run from the **project root** (CWD); npm scripts in package.json are the stable user interface — documentation must teach them, not raw `node engine/...` invocations.
 
 ## The five laws
@@ -33,7 +33,7 @@ measure-subs.mjs  subtitle QC — reads the same runtime
 2. **talk.js is the only timing truth** — scenes, subtitles, mouths, waveform all derive from it. Never invent a second timing source. Never hand-edit talk.js; always re-run `mix-studio.py`.
 3. **DRY across engine** — logic used by 2+ engine scripts lives in `engine/lib/`. Copy-paste between scripts is a defect. Logic trapped inside an executable script is equally a defect — it is untestable by construction.
 4. **Never edit engine inside a production project** — fix the template, re-copy. Otherwise projects drift.
-5. **Verification gate** — a change is done only when: `npm test` is green (unit: node + python), `node --check` passes for every touched engine script, and `npm run test:e2e` passes for changes touching the engine, runtime, or scaffold. Visual output must be unchanged unless intended — intended visual changes re-initialize the golden stills (delete `tests/e2e/fixtures/golden/`, re-run once, review with eyes before committing).
+5. **Verification gate** — a change is done only when: `npm test` is green (unit: node + python), `node --check` passes for every touched engine script, and `npm run test:e2e` passes for changes touching the engine, runtime, or scaffold. Visual output must be unchanged unless intended — intended visual changes rewrite the golden stills with `AIYU_WRITE_GOLDENS=1`, review them by eye, and record the reason in CHANGELOG.md.
 
 ## JSDoc policy (mandatory)
 
@@ -57,3 +57,14 @@ measure-subs.mjs  subtitle QC — reads the same runtime
 - Docs live in `docs/` in topical folders (`getting-started/`, `authoring/`, `delivery/`, `examples/`, `testing/`) — each folder has a README index, files are numbered in reading order. A change that alters behavior must update the matching doc in the same change.
 - `template/skills/` teaches these laws and the runtime API to coding agents inside scaffolded projects — a rule or API change must sync the matching skill in the same change. Stale skills are worse than none: agents follow them confidently.
 - `examples/legacy/` is frozen history — never edit the productions there, not even to "fix" them to current conventions. Their file layouts are fossils on purpose. Modern references belong in `examples/active/`.
+
+## Runtime and engine rules (0.5.0)
+
+- Features draw through `registerOverlay(order, fn)`; `core/runtime.js` never calls feature functions by name.
+- External tools (`ffmpeg`, `ffprobe`, Python) resolve from PATH only (`engine/lib/exec.mjs`, `engine/lib/exec_path.py`). Never spawn a bare name that the project folder could shadow.
+- User-supplied paths (`--page`, concat entries) must stay inside the project (`engine/lib/paths.mjs`).
+- `render` and `publish` never overwrite an existing version without `--force`.
+- The Chromium sandbox stays on. `AIYU_CHROMIUM_NO_SANDBOX=1` is the only opt-out, for root-in-container use.
+- Goldens: a missing golden fails the suite. `AIYU_WRITE_GOLDENS=1` writes them after an intentional visual change, with the reason recorded in CHANGELOG.
+- Accepted exception: `core/runtime.js` adopts the legacy `CH`/`PCH`/`SC`/`SRCCHIPS`/`FOOTNOTE_TEXT` globals so `examples/legacy` keeps working. New code uses the registry.
+- JSDoc with every parameter and a return is enforced by `tests/unit/architecture.test.mjs` for exported functions in `core/base.js`, `features/environment.js`, and `features/atmosphere.js`.

@@ -83,7 +83,7 @@ Rules that keep you safe:
 
 Variable text is the enemy of fixed layout. Defend at the template level:
 
-- `TXT(txt, x, y, size, color, align, maxW)` — always pass `maxW` for variable strings
+- `fitTXT(txt, x, y, maxW, size, color, align, weight)` — always use `fitTXT` for variable strings: it shrinks the font until the text fits `maxW`
 - Cards size to their content — check the longest realistic value in stills, not the average one
 - Subtitles need no defense (they re-wrap automatically), but they are driven by dialogue.txt — outside the variant system anyway
 - If a field can be absent, branch in style.js (`if (DATA.chipLabel) ...`) — never render empty cards

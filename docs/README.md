@@ -1,20 +1,23 @@
 # aiyu-studio documentation
 
-Organized by production journey. Every folder has its own README indexing its files.
+Organized by production journey. Each guide folder has a README index; `images/` contains shared assets.
 
 ```
 docs/
 ├── README.md                     ← you are here (the hub)
 ├── acknowledgements.md           lineage · influences · deliberate divergences (why the design is what it is)
 ├── getting-started/
+│   ├── README.md                 setup and first-project guide index
 │   └── 01-quickstart.md          zero to first video, step by step + scaffolded structure
 ├── authoring/
+│   ├── README.md                 authoring guide index
 │   ├── 01-scenes.md              scenes in style.js · runtime API · safe zones
 │   ├── 02-dialogue-audio.md      dialogue · segments.json · TTS · tempo
 │   ├── 03-cinematic.md           realistic humans · layered backgrounds · water · frame treatments
 │   ├── 04-maps.md                animated data-driven maps · flow paths · hachure mountains
 │   └── 05-parameterized.md       data-driven variants · batch rendering
 ├── delivery/
+│   ├── README.md                 delivery guide index
 │   └── 01-qc-publish.md          7-point QC · Reels/TikTok specs · legal/platform rules
 ├── examples/
 │   ├── README.md                 what the examples/ folders are — active vs legacy archaeology
@@ -26,7 +29,7 @@ docs/
 │   ├── 02-unit-tests.md          unit suite · load-script harness · adding tests
 │   ├── 03-e2e-tests.md           pipeline · determinism · preview · golden stills · platform traps
 │   └── 04-ci.md                  workflow anatomy · reproducing CI locally
-└── images/                       demo screenshots + pipeline diagram used by the repo READMEs
+└── images/                       shared screenshots + pipeline diagram used by the repo READMEs
 ```
 
 ## Recommended path
@@ -54,4 +57,4 @@ docs/
 
 1. **Everything derives from the single `talk.js`** — subtitles, scene boundaries, mouth envelopes, video duration all scale with the audio automatically. Never hand-edit talk.js; always re-run `mix-studio.py`
 2. **Always check safe zones with stills before a real render** — cam() zooms constantly, so on-screen positions never match the coordinates you wrote
-3. **Never overwrite older video versions** — always increment v1/v2/v3
+3. **Keep older video versions** — use a new `--out` prefix (`v1`, `v2`, `v3`); only use `--force` when replacement is intentional

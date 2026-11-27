@@ -82,7 +82,7 @@ The pipeline was hardened through real production (`jensen-legend` v3–v7, docu
 
 The bundled Kanit fonts in `template/assets/fonts/` are by **Cadson Demak**, licensed under the [SIL Open Font License 1.1](../template/assets/fonts/OFL.txt). Everything else in this repository is MIT — see [LICENSE](../LICENSE).
 
-## m-bain/whisperX — studied for v0.5.0
+## m-bain/whisperX — studied for v0.4.0
 
 [whisperX](https://github.com/m-bain/whisperX) (BSD-4-Clause) — batched whisper transcription
 with wav2vec2 forced phoneme alignment, VAD preprocessing, and pyannote speaker diarization.

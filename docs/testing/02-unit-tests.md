@@ -14,6 +14,13 @@ Fast, deterministic, no browser, no video renders. Run with `npm test` (node + p
 | `runtime-registry.test.mjs` | the explicit runtime configuration API | character/people registration, unknown-id errors, scene-table shape/order/`Infinity` validation, source chips and footnote registration, portrait-renderer registration |
 | `architecture.test.mjs` | static guardrails for layer direction and module shape | cards do not depend on character internals or story globals, cast resolution goes through the registry, core/features are IIFE-wrapped with explicit `globalThis` exports |
 | `skills.test.mjs` | structural validation of the scaffolded Agent Skills pack | all three skills exist with valid frontmatter (name matches directory, real description), no broken internal links, the non-negotiable invariants are explicitly taught |
+| `karaoke.test.mjs` | karaoke helpers from `features/subtitles.js` via the load-script harness: char→word mapping is sequential (repeated words don't collapse), missing tokens tolerated, active-word index tracks time-in-line with the intentional small lead and never goes backwards |
+| `verify.test.mjs` | `lib/verify.mjs` — the final-file hard gates, one failure per check | frame count within one frame of fps × duration, loudness within 0.25 LU, true peak under the ceiling, bed gap when measured, stream shape, faststart, duration |
+| `containment.test.mjs` | `lib/paths.mjs`, `lib/concat.mjs` | paths and concat entries stay inside the project; quoting and escaped apostrophes; absolute and escaping entries rejected |
+| `exec.test.mjs` | `lib/exec.mjs` | executables resolve from PATH only; the current directory and relative PATH entries are never searched |
+| `chunking.test.mjs` | `lib/chunking.mjs`, `lib/render-spec.mjs` | chunk boundaries and job planning; still and video time specs; output names |
+| `base-fit.test.mjs` | `core/base.js` `fitTXT` | shrinks in 2 px steps to fit, never below 24 px (recording canvas stub) |
+| `determinism-static.test.mjs` | template core, features, story | no `Math.random`, `Date.now`, `performance.now`, `new Date`, or crypto randomness in render code |
 
 ## Python tests (`unittest` — stdlib only)
 
@@ -21,9 +28,8 @@ Fast, deterministic, no browser, no video renders. Run with `npm test` (node + p
 |---|---|
 | `mix_studio_test.py` | importable pure functions in `engine/lib/mix_audio.py`: waveform peak extraction, silence trimming, dialogue validation, tempo/gap validation, voice filename/path traversal rejection, safe talk.js script serialization — exercised on synthetic PCM generated inside the test |
 | `auto_segment_test.py` | `tools/auto-segment/lib_align.py` pure logic — no whisper needed: normalization keeps Thai vowel/tone marks, perfect/noisy transcript alignment on synthesized word timestamps, monotone position advance, narrator grouping/character solo rules, padding/naming conventions, CLI error paths before any whisper import |
-| `tts_gen_test.py` | `tools/tts-gen` pure logic — no network: tts.json config validation/defaults, per-line file naming, exact-by-construction segments payload, wordtimes assembly (untimed lines degrade, never break), draft overwrite protection, provider registry honesty (edge is the only non-experimental provider; paid providers fail fast without keys) |
-| `phoneme_align_test.py` | CTC span merging, whitespace-run chunking, Thai max_chars splitting — trellis/backtrack need torch so they are covered by dev-time live verification instead (documented, deliberate) |
-| `karaoke.test.mjs` | karaoke helpers from `features/subtitles.js` via the load-script harness: char→word mapping is sequential (repeated words don't collapse), missing tokens tolerated, active-word index tracks time-in-line with the intentional small lead and never goes backwards |
+| `tts_gen_test.py` | `tools/tts-gen` pure logic — no network: tts.json config validation/defaults, per-line file naming, exact-by-construction segments payload, wordtimes assembly (untimed lines degrade, never break), draft overwrite protection, provider registry honesty (edge, elevenlabs, and gemini are the verified providers; paid providers fail fast without keys) |
+| `phoneme_align_test.py` | CTC span merging, whitespace-run chunking, Thai max_chars splitting — trellis/backtrack run in pure Python (no torch) and are checked on synthetic emissions |
 
 **Rule: never commit real audio fixtures.** Voice material is large, copyrighted-adjacent,
 and unnecessary — synthetic PCM with known amplitude envelopes tests the math better
